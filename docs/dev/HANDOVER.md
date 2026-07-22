@@ -1,7 +1,7 @@
 # 电销工作台 APP — 开发交接文档
 
 > 本文档用于向后继开发者移交项目信息，涵盖项目概况、技术栈、项目结构、环境搭建、开发流程、后续规划。
-> 版本：v1.0（2026-07-22）
+> 版本：v2.0（2026-07-22）
 
 ---
 
@@ -23,16 +23,16 @@
 
 ### 1.3 核心功能范围（v1.0）
 
-| 模块 | 功能 |
-|------|------|
-| 认证 | 登录（邮箱+密码）、Token 管理、强制改密、登出 |
-| 首页 | 今日概况卡片、待办日程预览、10 分钟轮询 |
-| 线索 | 列表（搜索/筛选/排序）、详情、拨号、**公海自领** |
-| 通话 | 调系统拨号盘、半自动回传、反馈面板、draft 持久化 |
-| 跟进 | 时间线、提交（接听类型/备注/分类）、编辑/删除 |
-| 日程 | 待办列表、Badge、完成/取消/新建/一键拨号/到期提醒 |
-| 个人 | 统计概览、修改密码、登出、通话记录 |
-| TM/TA | 团队线索池、团队日程、团队统计（v1.1） |
+| 模块 | 功能 | 状态 |
+|------|------|------|
+| 认证 | 登录（邮箱+密码）、Token 管理、强制改密、登出 | ✅ v0.2~v0.4 |
+| 首页 | 今日概况卡片、待办日程预览、10 分钟轮询、快捷入口 | ✅ v0.5 |
+| 线索 | 列表（搜索/筛选/排序/分页/无限滚动/下拉刷新） | ✅ v0.6 |
+| 线索详情 | 信息区、跟进时间线、操作面板 | 📋 v0.7 |
+| 通话 | 调系统拨号盘、半自动回传、反馈面板 | 📋 待开发 |
+| 跟进 | 时间线、提交（接听类型/备注/分类）、编辑/删除 | 📋 待开发 |
+| 日程 | 待办列表、Badge、完成/取消/新建/一键拨号/到期提醒 | 📋 待开发 |
+| 个人 | 统计概览、修改密码、登出、通话记录 | 📋 待开发 |
 
 ---
 
@@ -40,18 +40,21 @@
 
 | 项目 | 选型 | 版本 | 说明 |
 |------|------|------|------|
-| 框架 | **Flutter** | 3.44.7 | 声明式 UI，Platform Channel 访问原生权限 |
+| 框架 | **Flutter** | 3.44.7 | 声明式 UI，仅 Android 目标 |
 | Dart | Dart SDK | 3.12.2 | |
 | UI 组件库 | **TDesign Flutter** | 0.2.7（已本地 patch） | 腾讯开源，中文友好 |
-| 状态管理 | 待定 | — | 推荐 Riverpod 或 Bloc |
-| 网络层 | `dio` | 待接入 | Token 注入、全局错误码处理 |
-| 安全存储 | `flutter_secure_storage` | 待接入 | Token/密码加密存储 |
-| 版本号 | `package_info_plus` | 8.3.1 | — |
+| 状态管理 | **Riverpod** | 2.6.1 | `flutter_riverpod` |
+| 网络层 | **dio** | 5.7.0 | Token 注入、自动刷新、错误码解析 |
+| 路由 | **GoRouter** | 14.8.0 | 已添加待使用（当前用 AuthGate 状态驱动） |
+| 安全存储 | **flutter_secure_storage** | 9.2.0 | Token/密码加密存储 |
+| 本地存储 | **shared_preferences** | 2.3.0 | 邮箱、复选框状态、Options 缓存 |
+| 版本号 | **package_info_plus** | 8.3.1 | |
+| 网络状态 | **connectivity_plus** | 6.x | 离线检测 |
 | Android | compileSdk/Target | 36（API 36） | Android 16 |
 | Gradle | Gradle | 9.1.0 | |
 | JDK | Eclipse Temurin | 26.0.1 | OpenJDK |
 
-> **⚠️ TDesign Fluxter 本地 patch 说明**：`tdesign_flutter 0.2.7` 与 Dart 3.12 存在兼容性问题（`IconData final class`），详见 [开发踩坑记录](./DEVELOPMENT_PITFALLS.md#21-_tdiconsdata-extends-icondata--dart-312-不兼容)。
+> **⚠️ TDesign Flutter 本地 patch 说明**：`tdesign_flutter 0.2.7` 与 Dart 3.12 存在兼容性问题（`IconData final class` 导致 `_TDIconsData extends IconData` 编译失败），已手动修改 pub 缓存中的 `td_icons.dart`。详见 [开发踩坑记录](./DEVELOPMENT_PITFALLS.md#21-_tdiconsdata-extends-icondata--dart-312-不兼容)。
 
 ---
 
@@ -59,39 +62,57 @@
 
 ```
 telemarketing-saas-app/
-├── android/                     # Android 原生配置
-│   ├── app/
-│   │   ├── build.gradle.kts    # 应用级构建配置
-│   │   └── proguard-rules.pro  # 混淆规则
-│   └── build.gradle.kts        # 项目级构建配置
-│
-├── assets/
-│   └── images/                  # 图片资源（Logo 等）
-│
 ├── docs/
-│   ├── design/                  # 产品设计文档
-│   │   ├── APP_PRODUCT_DESIGN.md     # 主设计文档
-│   │   └── page-design/              # 各页面设计文档
-│   │       ├── 00-TDesign-Flutter-设计规范.md  # 设计令牌
-│   │       ├── 01-登录页.md                  # 登录页 UI 规范
-│   │       └── ...                          # 其他页面
-│   └── dev/
-│       ├── DEVELOPMENT_PITFALLS.md  # 踩坑记录 ← 必读
-│       └── (本文档)                  # 交接文档
+│   ├── design/                       # 产品设计文档
+│   │   ├── APP_PRODUCT_DESIGN.md
+│   │   ├── api.md                     # API 接口文档（必读）
+│   │   └── page-design/              # 各页面设计规范
+│   └── dev/                          # 开发文档
+│       ├── DEVELOPMENT_PITFALLS.md    # 踩坑记录 ← 新开发者必读
+│       ├── HANDOVER.md               # 本文件
+│       ├── MILESTONES.md             # 节点记录
+│       └── PLAN_*.md                 # 各页面开发计划
 │
 ├── lib/
-│   ├── main.dart                # 入口（竖屏锁定 + runApp）
-│   ├── app.dart                 # App 根组件（TDTheme + MaterialApp）
-│   ├── pages/                   # 页面目录
-│   │   └── login/
-│   │       └── login_page.dart  # 登录页（当前唯一实现页）
-│   └── widgets/                 # 公共组件（待增长）
+│   ├── main.dart                     # 入口
+│   ├── app.dart                      # App 根组件 + AuthGate 路由守卫
+│   │
+│   ├── models/                       # 数据模型
+│   │   ├── user.dart                 # 用户（含 mustResetPassword）
+│   │   ├── home_stats.dart           # 首页统计
+│   │   ├── schedule.dart             # 日程
+│   │   ├── lead.dart                 # 线索（含 project/owner 子模型）
+│   │   └── option_item.dart          # 下拉选项通用模型
+│   │
+│   ├── services/                     # 网络/数据服务
+│   │   ├── api_constants.dart        # 端点 + 配置（含 optionsCacheTTL）
+│   │   ├── api_client.dart           # Dio 单例 + 拦截器
+│   │   ├── api_exception.dart        # 统一错误码
+│   │   ├── token_storage.dart        # Token 安全存储
+│   │   ├── auth_service.dart         # 登录/登出/改密
+│   │   ├── home_service.dart         # 首页 4 接口
+│   │   ├── lead_service.dart         # 线索列表 + 选项
+│   │   ├── options_cache_service.dart # 选项缓存（内存+本地持久化）
+│   │   └── local_storage_service.dart # 本地凭据存储
+│   │
+│   ├── providers/                    # Riverpod 状态管理
+│   │   ├── auth_provider.dart        # 认证状态（含 423 改密）
+│   │   ├── home_provider.dart        # 首页 + 轮询
+│   │   ├── lead_list_provider.dart   # 线索列表 + 搜索/筛选/排序
+│   │   └── options_provider.dart     # 选项缓存 Provider
+│   │
+│   ├── pages/
+│   │   ├── login/                    # 登录页
+│   │   ├── home/                     # 首页看板
+│   │   ├── leads/                    # 线索列表页
+│   │   ├── force_change_password/    # 强制改密页
+│   │   ├── main_shell.dart           # 底部 4 Tab 导航壳
+│   │   └── coming_soon_page.dart     # 占位页（待开发功能）
+│   │
+│   └── widgets/
+│       └── lead_card.dart            # 线索卡片组件（ConsumerWidget）
 │
-├── test/
-│   └── widget_test.dart         # 简单冒烟测试
-│
-├── pubspec.yaml                 # 依赖管理
-└── analysis_options.yaml        # Lint 规则
+└── pubspec.yaml
 ```
 
 ---
@@ -102,29 +123,27 @@ telemarketing-saas-app/
 
 | 组件 | 安装方式 | 备注 |
 |------|---------|------|
-| Flutter SDK | `brew install flutter` | 已安装 3.44.7 |
+| Flutter SDK | `brew install flutter` | 3.44.7 |
 | Java JDK 17+ | `brew install --cask temurin` | 需 sudo 权限 |
-| Android SDK | `sdkmanager "platform-tools" "platforms;android-36"` | 已安装 |
+| Android SDK | 已安装 `~/Library/Android/sdk/` | |
 | Android Build Tools | `sdkmanager "build-tools;36.0.0"` | 已安装 |
 | Android NDK | `sdkmanager "ndk;28.2.13676358"` | 已安装 |
-| VS Code | `brew install --cask visual-studio-code` | 可选，推荐 |
+| VS Code | 可选 | 推荐装 Flutter/Dart 插件 |
 
 ### 4.2 环境变量
 
 ```bash
-# ~/.zshrc 中配置（已验证通过）
+# ~/.zshrc
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 export PATH="$PATH:$ANDROID_HOME/platform-tools"
-export PATH="$PATH:$ANDROID_HOME/emulator"
 ```
 
-### 4.3 验证安装
+### 4.3 验证
 
 ```bash
 flutter doctor
+# Android toolchain 应为 [✓]，Xcode ❌ 可忽略
 ```
-
-期望输出中 Android toolchain 为 `[✓]`，Xcode 的 ❌ 可忽略（本项目仅 Android）。
 
 ---
 
@@ -133,182 +152,105 @@ flutter doctor
 ### 5.1 常用命令
 
 ```bash
-# 获取依赖
-flutter pub get
-
-# 代码分析
-flutter analyze
-
-# Web 预览（开发 UI 时最方便）
-flutter run -d chrome
-
-# 真机运行（USB 连接 + 开启调试）
-flutter run -d <device-id>
-
-# 查看已连接设备
-flutter devices
-
-# 清理构建缓存
-flutter clean
-
-# 构建 APK
-flutter build apk --debug
-flutter build apk --release    # release 需配置签名
+flutter pub get              # 获取依赖
+flutter analyze              # 代码分析（零错误零警告为合格）
+flutter build apk --debug    # 构建 APK
+adb install -r build/app/outputs/flutter-apk/app-debug.apk  # 安装到真机
 ```
 
-### 5.2 真机调试说明
+### 5.2 真机调试
 
 1. 手机开启 **开发者选项** → **USB 调试**
-2. USB 连接电脑
-3. `flutter devices` 确认设备已识别
-4. `flutter run -d <设备ID>` 运行
+2. `flutter devices` 确认设备已识别
+3. `flutter run -d <设备ID>` 或 `flutter build apk --debug` + `adb install`
 
-> **注意**：`flutter run` 在退出后（exit code 2）通常是因为调试协议连接断开，**不影响 APP 在手机上正常运行**。
-
-### 5.3 快速迭代工作流
-
-```bash
-# 推荐开发方式
-1. 修改代码
-2. flutter analyze  # 快速检查
-3. flutter run -d chrome  # 浏览器预览（热重载秒级）
-4. 确认 UI 后 → flutter run -d <android>  # 真机验证
-```
+> `flutter run` 退出时 exit code 2 是调试协议断开，不影响 APP 运行。
 
 ---
 
 ## 6. 当前进度
 
-### ✅ 已完成
+### ✅ 已完成（v0.1 ~ v0.6）
 
-- [x] Flutter 项目初始化
-- [x] TDesign Flutter 集成（含本地兼容性 patch）
-- [x] Android SDK 环境配置（Build Tools/NDK）
-- [x] 登录页 UI 实现（含邮箱后缀选择器、@自动切换、验证状态）
-- [x] 登录页交互逻辑（表单校验、Loading 态、错误态、锁定倒计时）
-- [x] Web 预览 + 真机运行双重验证
+| 节点 | 内容 | 关键文件 |
+|------|------|---------|
+| v0.1 | 项目初始化 + 登录页 UI | login_page.dart |
+| v0.2 | 网络层(dio) + Riverpod + 登录API对接 + Token管理 | api_client, auth_service, auth_provider |
+| v0.3 | 保存邮箱/密码 + 复选框状态持久化 + TokenStorage 修复 | local_storage_service |
+| v0.4 | 强制改密页 + 423 兜底拦截 | force_change_password_page |
+| v0.5 | 首页看板 + 底部4Tab导航 + 通讯录状态重置 | home_page, main_shell, home_provider |
+| v0.6 | 线索列表页（搜索/筛选/排序/分页/卡片） | leads_list_page, lead_card, options_cache |
 
-### 📋 待开发（按优先级）
+### 📋 待开发
 
-#### P0 - 核心流程（MVP 必须）
-
-- [ ] **网络层接入（dio）**
-  - Token 拦截器（accessToken 注入、refresh 自动换发）
-  - 全局错误码映射（401/423/429 等）
-  - 基础请求封装
-- [ ] **状态管理选型与搭建**
-  - 推荐 Riverpod 或 Bloc
-  - 统一的状态管理规范
-- [ ] **登录 API 对接**
-  - POST `/api/auth/login` → 存储 Token
-  - Token 有效期管理
-  - 强制改密跳转逻辑
-- [ ] **首页看板**
-  - 今日概况卡片（待办数、跟进数、接通数、线索数）
-  - 待办日程预览（最多 5 条）
-  - 10 分钟自动轮询
-
-#### P1 - 核心功能
-
-- [ ] **线索列表页**（搜索/筛选/排序/分页）
-- [ ] **线索详情页**（信息区、跟进时间线、操作面板）
-- [ ] **拨号 + 通话回传**（系统拨号盘、READ_CALL_LOG、反馈面板）
-- [ ] **跟进记录**（时间线、提交、编辑/删除）
-- [ ] **日程**（列表、完成/取消、新建、一键拨号）
-
-#### P2 - 辅助功能
-
-- [ ] **个人统计**
-- [ ] **客户列表**
-- [ ] **通话记录列表**
-- [ ] **修改密码 / 登出**
-- [ ] **设置页面**
-
-#### P3 - 增强功能（v1.1+）
-
-- [ ] **公海自领**（TE 浏览公海并领取）
-- [ ] **TM/TA 团队视图**（线索池、团队日程、团队统计）
-- [ ] **日程增强**（重开、改期、统计）
-- [ ] **通话记录补正**
+见 `MILESTONES.md` 中的"下一步节点规划"。
 
 ---
 
-## 7. 页面设计文档索引
+## 7. 架构要点
 
-所有页面设计文档位于 `docs/design/page-design/` 目录下，基于 TDesign Flutter 组件编写：
+### 认证流程
 
-| 文档编号 | 页面 | 文件 |
-|---------|------|------|
-| 00 | TDesign Flutter 设计规范 | `00-TDesign-Flutter-设计规范.md` |
-| 01 | 登录页 | `01-登录页.md` |
-| 02 | 强制改密页 | (待查看) |
-| ... | 其他页面 | (待查看) |
+```
+AuthGate (app.dart)
+  ├─ initial → CircularProgressIndicator
+  ├─ unauthenticated → LoginPage
+  ├─ authenticating → LoginPage（按钮 loading）
+  ├─ authenticated → MainShell（4 Tab）
+  └─ forceChangePassword → ForceChangePasswordPage
+```
 
-> **注意**：当前实现的登录页（`lib/pages/login/login_page.dart`）与设计文档 `01-登录页.md` 在细节上可能略有出入（如使用 Material 复选框替代 TDCheckbox），以真机可用为前提。UI 一致性可在后续迭代中补全。
+### 网络层
+
+```
+ApiClient (Dio)
+  ├─ onRequest: 注入 Authorization header
+  └─ onError:
+       ├─ 423 FORCE_CHANGE_PASSWORD → onForceChangePassword callback
+       └─ 401 → 尝试 refresh → 重试原请求
+```
+
+### 底部导航（MainShell）
+
+```
+IndexedStack (保持状态)
+  ├─ Tab 0: HomePage（首页看板）
+  ├─ Tab 1: LeadsListPage（线索列表）✅ 已实现
+  ├─ Tab 2: ComingSoonPage（日程管理）📋
+  └─ Tab 3: _ProfileTab（我的）
+```
 
 ---
 
 ## 8. 已知问题与风险
 
-### 8.1 TDesign Flutter 兼容性风险
-
-| 问题 | 风险等级 | 应对措施 |
-|------|---------|---------|
-| `_TDIconsData extends IconData`（Dart 3.12） | 🔴 **高** | 已本地 patch pub cache，官方发布修复版本后需移除 patch |
-| `TDCheckbox` Android 白屏 | 🔴 **高** | 已用 Material 替代，官方修复后可切回 |
-| `image_picker_android` 嵌套类问题 | 🟡 **中** | 已用 dependency_overrides 规避 |
-
-### 8.2 技术决策待定项
-
-| 待定项 | 建议 | 备注 |
-|--------|------|------|
-| 状态管理 | **Riverpod**（推荐）或 **Bloc** | 当前无状态管理，页内状态直接用 setState |
-| 项目架构 | 推荐 MVVM 模式 | 网络层、数据层、UI 层分离 |
-| 路由管理 | **GoRouter** | 需支持鉴权守卫（未登录→登录页） |
-
-### 8.3 移动端独特实现的提醒
-
-- **拨号**：调系统拨号盘（`Intent.ACTION_DIAL`），非 VoIP
-- **通话回传**：需 `READ_CALL_LOG` 权限，通过 `Flutter Platform Channel` 调用
-- **夜间禁呼**：软提醒，非硬阻断（无法阻止系统拨号盘）
-- **无推送通知**：10 分钟轮询 + 下拉刷新替代
-- **侧载分发**：不经过应用商店，直接安装 APK
+| 问题 | 风险 | 状态 |
+|------|------|------|
+| `_TDIconsData extends IconData`（Dart 3.12） | 🔴 高 | 已本地 patch pub cache |
+| `TDCheckbox` Android 白屏 | 🔴 高 | 已用 Material 替代 |
+| `image_picker_android` 嵌套类 (D8) | 🟡 中 | dependency_overrides 锁定 |
+| `package_info_plus` KGP 警告 | 🟢 低 | 可忽略，未来可能阻断 |
 
 ---
 
 ## 9. 依赖版本锁定
 
-当前 `pubspec.yaml` 中的关键依赖和 override：
-
 ```yaml
-dependencies:
-  tdesign_flutter: ^0.2.7        # ⚠️ 有已知兼容问题，需保持关注
-  package_info_plus: ^8.0.0      # ⚠️ KGP 警告，未来可能不兼容
-
 dependency_overrides:
-  image_picker_android: 0.8.13+13  # 修复 D8 嵌套类编译错误
+  image_picker_android: 0.8.13+13
 ```
-
-**升级前必做**：
-1. 确认 `tdesign_flutter` 新版本已修复 `extends IconData` 问题
-2. 移除本地 pub cache 中的 patch
-3. 验证 Android 真机渲染正常
 
 ---
 
 ## 10. 后续开发建议
 
-1. **从网络层开始**：先搭好 dio 封装和 Token 管理，后续页面开发才有数据支撑
-2. **状态管理先行**：建议使用 Riverpod，与 TDesign 配合良好
-3. **UI 开发用 Chrome**：`flutter run -d chrome` 热重载极快，适合快速迭代 UI
-4. **真机验证不能省**：Web 正常 ≠ Android 正常（血泪教训）
-5. **逐页实现，优先核心流程**：拨号→回传→跟进是最核心的链路，优先打通
-6. **设计文档是依据不是圣经**：以设计文档为参考，以真机可用为准
-7. **阅读踩坑文档**：`docs/dev/DEVELOPMENT_PITFALLS.md` 记录了所有已知问题
+1. **先读踩坑文档**：`docs/dev/DEVELOPMENT_PITFALLS.md`
+2. **UI 迭代用真机**：Web 构建有 TDesign 兼容问题，直接用 `flutter build apk --debug` + `adb install`
+3. **逐页开发**：每完成一个页面，写计划→开发→真机测试→文档→commit
+4. **关注 `tdesign_flutter` 更新**：当前 0.2.7 有多个兼容问题，新版本可能修复
+5. **OptionsCacheService 复用**：项目内多处需要选项数据（筛选面板、卡片显示），统一通过该服务获取
 
 ---
 
-> **交接人**：Mobile App Builder  
-> **交接日期**：2026-07-22  
-> **项目启动里程碑**：Flutter 项目初始化 + 环境搭建 + 登录页 UI 实现  
-> **下一阶段**：网络层搭建 → 登录 API 对接 → 首页看板
+> **项目状态**：v0.6 — 线索列表页开发完成  
+> **更新日期**：2026-07-22

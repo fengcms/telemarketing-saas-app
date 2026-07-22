@@ -16,6 +16,12 @@ class ApiConstants {
   static const int connectTimeout = 15000;
   static const int receiveTimeout = 15000;
 
+  /// 下拉选项缓存有效期（秒）
+  /// 选项数据（分类/项目等）变更不频繁，
+  /// 设置 30 分钟（1800 秒）缓存减少重复请求。
+  /// 可根据实际需求调整此值。
+  static const int optionsCacheTTL = 1800;
+
   // ── 认证相关 ──
 
   static const String login = '/api/auth/login';
@@ -38,4 +44,14 @@ class ApiConstants {
   static const String schedules = '/api/tenant/schedules';
   static const String schedulesStatsMine = '/api/tenant/schedules/stats/mine';
   static const String schedulesStats = '/api/tenant/schedules/stats';
+
+  // ── 线索 ──
+
+  static const String leads = '/api/tenant/leads';
+
+  // ── 下拉选项 ──
+
+  static const String optionsCategories = '/api/tenant/options/categories';
+  static const String optionsProjects = '/api/tenant/options/projects';
+  static const String optionsUsers = '/api/tenant/options/users';
 }

@@ -1,0 +1,168 @@
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/api_client.dart';
+import '../services/api_constants.dart';
+import '../models/option_item.dart';
+
+/// 下拉选项缓存服务
+///
+/// 缓存分类/项目等下拉选项数据，避免重复请求。
+/// 内存缓存 TTL 在 [ApiConstants.optionsCacheTTL] 中配置（默认 1800 秒/30 分钟）。
+/// 同时持久化到 SharedPreferences，重开 APP 后先加载本地缓存再后台刷新。
+class OptionsCacheService {
+  final ApiClient _apiClient;
+
+  List<OptionItem> _categories = [];
+  List<OptionItem> _projects = [];
+  List<OptionItem> _users = [];
+  DateTime? _lastFetchTime;
+  bool _isLoading = false;
+  bool _localLoaded = false;
+
+  static const _keyCategories = 'cache_options_categories';
+  static const _keyProjects = 'cache_options_projects';
+  static const _keyUsers = 'cache_options_users';
+
+  OptionsCacheService({required ApiClient apiClient}) : _apiClient = apiClient;
+
+  /// 缓存是否有效（未过期）
+  bool get _isValid =>
+      _lastFetchTime != null &&
+      DateTime.now().difference(_lastFetchTime!).inSeconds <
+          ApiConstants.optionsCacheTTL;
+
+  /// 确保缓存有效
+  Future<void> _ensureLoaded() async {
+    // 先尝试从本地加载
+    if (!_localLoaded) {
+      await _loadFromLocal();
+      _localLoaded = true;
+    }
+
+    // 如果内存缓存过期，后台刷新
+    if (!_isValid && !_isLoading) {
+      _refreshFromApi();
+    }
+  }
+
+  /// 从本地 SharedPreferences 加载
+  Future<void> _loadFromLocal() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cats = prefs.getString(_keyCategories);
+      final projs = prefs.getString(_keyProjects);
+      final users = prefs.getString(_keyUsers);
+      if (cats != null) _categories = _decodeList(cats);
+      if (projs != null) _projects = _decodeList(projs);
+      if (users != null) _users = _decodeList(users);
+    } catch (_) {}
+  }
+
+  /// 保存到本地 SharedPreferences
+  Future<void> _saveToLocal() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keyCategories, _encodeList(_categories));
+      await prefs.setString(_keyProjects, _encodeList(_projects));
+      await prefs.setString(_keyUsers, _encodeList(_users));
+    } catch (_) {}
+  }
+
+  String _encodeList(List<OptionItem> items) {
+    return jsonEncode(items.map((e) => {'id': e.id, 'name': e.name}).toList());
+  }
+
+  List<OptionItem> _decodeList(String json) {
+    final list = jsonDecode(json) as List;
+    return list
+        .map((e) => OptionItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// 从 API 刷新缓存
+  Future<void> _refreshFromApi() async {
+    _isLoading = true;
+    try {
+      final results = await Future.wait([
+        _fetchCategories(),
+        _fetchProjects(),
+        _fetchUsers(),
+      ]);
+      _categories = results[0];
+      _projects = results[1];
+      _users = results[2];
+      _lastFetchTime = DateTime.now();
+      await _saveToLocal();
+    } catch (_) {
+      // 静默失败，保留旧缓存
+    } finally {
+      _isLoading = false;
+    }
+  }
+
+  Future<List<OptionItem>> _fetchCategories() async {
+    final response = await _apiClient.dio.get(ApiConstants.optionsCategories);
+    return _parseOptions(response.data);
+  }
+
+  Future<List<OptionItem>> _fetchProjects() async {
+    final response = await _apiClient.dio.get(ApiConstants.optionsProjects);
+    return _parseOptions(response.data);
+  }
+
+  Future<List<OptionItem>> _fetchUsers() async {
+    final response = await _apiClient.dio.get(ApiConstants.optionsUsers);
+    return _parseOptions(response.data);
+  }
+
+  List<OptionItem> _parseOptions(dynamic data) {
+    if (data is Map && data['success'] == true) {
+      final items = data['data'] as List<dynamic>? ?? [];
+      return items
+          .map((e) => OptionItem.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
+  }
+
+  // ── 公开查找方法 ──
+
+  Future<String?> getCategoryName(String? id) async {
+    if (id == null || id.isEmpty) return null;
+    await _ensureLoaded();
+    final found = _categories.where((c) => c.id == id);
+    return found.isNotEmpty ? found.first.name : id;
+  }
+
+  Future<String?> getProjectName(String? id) async {
+    if (id == null || id.isEmpty) return null;
+    await _ensureLoaded();
+    final found = _projects.where((p) => p.id == id);
+    return found.isNotEmpty ? found.first.name : id;
+  }
+
+  Future<String?> getUserName(String? id) async {
+    if (id == null || id.isEmpty) return null;
+    await _ensureLoaded();
+    final found = _users.where((u) => u.id == id);
+    return found.isNotEmpty ? found.first.name : id;
+  }
+
+  // ── 批量访问 ──
+
+  Future<List<OptionItem>> getCategories() async {
+    await _ensureLoaded();
+    return List.unmodifiable(_categories);
+  }
+
+  Future<List<OptionItem>> getProjects() async {
+    await _ensureLoaded();
+    return List.unmodifiable(_projects);
+  }
+
+  Future<void> refresh() async {
+    _lastFetchTime = null;
+    _isLoading = false;
+    await _refreshFromApi();
+  }
+}

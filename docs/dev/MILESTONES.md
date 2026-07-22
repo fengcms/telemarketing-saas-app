@@ -209,9 +209,58 @@ ApiClient 拦截器链：
 
 ---
 
+## 节点 v0.6 — 线索列表页（2026-07-22）
+
+### 完成内容
+
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 顶部导航栏 | ✅ | brand-7 蓝底，"我的线索"左对齐，右侧排序+筛选图标 |
+| 搜索栏 | ✅ | 胶囊形搜索框 + 蓝色"搜索"按钮(浮动,3px间距) + 清除按钮 |
+| 排序弹窗 | ✅ | 底部弹出，最近更新(默认) / 待跟进优先 |
+| 筛选弹窗 | ✅ | 底部弹出，状态/分类/项目多选，确定+重置 |
+| 筛选标签栏 | ✅ | Stack 浮层，不占位不顶卡片，带阴影，× 移除单个条件 |
+| 线索卡片 | ✅ | 5行完整布局，状态5色(待跟进/已分配/跟进中/已转化/无效) |
+| 分类+项目名 | ✅ | 通过 OptionsCacheService 从 categoryId/projectId 解析名称 |
+| 跟进徽章 | ✅ | 今日可打(绿) / N天后(橙) / 已逾期(红)，胶囊形 |
+| 归属人行(TM/TA) | ✅ | 仅经理/管理员可见 |
+| 无限滚动 | ✅ | ScrollController 监听底部 + 加载锁 |
+| 下拉刷新 | ✅ | RefreshIndicator |
+| 选项缓存 | ✅ | OptionsCacheService + SharedPreferences 持久化(30分钟TTL) |
+| 搜索改按钮触发 | ✅ | 去掉500ms防抖自动搜，蓝色搜索按钮手动触发 |
+
+### 新增/修改文件
+
+| 文件 | 改动类型 |
+|------|---------|
+| `lib/models/lead.dart` | 🆕 新建（含 LeadProject/LeadOwner） |
+| `lib/models/option_item.dart` | 🆕 新建 |
+| `lib/services/lead_service.dart` | 🆕 新建 |
+| `lib/services/options_cache_service.dart` | 🆕 新建（内存+本地持久化缓存） |
+| `lib/providers/lead_list_provider.dart` | 🆕 新建 |
+| `lib/providers/options_provider.dart` | 🆕 新建 |
+| `lib/widgets/lead_card.dart` | 🆕 新建（ConsumerWidget + OptionsCache 查找） |
+| `lib/pages/leads/leads_list_page.dart` | 🆕 新建（完整线索列表页） |
+| `lib/pages/main_shell.dart` | ✅ 修改：Tab 2 线索替换为 LeadsListPage |
+| `lib/services/api_constants.dart` | ✅ 新增 leads/options 端点 + optionsCacheTTL 配置 |
+
+### 踩坑记录
+
+详见 `docs/dev/DEVELOPMENT_PITFALLS.md`，新增：
+
+1. **API 返回 ID 而非名称**：接口返回 `categoryId`/`projectId`（字符串ID），不是 `category`/`project`（对象）。需通过下拉选项接口获取映射表，再用 OptionsCacheService 解析显示名。
+2. **筛选标签引起页面溢出**：筛选标签作为 Column 内联元素会顶推卡片内容。改为 Stack + Positioned 浮层，不参与布局流。
+3. **`Future.wait` 混合类型**：多个异步类型不同的 future 同时等待时，返回 `List<dynamic>` 需要显式类型转换。
+4. **Options 数据持久化**：下拉选项应首次加载后缓存到 SharedPreferences，后续 APP 启动先读本地再后台刷新。
+5. **搜索自动触发浪费带宽**：500ms 防抖搜索每个字符都请求 API。改为按钮触发 + 键盘回车触发。
+
+---
+
 ## 下一步节点规划
 
-### P0 - 核心流程（下一节点 v0.5）
+## 下一步节点规划
+
+### P0 - 核心流程（下一节点 v0.7）
 
 | 模块 | 优先级 | 估算 |
 |------|:------:|:----:|
@@ -233,4 +282,4 @@ ApiClient 拦截器链：
 ---
 
 > 本文档与 `docs/dev/HANDOVER.md`（交接文档）配套使用。
-> 节点版本：v0.5 | 更新日期：2026-07-22
+> 节点版本：v0.6 | 更新日期：2026-07-22

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'home/home_page.dart';
+import 'leads/leads_list_page.dart';
 import 'coming_soon_page.dart';
 import '../providers/auth_provider.dart';
 
@@ -33,7 +34,7 @@ class MainShell extends ConsumerWidget {
         index: currentTab,
         children: [
           HomePage(onSwitchTab: switchTab),
-          const ComingSoonPage(featureName: '线索列表'),
+          const LeadsListPage(),
           const ComingSoonPage(featureName: '日程管理'),
           _ProfileTab(
             userName: user?.name ?? '用户',
