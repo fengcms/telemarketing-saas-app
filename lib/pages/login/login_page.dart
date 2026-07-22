@@ -1,17 +1,24 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../../providers/auth_provider.dart';
 
-/// 登录页 - 逐步引入 TDesign 组件进行兼容性测试
-class LoginPage extends StatefulWidget {
+/// 登录页
+///
+/// 提供邮箱+密码登录功能，接入真实 POST /api/auth/login 接口。
+/// 自动处理 401（账号或密码错误）、423（账号锁定）、429（频率限制）等错误。
+///
+/// 设计文档参考：docs/design/page-design/01-登录页.md
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _passwordCtrl = TextEditingController();
   final FocusNode _emailFocus = FocusNode();
@@ -20,9 +27,6 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   bool _saveEmail = true;
   bool _savePassword = false;
-  bool _isLoading = false;
-  bool _isLocked = false;
-  String? _errorMessage;
   String _version = '';
   String _selectedDomain = 'qq.com';
   bool _isFullEmailMode = false;
@@ -70,25 +74,55 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _onLogin() {
-    if (_isLoading || _isLocked) return;
-    FocusScope.of(context).unfocus();
-    setState(() { _isLoading = true; _errorMessage = null; });
+    final authState = ref.read(authProvider);
+    if (authState.status == AuthStatus.authenticating) return;
 
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (!mounted) return;
-      final pwd = _passwordCtrl.text;
-      if (pwd == 'error') {
-        setState(() { _isLoading = false; _errorMessage = '邮箱或密码错误'; });
-      } else if (pwd == 'locked') {
-        setState(() { _isLoading = false; _isLocked = true; _errorMessage = '账号已锁定，请15分钟后再试'; });
-        Future.delayed(const Duration(seconds: 15), () {
-          if (mounted) setState(() { _isLocked = false; _errorMessage = null; });
-        });
-      } else {
-        setState(() { _isLoading = false; });
-        TDToast.showText('登录成功', context: context);
+    // 校验表单
+    String? emailErr;
+    String? pwdErr;
+
+    if (_isFullEmailMode) {
+      final email = _emailCtrl.text.trim();
+      if (email.isEmpty) {
+        emailErr = '请输入邮箱地址';
+      } else if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+          .hasMatch(email)) {
+        emailErr = '请输入有效的邮箱地址';
       }
-    });
+    } else {
+      final prefix = _emailCtrl.text.trim();
+      if (prefix.isEmpty) {
+        emailErr = '请输入邮箱地址';
+      } else if (!RegExp(r'^[a-zA-Z0-9._%+-]+$').hasMatch(prefix)) {
+        emailErr = '请输入有效的邮箱前缀';
+      }
+    }
+
+    if (_passwordCtrl.text.isEmpty) {
+      pwdErr = '请输入密码';
+    }
+
+    // 简单的错误提示显示（使用 SnackBar）
+    if (emailErr != null) {
+      TDToast.showText(emailErr, context: context);
+      return;
+    }
+    if (pwdErr != null) {
+      TDToast.showText(pwdErr, context: context);
+      return;
+    }
+
+    // 拼接邮箱
+    FocusScope.of(context).unfocus();
+    final email = _isFullEmailMode
+        ? _emailCtrl.text.trim().toLowerCase()
+        : '${_emailCtrl.text.trim().toLowerCase()}@$_selectedDomain';
+
+    // 调用登录 API
+    ref.read(authProvider.notifier).login(
+      email: email,
+      password: _passwordCtrl.text,
+    );
   }
 
   @override
@@ -189,7 +223,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: TextField(
                   controller: _emailCtrl,
                   focusNode: _emailFocus,
-                  enabled: !_isLoading,
+                  enabled: ref.watch(authProvider).status != AuthStatus.authenticating,
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(fontSize: 15, color: Color(0xFF181818)),
                   decoration: InputDecoration(
@@ -324,7 +358,7 @@ class _LoginPageState extends State<LoginPage> {
             child: TextField(
               controller: _passwordCtrl,
               focusNode: _passwordFocus,
-              enabled: !_isLoading && !_isLocked,
+              enabled: ref.watch(authProvider).status != AuthStatus.authenticating,
               obscureText: _obscurePassword,
               style: const TextStyle(
                   fontSize: 15, color: Color(0xFF181818)),
@@ -399,16 +433,18 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildLoginButton() {
+    final authState = ref.watch(authProvider);
+    final isLoading = authState.status == AuthStatus.authenticating;
     return SizedBox(
       width: double.infinity,
       height: 52,
       child: TDButton(
-        text: _isLoading ? '' : '登 录',
+        text: isLoading ? '' : '登 录',
         theme: TDButtonTheme.primary,
         shape: TDButtonShape.round,
-        disabled: _isLoading || _isLocked,
+        disabled: isLoading,
         onTap: _onLogin,
-        iconWidget: _isLoading
+        iconWidget: isLoading
             ? const SizedBox(
                 width: 24,
                 height: 24,
@@ -424,7 +460,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildError() {
-    if (_errorMessage == null) return const SizedBox.shrink();
+    final errorMessage = ref.watch(authProvider).errorMessage;
+    if (errorMessage == null) return const SizedBox.shrink();
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -433,7 +470,7 @@ class _LoginPageState extends State<LoginPage> {
         const SizedBox(width: 6),
         Flexible(
           child: Text(
-            _errorMessage!,
+            errorMessage,
             style: const TextStyle(
                 fontSize: 14, color: Color(0xFFD54941)),
             textAlign: TextAlign.center,
