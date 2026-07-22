@@ -4,12 +4,18 @@ import '../services/api_client.dart';
 import '../services/api_exception.dart';
 import '../services/auth_service.dart';
 import '../services/token_storage.dart';
+import '../services/local_storage_service.dart';
 
 // ── Service Providers ──
 
 /// Token 存储实例
 final tokenStorageProvider = Provider<TokenStorage>((ref) {
   return TokenStorage();
+});
+
+/// 本地凭据存储（邮箱/密码）
+final localStorageServiceProvider = Provider<LocalStorageService>((ref) {
+  return LocalStorageService();
 });
 
 /// API 客户端实例

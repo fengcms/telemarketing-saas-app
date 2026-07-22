@@ -8,7 +8,8 @@ import '../../providers/auth_provider.dart';
 /// 登录页
 ///
 /// 提供邮箱+密码登录功能，接入真实 POST /api/auth/login 接口。
-/// 自动处理 401（账号或密码错误）、423（账号锁定）、429（频率限制）等错误。
+/// 自动处理 401、423、429 等错误。
+/// 支持「保存登录邮箱」「保存登录密码」本地持久化。
 ///
 /// 设计文档参考：docs/design/page-design/01-登录页.md
 class LoginPage extends ConsumerStatefulWidget {
@@ -40,8 +41,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   void initState() {
     super.initState();
-    _loadVersion();
     _emailCtrl.addListener(_onEmailChanged);
+    // 延迟一帧加载已保存凭据（确保 Provider 可用）
+    Future.microtask(() {
+      _loadVersion();
+      _loadSavedCredentials();
+    });
   }
 
   @override
@@ -54,6 +59,93 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
+  // ── 已保存凭据加载 ──
+
+  /// 加载已保存的邮箱和密码
+  Future<void> _loadSavedCredentials() async {
+    if (!mounted) return;
+    final storage = ref.read(localStorageServiceProvider);
+
+    // 先恢复复选框状态（在填充数据之前，避免状态覆盖）
+    final saveEmailChecked = await storage.loadSaveEmailChecked();
+    final savePasswordChecked = await storage.loadSavePasswordChecked();
+
+    if (!mounted) return;
+    setState(() {
+      _saveEmail = saveEmailChecked;
+      _savePassword = savePasswordChecked;
+    });
+
+    // 加载已保存邮箱
+    final savedEmail = await storage.loadEmail();
+    if (savedEmail != null && savedEmail.isNotEmpty) {
+      final atIndex = savedEmail.indexOf('@');
+      if (atIndex > 0) {
+        final prefix = savedEmail.substring(0, atIndex);
+        final domain = savedEmail.substring(atIndex + 1);
+        if (_domainOptions.contains(domain)) {
+          // 后缀在预设列表中 → 前缀模式
+          setState(() {
+            _emailCtrl.text = prefix;
+            _selectedDomain = domain;
+            _isFullEmailMode = false;
+          });
+        } else {
+          // 后缀不在预设列表中 → 完整邮箱模式
+          setState(() {
+            _emailCtrl.text = savedEmail;
+            _isFullEmailMode = true;
+          });
+        }
+      } else {
+        // 不含 @ → 直接填入前缀
+        setState(() {
+          _emailCtrl.text = savedEmail;
+        });
+      }
+    }
+
+    // 加载已保存密码（仅在复选框勾选时填充）
+    if (_savePassword) {
+      final savedPassword = await storage.loadPassword();
+      if (savedPassword != null && savedPassword.isNotEmpty) {
+        setState(() {
+          _passwordCtrl.text = savedPassword;
+        });
+      }
+    }
+
+  }
+
+  /// 登录成功后保存凭据
+  Future<void> _saveCredentials() async {
+    final storage = ref.read(localStorageServiceProvider);
+    final email = _getEmail();
+    final password = _passwordCtrl.text;
+
+    // 保存复选框状态
+    await storage.saveSaveEmailChecked(_saveEmail);
+    await storage.saveSavePasswordChecked(_savePassword);
+
+    // 保存邮箱
+    if (_saveEmail && email != null) {
+      await storage.saveEmail(email);
+    } else {
+      await storage.clearEmail();
+    }
+
+    // 保存密码
+    if (_savePassword && password.isNotEmpty) {
+      await storage.savePassword(password);
+      if (mounted) {
+        TDToast.showText('密码已加密保存', context: context);
+      }
+    } else {
+      await storage.clearPassword();
+    }
+  }
+
+  /// 邮箱输入变化处理（@ 自动切换完整邮箱模式）
   void _onEmailChanged() {
     final text = _emailCtrl.text;
     final hasAt = text.contains('@');
@@ -64,15 +156,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
+  /// 加载 APP 版本号
   Future<void> _loadVersion() async {
     try {
       final info = await PackageInfo.fromPlatform();
-      setState(() => _version = 'v${info.version}');
+      if (mounted) setState(() => _version = 'v${info.version}');
     } catch (_) {
-      setState(() => _version = 'v1.0.0');
+      if (mounted) setState(() => _version = 'v1.0.0');
     }
   }
 
+  /// 拼接完整邮箱
+  String? _getEmail() {
+    final text = _emailCtrl.text.trim().toLowerCase();
+    if (text.isEmpty) return null;
+    if (_isFullEmailMode) return text;
+    return '$text@$_selectedDomain';
+  }
+
+  /// 登录按钮点击处理
   void _onLogin() {
     final authState = ref.read(authProvider);
     if (authState.status == AuthStatus.authenticating) return;
@@ -122,7 +224,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     ref.read(authProvider.notifier).login(
       email: email,
       password: _passwordCtrl.text,
-    );
+    ).then((success) {
+      if (success && mounted) {
+        _saveCredentials();
+      }
+    });
   }
 
   @override
@@ -398,11 +504,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget _buildOptions() {
     return Row(
       children: [
-        _buildCheckbox('保存登录邮箱', _saveEmail,
-            (v) => setState(() => _saveEmail = v!)),
+        _buildCheckbox('保存登录邮箱', _saveEmail, (v) {
+          setState(() => _saveEmail = v!);
+          ref.read(localStorageServiceProvider).saveSaveEmailChecked(_saveEmail);
+        }),
         const SizedBox(width: 24),
-        _buildCheckbox('保存登录密码', _savePassword,
-            (v) => setState(() => _savePassword = v!)),
+        _buildCheckbox('保存登录密码', _savePassword, (v) {
+          setState(() => _savePassword = v!);
+          ref.read(localStorageServiceProvider).saveSavePasswordChecked(_savePassword);
+        }),
       ],
     );
   }

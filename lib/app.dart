@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'pages/login/login_page.dart';
+import 'pages/home/home_page.dart';
 import 'providers/auth_provider.dart';
 
 void main() {
@@ -47,11 +48,7 @@ class AuthGate extends ConsumerWidget {
       AuthStatus.initial => const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         ),
-      AuthStatus.authenticated => const Scaffold(
-          body: Center(
-            child: Text('首页（待开发）', style: TextStyle(fontSize: 24)),
-          ),
-        ),
+      AuthStatus.authenticated => const HomePage(),
       AuthStatus.authenticating || AuthStatus.unauthenticated =>
         const LoginPage(),
     };

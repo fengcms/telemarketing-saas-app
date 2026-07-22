@@ -285,6 +285,8 @@ Scaffold(
 
 ---
 
+---
+
 ### 5.3 下拉选项文字溢出
 
 **严重级别**：🟡 **视觉（P2）**
@@ -299,6 +301,41 @@ Scaffold(
 - 选择器容器宽度从 110px 调整为 120px
 
 ---
+
+### 5.4 `TokenStorage.clearAll()` 误删已保存的密码
+
+**严重级别**：🔴 **阻断性（P0）**
+
+**现象**：勾选了「保存登录密码」登录后退出，再次打开登录页时复选框勾选状态正确，但密码框为空。
+
+**原因**：`TokenStorage.clearAll()` 调用 `_storage.deleteAll()` 清空了整个 `FlutterSecureStorage` 实例。
+
+```dart
+// ❌ 错误写法——deleteAll() 会删除所有 key，包括 LocalStorageService 保存的密码
+Future<void> clearAll() async {
+  await _storage.deleteAll();  // ← 连带删除了已保存的密码
+}
+```
+
+`TokenStorage` 和 `LocalStorageService` 共用同一个 `FlutterSecureStorage` 实例（默认 `const FlutterSecureStorage()`），所以 `deleteAll()` 一锅端了。
+
+**解决方案**：改为只删除 Token/用户信息相关的 key：
+
+```dart
+// ✅ 正确写法——只删除本 service 负责的 key
+Future<void> clearAll() async {
+  await Future.wait([
+    _storage.delete(key: _keyAccessToken),
+    _storage.delete(key: _keyRefreshToken),
+    _storage.delete(key: _keyUserId),
+    _storage.delete(key: _keyUserName),
+    _storage.delete(key: _keyUserEmail),
+    _storage.delete(key: _keyUserRole),
+  ]);
+}
+```
+
+**教训**：使用 `FlutterSecureStorage`（或其他全局存储）时，**绝不要轻易调用 `deleteAll()`**。不同 Service 可能共享同一个存储实例，`deleteAll()` 会误伤其他模块的数据。始终只删除自己明确管理的 key。
 
 ## 6. 已知待解决问题
 

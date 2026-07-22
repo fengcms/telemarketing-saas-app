@@ -64,7 +64,17 @@ class TokenStorage {
   Future<String?> getUserRole() => _storage.read(key: _keyUserRole);
 
   /// 清除所有登录凭据（登出时调用）
+  ///
+  /// 注意：只删除 Token/用户信息相关的 key，
+  /// 避免误伤 LocalStorageService 保存的密码等数据。
   Future<void> clearAll() async {
-    await _storage.deleteAll();
+    await Future.wait([
+      _storage.delete(key: _keyAccessToken),
+      _storage.delete(key: _keyRefreshToken),
+      _storage.delete(key: _keyUserId),
+      _storage.delete(key: _keyUserName),
+      _storage.delete(key: _keyUserEmail),
+      _storage.delete(key: _keyUserRole),
+    ]);
   }
 }

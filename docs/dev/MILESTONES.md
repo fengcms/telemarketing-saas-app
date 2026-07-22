@@ -91,6 +91,41 @@ main.dart
 
 ---
 
+## 节点 v0.3 — 本地凭据持久化与登录流程打磨（2026-07-22）
+
+### 完成内容
+
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 保存登录邮箱 | ✅ | SharedPreferences 持久化，退出重开自动填充 |
+| 保存登录密码 | ✅ | flutter_secure_storage 加密存储，退出重开自动填充 |
+| 复选框状态独立持久化 | ✅ | 勾选/取消立即保存，与数据存储分离 |
+| 首页退出按钮 | ✅ | 添加退出按钮 + 确认弹窗，方便反复测试登录流程 |
+| `TokenStorage.clearAll()` 修复 | ✅ | 从 `deleteAll()` 改为只删除自身管理的 key，避免误删密码 |
+
+### 修复的坑
+
+详见 `docs/dev/DEVELOPMENT_PITFALLS.md §5.4`：
+
+> `TokenStorage.clearAll()` 使用 `_storage.deleteAll()` 清空了整个 FlutterSecureStorage，连带删除了 `LocalStorageService` 已保存的密码。修复为逐一删除已知 key。
+
+### 本地存储架构
+
+```
+SharedPreferences
+  ├── saved_login_email              ← 保存的邮箱（明文）
+  ├── saved_login_save_email_checked ← 复选框状态
+  └── saved_login_save_password_checked ← 复选框状态
+
+FlutterSecureStorage (Android Keystore)
+  ├── access_token              ← TokenStorage 管理
+  ├── refresh_token             ← TokenStorage 管理
+  ├── user_id / user_name / ... ← TokenStorage 管理
+  └── saved_login_password      ← LocalStorageService 管理（加密）
+```
+
+---
+
 ## 下一步节点规划
 
 ### P0 - 核心流程（下一节点 v0.3）
@@ -115,4 +150,4 @@ main.dart
 ---
 
 > 本文档与 `docs/dev/HANDOVER.md`（交接文档）配套使用。
-> 节点版本：v0.2 | 更新日期：2026-07-22
+> 节点版本：v0.3 | 更新日期：2026-07-22

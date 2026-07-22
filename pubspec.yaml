@@ -51,6 +51,9 @@ dependencies:
   # 安全存储（Token/密码）
   flutter_secure_storage: ^9.2.0
 
+  # 本地键值存储（邮箱明文等非敏感数据）
+  shared_preferences: ^2.3.0
+
 dependency_overrides:
   # 升级 image_picker_android 以修复 Android 构建兼容性
   image_picker_android: 0.8.13+13
