@@ -174,6 +174,41 @@ ApiClient 拦截器链：
 
 ---
 
+## 节点 v0.5 — 首页看板与底部导航（2026-07-22）
+
+### 完成内容
+
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 首页 TDNavBar | ✅ | brand-7 蓝色背景，"首页"左对齐，"团队看板"(TM/TA可见)+退出按钮 |
+| 今日概况 Section | ✅ | 2×2 四宫格（今日待办/跟进/接通/我的线索），32sp 大字 |
+| 待办日程 Section | ✅ | 最多5条 + TDBadge计数 + "已逾期"标记 + 空态 |
+| 快捷入口 Section | ✅ | 我的线索(计数) + 通话记录(ComingSoon)，IntrinsicHeight等高 |
+| 底部导航栏 | ✅ | 4 Tab（首页/线索/日程/我的），IndexedStack 保持状态 |
+| "我的" Tab | ✅ | 用户信息 + 退出登录按钮 |
+| 数据层 | ✅ | HomeStats+Schedule 模型，HomeService 4接口封装 |
+| 状态管理 | ✅ | HomePageNotifier + 10分钟轮询 + 生命周期监听 |
+| 离线检测 | ✅ | connectivity_plus 网络监听 + 离线提示条 |
+| 下拉刷新 | ✅ | RefreshIndicator 支持 |
+| ComingSoon 占位页 | ✅ | 通话记录/线索列表/日程管理/团队看板 路由占位 |
+| 切换账号数据重置 | ✅ | 登出时自动清空首页旧数据，登录后重新请求 |
+
+### 新增/修改文件
+
+| 文件 | 改动类型 |
+|------|---------|
+| `lib/models/home_stats.dart` | 🆕 新建 |
+| `lib/models/schedule.dart` | 🆕 新建 |
+| `lib/services/home_service.dart` | 🆕 新建 |
+| `lib/providers/home_provider.dart` | 🆕 新建 |
+| `lib/pages/main_shell.dart` | 🆕 新建 |
+| `lib/pages/coming_soon_page.dart` | 🆕 新建 |
+| `lib/pages/home/home_page.dart` | ✅ 全部重写 |
+| `lib/app.dart` | ✅ 修改：MainShell 替换 HomePage |
+| `pubspec.yaml` | ✅ 添加 connectivity_plus |
+
+---
+
 ## 下一步节点规划
 
 ### P0 - 核心流程（下一节点 v0.5）
@@ -198,4 +233,4 @@ ApiClient 拦截器链：
 ---
 
 > 本文档与 `docs/dev/HANDOVER.md`（交接文档）配套使用。
-> 节点版本：v0.4 | 更新日期：2026-07-22
+> 节点版本：v0.5 | 更新日期：2026-07-22
