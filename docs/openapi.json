@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://api.example.com"
+      "url": "https://tm-api-test.kao9.com"
     }
   ],
   "components": {

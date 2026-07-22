@@ -11,7 +11,7 @@
 
 | 项目 | 值 |
 |------|-----|
-| 本地开发地址 | `http://localhost:8787` |
+| 线上测试环境地址 | `https://tm-api-test.kao9.com/` |
 | JSON 请求头 | `Content-Type: application/json` |
 | 认证请求头 | `Authorization: Bearer <accessToken>` |
 | AccessToken 有效期 | 15 分钟（JWT） |
@@ -146,7 +146,7 @@
 **curl：**
 
 ```bash
-curl http://localhost:8787/health
+curl https://tm-api-test.kao9.com/health
 ```
 
 ---
@@ -183,7 +183,7 @@ curl http://localhost:8787/health
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/auth/login \
+curl -X POST https://tm-api-test.kao9.com/api/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"admin@dev.local","password":"Dev@123456"}'
 ```
@@ -213,7 +213,7 @@ curl -X POST http://localhost:8787/api/auth/login \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/auth/refresh \
+curl -X POST https://tm-api-test.kao9.com/api/auth/refresh \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <refreshToken>' \
   -d '{"refreshToken":"<refreshToken>"}'
@@ -226,7 +226,7 @@ curl -X POST http://localhost:8787/api/auth/refresh \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/auth/logout \
+curl -X POST https://tm-api-test.kao9.com/api/auth/logout \
   -H 'Authorization: Bearer <accessToken>'
 ```
 
@@ -246,7 +246,7 @@ curl -X POST http://localhost:8787/api/auth/logout \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/auth/change-password \
+curl -X POST https://tm-api-test.kao9.com/api/auth/change-password \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <accessToken>' \
   -d '{"oldPassword":"Dev@123456","newPassword":"NewP@ss123"}'
@@ -257,7 +257,7 @@ curl -X POST http://localhost:8787/api/auth/change-password \
 全设备登出（递增 JWT tv 版本号，所有已签发 Token 立即失效）。
 
 ```bash
-curl -X POST http://localhost:8787/api/auth/logout-all \
+curl -X POST https://tm-api-test.kao9.com/api/auth/logout-all \
   -H 'Authorization: Bearer <accessToken>'
 ```
 
@@ -272,7 +272,7 @@ curl -X POST http://localhost:8787/api/auth/logout-all \
 **curl：**
 
 ```bash
-curl 'http://localhost:8787/api/platform/tenants?page=1&size=20' \
+curl 'https://tm-api-test.kao9.com/api/platform/tenants?page=1&size=20' \
   -H 'Authorization: Bearer <psa_token>'
 ```
 
@@ -294,7 +294,7 @@ curl 'http://localhost:8787/api/platform/tenants?page=1&size=20' \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/platform/tenants \
+curl -X POST https://tm-api-test.kao9.com/api/platform/tenants \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <psa_token>' \
   -d '{"name":"测试租户","slug":"test-tenant","adminEmail":"admin@test.local","adminPassword":"Dev@123456"}'
@@ -307,7 +307,7 @@ curl -X POST http://localhost:8787/api/platform/tenants \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/platform/tenants/tenant-dev-001/export-backup \
+curl -X POST https://tm-api-test.kao9.com/api/platform/tenants/tenant-dev-001/export-backup \
   -H 'Authorization: Bearer <psa_token>'
 ```
 
@@ -318,7 +318,7 @@ curl -X POST http://localhost:8787/api/platform/tenants/tenant-dev-001/export-ba
 **curl：**
 
 ```bash
-curl 'http://localhost:8787/api/platform/stats?dateFrom=2026-07-18&dateTo=2026-07-19' \
+curl 'https://tm-api-test.kao9.com/api/platform/stats?dateFrom=2026-07-18&dateTo=2026-07-19' \
   -H 'Authorization: Bearer <psa_token>'
 ```
 
@@ -327,7 +327,7 @@ curl 'http://localhost:8787/api/platform/stats?dateFrom=2026-07-18&dateTo=2026-0
 编辑租户（名称、状态、配额等）。
 
 ```bash
-curl -X PATCH http://localhost:8787/api/platform/tenants/tenant-dev-001 \
+curl -X PATCH https://tm-api-test.kao9.com/api/platform/tenants/tenant-dev-001 \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <psa_token>' \
   -d '{"name":"新名称","maxUsers":100}'
@@ -338,7 +338,7 @@ curl -X PATCH http://localhost:8787/api/platform/tenants/tenant-dev-001 \
 续期或恢复租户（`expireAt` 为未来 unix 秒时间戳）。
 
 ```bash
-curl -X POST http://localhost:8787/api/platform/tenants/tenant-dev-001/renew \
+curl -X POST https://tm-api-test.kao9.com/api/platform/tenants/tenant-dev-001/renew \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <psa_token>' \
   -d '{"expireAt":1800000000}'
@@ -397,7 +397,7 @@ Cron 执行记录（运维可观测）。
 **curl：**
 
 ```bash
-curl 'http://localhost:8787/api/tenant/users?page=1&size=20' \
+curl 'https://tm-api-test.kao9.com/api/tenant/users?page=1&size=20' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -419,7 +419,7 @@ curl 'http://localhost:8787/api/tenant/users?page=1&size=20' \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/users \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/users \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"email":"staff@dev.local","name":"员工","role":"tenant_employee","password":"Dev@123456"}'
@@ -432,7 +432,7 @@ curl -X POST http://localhost:8787/api/tenant/users \
 **curl：**
 
 ```bash
-curl -X PATCH http://localhost:8787/api/tenant/users/<user_id> \
+curl -X PATCH https://tm-api-test.kao9.com/api/tenant/users/<user_id> \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"status":"disabled"}'
@@ -443,7 +443,7 @@ curl -X PATCH http://localhost:8787/api/tenant/users/<user_id> \
 批量创建用户（TA；max 50）。
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/users/batch \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/users/batch \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"users":[{"email":"staff1@dev.local","name":"员工1","role":"tenant_employee","password":"Dev@123456"}]}'
@@ -454,7 +454,7 @@ curl -X POST http://localhost:8787/api/tenant/users/batch \
 管理员重置用户密码（TA；强制下次登录改密）。
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/users/<user_id>/reset-password \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/users/<user_id>/reset-password \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"newPassword":"NewP@ss123"}'
@@ -471,7 +471,7 @@ curl -X POST http://localhost:8787/api/tenant/users/<user_id>/reset-password \
 **curl：**
 
 ```bash
-curl http://localhost:8787/api/tenant/profile \
+curl https://tm-api-test.kao9.com/api/tenant/profile \
   -H 'Authorization: Bearer <token>'
 ```
 
@@ -527,7 +527,7 @@ curl http://localhost:8787/api/tenant/profile \
 **curl：**
 
 ```bash
-curl -X PATCH http://localhost:8787/api/tenant/profile \
+curl -X PATCH https://tm-api-test.kao9.com/api/tenant/profile \
   -H 'Authorization: Bearer <ta_token>' \
   -H 'Content-Type: application/json' \
   -d '{"name":"新公司名","settings":{"allowSelfClaim":true}}'
@@ -548,7 +548,7 @@ curl -X PATCH http://localhost:8787/api/tenant/profile \
 **curl：**
 
 ```bash
-curl http://localhost:8787/api/tenant/categories \
+curl https://tm-api-test.kao9.com/api/tenant/categories \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -557,7 +557,7 @@ curl http://localhost:8787/api/tenant/categories \
 新增分类（TA）。
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/categories \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/categories \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"name":"高意向","sort":0}'
@@ -580,7 +580,7 @@ curl -X POST http://localhost:8787/api/tenant/categories \
 **curl：**
 
 ```bash
-curl 'http://localhost:8787/api/tenant/projects?status=active' \
+curl 'https://tm-api-test.kao9.com/api/tenant/projects?status=active' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -589,7 +589,7 @@ curl 'http://localhost:8787/api/tenant/projects?status=active' \
 新增项目（TA）。
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/projects \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/projects \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"name":"XX小区"}'
@@ -612,7 +612,7 @@ curl -X POST http://localhost:8787/api/tenant/projects \
 **curl：**
 
 ```bash
-curl http://localhost:8787/api/tenant/quick-notes \
+curl https://tm-api-test.kao9.com/api/tenant/quick-notes \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -621,7 +621,7 @@ curl http://localhost:8787/api/tenant/quick-notes \
 新增快捷备注（仅 TA）。
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/quick-notes \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/quick-notes \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"content":"客户要求改天再联系","sort":1}'
@@ -659,7 +659,7 @@ curl -X POST http://localhost:8787/api/tenant/quick-notes \
 **curl：**
 
 ```bash
-curl http://localhost:8787/api/tenant/options/projects \
+curl https://tm-api-test.kao9.com/api/tenant/options/projects \
   -H 'Authorization: Bearer <token>'
 ```
 
@@ -717,7 +717,7 @@ curl http://localhost:8787/api/tenant/options/projects \
 **curl：**
 
 ```bash
-curl http://localhost:8787/api/tenant/options/categories \
+curl https://tm-api-test.kao9.com/api/tenant/options/categories \
   -H 'Authorization: Bearer <token>'
 ```
 
@@ -745,19 +745,19 @@ curl http://localhost:8787/api/tenant/options/categories \
 
 ```bash
 # TA 查看全部
-curl 'http://localhost:8787/api/tenant/leads?scope=all&page=1&size=20' \
+curl 'https://tm-api-test.kao9.com/api/tenant/leads?scope=all&page=1&size=20' \
   -H 'Authorization: Bearer <ta_token>'
 
 # TE 仅看自己、含原始号码
-curl 'http://localhost:8787/api/tenant/leads?scope=mine&raw=1' \
+curl 'https://tm-api-test.kao9.com/api/tenant/leads?scope=mine&raw=1' \
   -H 'Authorization: Bearer <ta_token>'
 
 # 按状态筛选
-curl 'http://localhost:8787/api/tenant/leads?status__in=pending,assigned' \
+curl 'https://tm-api-test.kao9.com/api/tenant/leads?status__in=pending,assigned' \
   -H 'Authorization: Bearer <ta_token>'
 
 # 仅显示未擦除（推荐正常业务列表）
-curl 'http://localhost:8787/api/tenant/leads?scope=all&erased=0' \
+curl 'https://tm-api-test.kao9.com/api/tenant/leads?scope=all&erased=0' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -778,7 +778,7 @@ curl 'http://localhost:8787/api/tenant/leads?scope=all&erased=0' \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/leads \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/leads \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"phone":"13800138000","name":"张三"}'
@@ -791,7 +791,7 @@ curl -X POST http://localhost:8787/api/tenant/leads \
 **curl：**
 
 ```bash
-curl http://localhost:8787/api/tenant/leads/<lead_id> \
+curl https://tm-api-test.kao9.com/api/tenant/leads/<lead_id> \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -802,7 +802,7 @@ curl http://localhost:8787/api/tenant/leads/<lead_id> \
 **curl：**
 
 ```bash
-curl -X PATCH http://localhost:8787/api/tenant/leads/<lead_id> \
+curl -X PATCH https://tm-api-test.kao9.com/api/tenant/leads/<lead_id> \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"status":"following","categoryId":"<category_id>"}'
@@ -825,7 +825,7 @@ curl -X PATCH http://localhost:8787/api/tenant/leads/<lead_id> \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/leads/<lead_id>/followups \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/followups \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"content":"客户表示有兴趣","answerType":"answered","duration":120}'
@@ -846,7 +846,7 @@ curl -X POST http://localhost:8787/api/tenant/leads/<lead_id>/followups \
 **curl：**
 
 ```bash
-curl -X PATCH http://localhost:8787/api/tenant/leads/<lead_id>/followups/<fid> \
+curl -X PATCH https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/followups/<fid> \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <te_token>' \
   -d '{"content":"修正后的备注内容"}'
@@ -859,7 +859,7 @@ curl -X PATCH http://localhost:8787/api/tenant/leads/<lead_id>/followups/<fid> \
 **curl：**
 
 ```bash
-curl -X DELETE http://localhost:8787/api/tenant/leads/<lead_id>/followups/<fid> \
+curl -X DELETE https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/followups/<fid> \
   -H 'Authorization: Bearer <te_token>'
 ```
 
@@ -887,7 +887,7 @@ curl -X DELETE http://localhost:8787/api/tenant/leads/<lead_id>/followups/<fid> 
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/leads/<lead_id>/assign \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/assign \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <tm_token>' \
   -d '{"ownerId":"<target_user_id>"}'
@@ -900,7 +900,7 @@ curl -X POST http://localhost:8787/api/tenant/leads/<lead_id>/assign \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/leads/<lead_id>/convert \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/convert \
   -H 'Authorization: Bearer <tm_token>'
 ```
 
@@ -920,7 +920,7 @@ curl -X POST http://localhost:8787/api/tenant/leads/<lead_id>/convert \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/leads/batch-assign \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/batch-assign \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <tm_token>' \
   -d '{"leadIds":["<id1>","<id2>"],"ownerId":"<target_user_id>"}'
@@ -962,7 +962,7 @@ curl -X POST http://localhost:8787/api/tenant/leads/batch-assign \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/leads/import \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/import \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"rows":[{"phone":"13800138001","name":"客户A"}],"label":"测试导入"}'
@@ -975,7 +975,7 @@ curl -X POST http://localhost:8787/api/tenant/leads/import \
 **curl：**
 
 ```bash
-curl http://localhost:8787/api/tenant/leads/imports \
+curl https://tm-api-test.kao9.com/api/tenant/leads/imports \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -984,7 +984,7 @@ curl http://localhost:8787/api/tenant/leads/imports \
 导入批次详情（含成功/失败条数明细）。
 
 ```bash
-curl http://localhost:8787/api/tenant/leads/imports/<import_id> \
+curl https://tm-api-test.kao9.com/api/tenant/leads/imports/<import_id> \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -993,7 +993,7 @@ curl http://localhost:8787/api/tenant/leads/imports/<import_id> \
 退回公海（TA/TM，`note` 可选）。
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/leads/<lead_id>/recycle \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/recycle \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"note":"客户暂时不考虑"}'
@@ -1004,7 +1004,7 @@ curl -X POST http://localhost:8787/api/tenant/leads/<lead_id>/recycle \
 员工自领公海线索（需租户开启 `allowSelfClaim`）。
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/leads/<lead_id>/claim \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/claim \
   -H 'Authorization: Bearer <te_token>'
 ```
 
@@ -1013,7 +1013,7 @@ curl -X POST http://localhost:8787/api/tenant/leads/<lead_id>/claim \
 激活已失效线索（`invalid` → `pending`，回到公海；TA/TM）。
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/leads/<lead_id>/reactivate \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/reactivate \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1022,7 +1022,7 @@ curl -X POST http://localhost:8787/api/tenant/leads/<lead_id>/reactivate \
 单条线索的分配/回收/认领历史（读 `lead_assignments` 明细，不受批次头表改造影响）。
 
 ```bash
-curl http://localhost:8787/api/tenant/leads/<lead_id>/assignments \
+curl https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/assignments \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1070,7 +1070,7 @@ curl http://localhost:8787/api/tenant/leads/<lead_id>/assignments \
 支持通用查询 DSL（§9.4）过滤与分页：`action`（assign/reassign/recycle/claim）、`leadId`、`toUserId`、`page`、`size`（默认 `page=1`、`size=20`、上限 `size=200`），默认按 `createdAt` 倒序。
 
 ```bash
-curl 'http://localhost:8787/api/tenant/assignments/<batch_id>?page=1&size=20' \
+curl 'https://tm-api-test.kao9.com/api/tenant/assignments/<batch_id>?page=1&size=20' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1101,7 +1101,7 @@ curl 'http://localhost:8787/api/tenant/assignments/<batch_id>?page=1&size=20' \
 批量改状态（max 100）。
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/leads/batch-status \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/batch-status \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"leadIds":["id1","id2"],"status":"following","note":"批量跟进"}'
@@ -1122,7 +1122,7 @@ PIPL 擦除（TA 专用）。置空全部 PII 字段（name/phone/wechat/company
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/leads/<lead_id>/erase \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/erase \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1170,15 +1170,15 @@ curl -X POST http://localhost:8787/api/tenant/leads/<lead_id>/erase \
 
 ```bash
 # 查看今日待办
-curl 'http://localhost:8787/api/tenant/schedules' \
+curl 'https://tm-api-test.kao9.com/api/tenant/schedules' \
   -H 'Authorization: Bearer <te_token>'
 
 # TM/TA 按日期查看
-curl 'http://localhost:8787/api/tenant/schedules?dateFrom=2026-07-19&dateTo=2026-07-19' \
+curl 'https://tm-api-test.kao9.com/api/tenant/schedules?dateFrom=2026-07-19&dateTo=2026-07-19' \
   -H 'Authorization: Bearer <tm_token>'
 
 # 查看已完成
-curl 'http://localhost:8787/api/tenant/schedules?status__in=pending,completed' \
+curl 'https://tm-api-test.kao9.com/api/tenant/schedules?status__in=pending,completed' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1189,7 +1189,7 @@ curl 'http://localhost:8787/api/tenant/schedules?status__in=pending,completed' \
 **curl：**
 
 ```bash
-curl http://localhost:8787/api/tenant/schedules/<schedule_id> \
+curl https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id> \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1217,7 +1217,7 @@ curl http://localhost:8787/api/tenant/schedules/<schedule_id> \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/schedules \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/schedules \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <te_token>' \
   -d '{"leadId":"<lead_id>","scheduledAt":1700000000,"title":"回访确认意向"}'
@@ -1230,7 +1230,7 @@ curl -X POST http://localhost:8787/api/tenant/schedules \
 **curl：**
 
 ```bash
-curl -X PATCH http://localhost:8787/api/tenant/schedules/<schedule_id> \
+curl -X PATCH https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id> \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"scheduledAt":1700003600,"title":"改期至周三下午"}'
@@ -1243,7 +1243,7 @@ curl -X PATCH http://localhost:8787/api/tenant/schedules/<schedule_id> \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/schedules/<schedule_id>/complete \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id>/complete \
   -H 'Authorization: Bearer <te_token>'
 ```
 
@@ -1254,7 +1254,7 @@ curl -X POST http://localhost:8787/api/tenant/schedules/<schedule_id>/complete \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/schedules/<schedule_id>/cancel \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id>/cancel \
   -H 'Authorization: Bearer <te_token>'
 ```
 
@@ -1265,7 +1265,7 @@ curl -X POST http://localhost:8787/api/tenant/schedules/<schedule_id>/cancel \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/schedules/<schedule_id>/reopen \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id>/reopen \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1276,7 +1276,7 @@ curl -X POST http://localhost:8787/api/tenant/schedules/<schedule_id>/reopen \
 **curl：**
 
 ```bash
-curl -X DELETE http://localhost:8787/api/tenant/schedules/<schedule_id> \
+curl -X DELETE https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id> \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1298,7 +1298,7 @@ curl -X DELETE http://localhost:8787/api/tenant/schedules/<schedule_id> \
 **curl：**
 
 ```bash
-curl http://localhost:8787/api/tenant/schedules/stats \
+curl https://tm-api-test.kao9.com/api/tenant/schedules/stats \
   -H 'Authorization: Bearer <tm_token>'
 ```
 
@@ -1309,7 +1309,7 @@ curl http://localhost:8787/api/tenant/schedules/stats \
 **curl：**
 
 ```bash
-curl http://localhost:8787/api/tenant/schedules/stats/mine \
+curl https://tm-api-test.kao9.com/api/tenant/schedules/stats/mine \
   -H 'Authorization: Bearer <te_token>'
 ```
 
@@ -1327,7 +1327,7 @@ curl http://localhost:8787/api/tenant/schedules/stats/mine \
 **curl：**
 
 ```bash
-curl http://localhost:8787/api/tenant/schedules/stats/mine \
+curl https://tm-api-test.kao9.com/api/tenant/schedules/stats/mine \
   -H 'Authorization: Bearer <te_token>'
 ```
 
@@ -1351,11 +1351,11 @@ curl http://localhost:8787/api/tenant/schedules/stats/mine \
 **curl：**
 
 ```bash
-curl 'http://localhost:8787/api/tenant/customers?scope=all' \
+curl 'https://tm-api-test.kao9.com/api/tenant/customers?scope=all' \
   -H 'Authorization: Bearer <ta_token>'
 
 # 仅显示未擦除（推荐正常业务列表）
-curl 'http://localhost:8787/api/tenant/customers?scope=all&erased=0' \
+curl 'https://tm-api-test.kao9.com/api/tenant/customers?scope=all&erased=0' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1376,7 +1376,7 @@ curl 'http://localhost:8787/api/tenant/customers?scope=all&erased=0' \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/customers \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/customers \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <tm_token>' \
   -d '{"name":"李四","phone":"13900139000"}'
@@ -1389,7 +1389,7 @@ curl -X POST http://localhost:8787/api/tenant/customers \
 **curl：**
 
 ```bash
-curl http://localhost:8787/api/tenant/customers/<customer_id> \
+curl https://tm-api-test.kao9.com/api/tenant/customers/<customer_id> \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1400,7 +1400,7 @@ curl http://localhost:8787/api/tenant/customers/<customer_id> \
 **curl：**
 
 ```bash
-curl -X DELETE http://localhost:8787/api/tenant/customers/<customer_id> \
+curl -X DELETE https://tm-api-test.kao9.com/api/tenant/customers/<customer_id> \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1411,7 +1411,7 @@ PIPL 擦除客户（TA）。置空全部 PII 字段（name/phone/wechat/company/
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/customers/<customer_id>/erase \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/customers/<customer_id>/erase \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1422,7 +1422,7 @@ curl -X POST http://localhost:8787/api/tenant/customers/<customer_id>/erase \
 分配客户给员工（TA/TM）。
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/customers/<customer_id>/assign \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/customers/<customer_id>/assign \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"ownerId":"<target_user_id>"}'
@@ -1443,7 +1443,7 @@ curl -X POST http://localhost:8787/api/tenant/customers/<customer_id>/assign \
 **curl：**
 
 ```bash
-curl 'http://localhost:8787/api/tenant/calls?dateFrom=2026-07-18&dateTo=2026-07-19' \
+curl 'https://tm-api-test.kao9.com/api/tenant/calls?dateFrom=2026-07-18&dateTo=2026-07-19' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1469,7 +1469,7 @@ curl 'http://localhost:8787/api/tenant/calls?dateFrom=2026-07-18&dateTo=2026-07-
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/calls \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/calls \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <te_token>' \
   -d '{"phone":"13800138000","startedAt":1700000000,"externalCallId":"ext-001","answerType":"answered","duration":60,"content":"客户说考虑一下"}'
@@ -1500,7 +1500,7 @@ curl -X POST http://localhost:8787/api/tenant/calls \
 **curl：**
 
 ```bash
-curl http://localhost:8787/api/tenant/calls/<call_id> \
+curl https://tm-api-test.kao9.com/api/tenant/calls/<call_id> \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1509,7 +1509,7 @@ curl http://localhost:8787/api/tenant/calls/<call_id> \
 删除通话记录（仅 TA；软删）。
 
 ```bash
-curl -X DELETE http://localhost:8787/api/tenant/calls/<call_id> \
+curl -X DELETE https://tm-api-test.kao9.com/api/tenant/calls/<call_id> \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1524,7 +1524,7 @@ curl -X DELETE http://localhost:8787/api/tenant/calls/<call_id> \
 **curl：**
 
 ```bash
-curl http://localhost:8787/api/tenant/blocklist \
+curl https://tm-api-test.kao9.com/api/tenant/blocklist \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1544,7 +1544,7 @@ curl http://localhost:8787/api/tenant/blocklist \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/blocklist \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/blocklist \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"phone":"13800138000","reason":"客户投诉"}'
@@ -1557,7 +1557,7 @@ curl -X POST http://localhost:8787/api/tenant/blocklist \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/blocklist/batch \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/blocklist/batch \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
   -d '{"phones":["13800138001","13800138002"]}'
@@ -1570,7 +1570,7 @@ curl -X POST http://localhost:8787/api/tenant/blocklist/batch \
 **curl：**
 
 ```bash
-curl -X DELETE http://localhost:8787/api/tenant/blocklist/<entry_id> \
+curl -X DELETE https://tm-api-test.kao9.com/api/tenant/blocklist/<entry_id> \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1581,7 +1581,7 @@ curl -X DELETE http://localhost:8787/api/tenant/blocklist/<entry_id> \
 **curl：**
 
 ```bash
-curl -X POST http://localhost:8787/api/tenant/blocklist/reconcile \
+curl -X POST https://tm-api-test.kao9.com/api/tenant/blocklist/reconcile \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1604,7 +1604,7 @@ curl -X POST http://localhost:8787/api/tenant/blocklist/reconcile \
 **curl：**
 
 ```bash
-curl 'http://localhost:8787/api/tenant/stats?dateFrom=2026-07-18&dateTo=2026-07-19' \
+curl 'https://tm-api-test.kao9.com/api/tenant/stats?dateFrom=2026-07-18&dateTo=2026-07-19' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1615,7 +1615,7 @@ curl 'http://localhost:8787/api/tenant/stats?dateFrom=2026-07-18&dateTo=2026-07-
 **curl：**
 
 ```bash
-curl 'http://localhost:8787/api/tenant/stats/mine?dateFrom=2026-07-18&dateTo=2026-07-19' \
+curl 'https://tm-api-test.kao9.com/api/tenant/stats/mine?dateFrom=2026-07-18&dateTo=2026-07-19' \
   -H 'Authorization: Bearer <te_token>'
 ```
 
@@ -1630,7 +1630,7 @@ curl 'http://localhost:8787/api/tenant/stats/mine?dateFrom=2026-07-18&dateTo=202
 **curl：**
 
 ```bash
-curl 'http://localhost:8787/api/tenant/audit?dateFrom=2026-01-01&dateTo=2099-12-31&size=20' \
+curl 'https://tm-api-test.kao9.com/api/tenant/audit?dateFrom=2026-01-01&dateTo=2099-12-31&size=20' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -1649,5 +1649,5 @@ Swagger UI 交互式文档。
 **curl：**
 
 ```bash
-curl http://localhost:8787/openapi.json | head -20
+curl https://tm-api-test.kao9.com/openapi.json | head -20
 ```
