@@ -1,0 +1,2941 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "telemarketing-saas-be",
+    "version": "1.0.0",
+    "description": "多租户电销管理 SaaS (Cloudflare Workers + Hono + D1)"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "AssignmentBatch": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "批次主键(UUID)，同时作为 lead_assignments.batch_id" },
+          "action": { "type": "string", "enum": ["assign", "reassign", "recycle", "claim", "status-change"], "description": "assign=分配 / reassign=改派 / recycle=回收公海 / claim=自领 / status-change=批量改状态" },
+          "operatorId": { "type": "string", "description": "操作人 ID" },
+          "operatorRole": { "type": "string", "description": "操作人角色(审计用)" },
+          "fromUserId": { "type": "string", "description": "统一来源(单条/全公海填实际值；批量混合为 null)" },
+          "toUserId": { "type": "string", "description": "目标归属人(退回公海/无归属变更为 null)" },
+          "toStatus": { "type": "string", "description": "仅 action=status-change 时记新状态(取值同 leads.status: pending/assigned/following/converted/invalid)" },
+          "total": { "type": "integer", "description": "本次操作目标线索数" },
+          "success": { "type": "integer", "description": "实际成功数" },
+          "failed": { "type": "integer", "description": "失败数(线索不存在等)" },
+          "skipped": { "type": "integer", "description": "跳过总数" },
+          "skipDetail": { "type": "object", "description": "跳过原因细分(已为对象，前端直接 map 渲染)：alreadyOwned / notStale / notInvalid / blocklisted" },
+          "note": { "type": "string", "description": "操作备注" },
+          "createdAt": { "type": "integer", "description": "创建时间(unix秒)" }
+        }
+      },
+      "Assignment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "明细主键(UUID)" },
+          "leadId": { "type": "string", "description": "关联线索 ID" },
+          "action": { "type": "string", "enum": ["assign", "reassign", "recycle", "claim"], "description": "明细动作(头表 status-change 不写明细)" },
+          "fromUserId": { "type": "string", "description": "原归属(退回公海为 null)" },
+          "toUserId": { "type": "string", "description": "新归属(退回公海为 null)" },
+          "operatorId": { "type": "string", "description": "操作人" },
+          "operatorRole": { "type": "string", "description": "操作人角色(审计用)" },
+          "note": { "type": "string", "description": "操作备注" },
+          "batchId": { "type": "string", "description": "关联批次头 UUID" },
+          "createdAt": { "type": "integer", "description": "创建时间(unix秒)" }
+        }
+      },
+      "PaginatedAssignmentBatches": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/AssignmentBatch" } },
+          "total": { "type": "integer", "description": "符合条件的总记录数" },
+          "page": { "type": "integer", "description": "当前页码(从1起)" },
+          "size": { "type": "integer", "description": "每页条数(默认20，上限200)" },
+          "pages": { "type": "integer", "description": "总页数" }
+        }
+      },
+      "PaginatedAssignments": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Assignment" } },
+          "total": { "type": "integer", "description": "明细总数" },
+          "page": { "type": "integer", "description": "当前页(从1起)" },
+          "size": { "type": "integer", "description": "每页条数(默认20，上限200)" },
+          "pages": { "type": "integer", "description": "总页数" }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Platform"
+    },
+    {
+      "name": "Tenant"
+    },
+    {
+      "name": "Leads"
+    },
+    {
+      "name": "Customers"
+    },
+    {
+      "name": "Calls"
+    },
+    {
+      "name": "Schedules"
+    },
+    {
+      "name": "Stats"
+    },
+    {
+      "name": "Categories"
+    },
+    {
+      "name": "Projects"
+    },
+    {
+      "name": "QuickNotes"
+    },
+    {
+      "name": "Blocklist"
+    },
+    {
+      "name": "Assignments"
+    },
+    {
+      "name": "Options",
+      "description": "下拉选项（前端筛选框专用）"
+    }
+  ],
+  "paths": {
+    "/api/auth/change-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Change password",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "security": [],
+        "summary": "Login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "tokens"
+          },
+          "401": {
+            "description": "AUTH_INVALID"
+          },
+          "403": {
+            "description": "TENANT_EXPIRED/IN_GRACE"
+          },
+          "423": {
+            "description": "ACCOUNT_LOCKED"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Logout",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/logout-all": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Logout all devices (increment tv)",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "security": [],
+        "summary": "Refresh token",
+        "responses": {
+          "200": {
+            "description": "new tokens"
+          }
+        }
+      }
+    },
+    "/api/platform/blocklist": {
+      "get": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Platform-level blocklist (PSA)",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "paginated (masked); each item includes createdByName"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Add to platform blocklist (PSA)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "phone"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "created"
+          }
+        }
+      }
+    },
+    "/api/platform/blocklist/batch": {
+      "post": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Batch add to platform blocklist (PSA)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phones": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 500
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "phones"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "batch result: {added, existed, invalid}"
+          },
+          "413": {
+            "description": "BATCH_TOO_LARGE (>500)"
+          }
+        }
+      }
+    },
+    "/api/platform/blocklist/{id}": {
+      "delete": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Remove from platform blocklist (PSA)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "deleted"
+          }
+        }
+      }
+    },
+    "/api/platform/cron-logs": {
+      "get": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Cron execution logs (PSA)",
+        "parameters": [
+          {
+            "name": "task",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "paginated"
+          }
+        }
+      }
+    },
+    "/api/platform/stats": {
+      "get": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Global stats (PSA)",
+        "parameters": [
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "global stats"
+          }
+        }
+      }
+    },
+    "/api/platform/tenants": {
+      "get": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "List tenants (PSA)",
+        "responses": {
+          "200": {
+            "description": "paginated; each item includes userCount and leadCount (non-deleted users/leads per tenant)"
+          },
+          "423": {
+            "description": "FORCE_CHANGE_PASSWORD (global auth middleware: returned by all protected routes when user.must_reset_password=1)"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Create tenant (PSA)",
+        "responses": {
+          "201": {
+            "description": "created with admin+seeds"
+          }
+        }
+      }
+    },
+    "/api/platform/tenants/{id}": {
+      "get": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Get tenant",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "tenant"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Edit tenant (PSA)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "suspended"
+                    ]
+                  },
+                  "maxUsers": {
+                    "type": "integer"
+                  },
+                  "maxLeads": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "updated"
+          }
+        }
+      }
+    },
+    "/api/platform/tenants/{id}/export-backup": {
+      "post": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Export tenant backup (PSA)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JSON backup"
+          }
+        }
+      }
+    },
+    "/api/platform/tenants/{id}/renew": {
+      "post": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Renew / restore tenant (PSA)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expireAt": {
+                    "type": "integer",
+                    "description": "unix seconds"
+                  }
+                },
+                "required": [
+                  "expireAt"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "renewed"
+          }
+        }
+      }
+    },
+    "/api/platform/tenants/{id}/users": {
+      "get": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "List users for a tenant (PSA)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "paginated"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Create user for a tenant (PSA)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "tenant_admin",
+                      "tenant_manager",
+                      "tenant_employee"
+                    ]
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "name",
+                  "role",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "created"
+          }
+        }
+      }
+    },
+    "/api/platform/tenants/{id}/users/{uid}": {
+      "patch": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Edit tenant user (PSA)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "disabled"
+                    ]
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "tenant_admin",
+                      "tenant_manager",
+                      "tenant_employee"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "updated"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Delete tenant user (PSA)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "deleted"
+          }
+        }
+      }
+    },
+    "/api/platform/users": {
+      "get": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Cross-tenant users list (PSA)",
+        "responses": {
+          "200": {
+            "description": "paginated"
+          }
+        }
+      }
+    },
+    "/api/tenant/_cron/stats-aggregate": {
+      "post": {
+        "tags": [
+          "System"
+        ],
+        "security": [],
+        "summary": "Manual trigger stats aggregation (dev/test only)",
+        "responses": {
+          "200": {
+            "description": "aggregation result"
+          }
+        }
+      }
+    },
+    "/api/tenant/assignments": {
+      "get": {
+        "tags": [
+          "Assignments"
+        ],
+        "summary": "Assignment batch feed (TA/TM; paginated, 1 row per operation)",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 },
+            "description": "页码(从1起)"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20 },
+            "description": "每页条数(默认20，上限200)"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "排序字段，前缀 - 表倒序，如 sort=-createdAt；可逗号分隔多字段"
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "按批次 id 精确匹配(通用查询 DSL：默认 eq；支持 id__in=a,b)"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["assign", "reassign", "recycle", "claim", "status-change"]
+            },
+            "description": "按动作过滤(通用查询 DSL)"
+          },
+          {
+            "name": "operatorId",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "按操作人 ID 过滤(通用查询 DSL：默认 eq；支持 operatorId__in=a,b)"
+          },
+          {
+            "name": "fromUserId",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "按统一来源用户 ID 过滤(默认 eq)"
+          },
+          {
+            "name": "toUserId",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "按目标归属用户 ID 过滤(默认 eq)"
+          },
+          {
+            "name": "toStatus",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "按目标状态过滤(仅 action=status-change 有值；取值同 leads.status: pending/assigned/following/converted/invalid)"
+          },
+          {
+            "name": "createdAt",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "按创建时间区间过滤。通用查询 DSL 日期操作符后缀：createdAt__gte=起, createdAt__lte=止(epoch秒或 YYYY-MM-DD)；或 createdAt__between=起~止。注意：不接受 createdAt__from/__to"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "分配批次历史(分页)，封装于标准信封 { success, data: { items:[AssignmentBatch], total, page, size, pages } }。每次操作 1 行(批量分配 1000 条=1 行)，读 lead_assignment_batches 头表。支持通用查询 DSL(§9.4)：action / operatorId / fromUserId / toUserId / toStatus / createdAt 过滤。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "description": "请求是否成功" },
+                    "data": { "$ref": "#/components/schemas/PaginatedAssignmentBatches" },
+                    "error": { "type": "object", "nullable": true, "description": "失败时含 {code,message}，成功为 null" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenant/assignments/{batchId}": {
+      "get": {
+        "tags": [
+          "Assignments"
+        ],
+        "summary": "Assignment batch detail drill-down (TA/TM; paginated)",
+        "parameters": [
+          {
+            "name": "batchId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "assign",
+                "reassign",
+                "recycle",
+                "claim"
+              ],
+              "description": "按明细动作过滤(通用查询 DSL)"
+            }
+          },
+          {
+            "name": "leadId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "按线索 ID 过滤明细"
+            }
+          },
+          {
+            "name": "toUserId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "按目标归属人过滤明细"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "批次明细下钻(分页)，封装于标准信封 { success, data: { batch:AssignmentBatch, items:[Assignment], total, page, size, pages } }。batch 为头表行(skipDetail 已为对象)，items 为当前页 lead_assignments 明细。支持通用查询 DSL(§9.4)：action / leadId / toUserId 过滤；默认按 createdAt 倒序。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "description": "请求是否成功" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "batch": { "$ref": "#/components/schemas/AssignmentBatch" },
+                        "items": { "type": "array", "description": "当前页明细", "items": { "$ref": "#/components/schemas/Assignment" } },
+                        "total": { "type": "integer", "description": "明细总数" },
+                        "page": { "type": "integer", "description": "当前页(从1起)" },
+                        "size": { "type": "integer", "description": "每页条数(默认20/上限200)" },
+                        "pages": { "type": "integer", "description": "总页数" }
+                      }
+                    },
+                    "error": { "type": "object", "nullable": true, "description": "失败时含 {code,message}，成功为 null" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "批次不存在(或不属于当前租户)"
+          }
+        }
+      }
+    },
+    "/api/tenant/audit": {
+      "get": {
+        "tags": [
+          "Tenant"
+        ],
+        "summary": "Audit logs (TA/TM)",
+        "responses": {
+          "200": {
+            "description": "paginated"
+          }
+        }
+      }
+    },
+    "/api/tenant/blocklist": {
+      "get": {
+        "tags": [
+          "Blocklist"
+        ],
+        "summary": "List blocklist (TA/TM/TE; masked)",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "paginated (masked); each item includes createdByName"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Blocklist"
+        ],
+        "summary": "Add to blocklist (TA; auto-cancels pending schedules)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "phone"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "created"
+          }
+        }
+      }
+    },
+    "/api/tenant/blocklist/batch": {
+      "post": {
+        "tags": [
+          "Blocklist"
+        ],
+        "summary": "Batch add to blocklist (TA)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phones": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "phones"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "batch result"
+          }
+        }
+      }
+    },
+    "/api/tenant/blocklist/reconcile": {
+      "post": {
+        "tags": [
+          "Blocklist"
+        ],
+        "summary": "Reconcile is_blocked (TA; manual trigger)",
+        "responses": {
+          "200": {
+            "description": "reconciled"
+          }
+        }
+      }
+    },
+    "/api/tenant/blocklist/{id}": {
+      "delete": {
+        "tags": [
+          "Blocklist"
+        ],
+        "summary": "Remove from blocklist (TA; soft-delete)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "deleted"
+          }
+        }
+      }
+    },
+    "/api/tenant/calls": {
+      "get": {
+        "tags": [
+          "Calls"
+        ],
+        "summary": "List calls (TE forced own, masked)",
+        "responses": {
+          "200": {
+            "description": "paginated"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Calls"],
+        "summary": "Create call (idempotent; optional content→atomic followup REQ-04)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": { "type": "string" },
+                  "startedAt": { "type": "integer" },
+                  "externalCallId": { "type": "string" },
+                  "leadId": { "type": "string" },
+                  "answerType": { "type": "string", "enum": ["answered","no_answer","rejected","empty_number","suspended"] },
+                  "content": { "type": "string", "maxLength": 2000 },
+                  "categoryId": { "type": "string" },
+                  "duration": { "type": "integer" }
+                },
+                "required": ["phone", "startedAt", "externalCallId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "created or updated (incl followupId/followupCreated)"
+          }
+        }
+      }
+    },
+    "/api/tenant/calls/{id}": {
+      "get": {
+        "tags": [
+          "Calls"
+        ],
+        "summary": "Call detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "detail (masked)"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Calls"
+        ],
+        "summary": "Complete call (TA/TM)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "updated"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Calls"
+        ],
+        "summary": "Delete call (TA; soft-delete)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "deleted"
+          }
+        }
+      }
+    },
+    "/api/tenant/categories": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "List categories (TA/TM/TE)",
+        "responses": {
+          "200": {
+            "description": "flat list"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Create category (TA)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "sort": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "created"
+          }
+        }
+      }
+    },
+    "/api/tenant/categories/{id}": {
+      "patch": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Edit category (TA)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "sort": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "updated"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Soft-delete category (TA)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "deleted"
+          }
+        }
+      }
+    },
+    "/api/tenant/customers": {
+      "get": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "List customers",
+        "parameters": [
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mine",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "erased",
+            "in": "query",
+            "description": "PIPL erase filter: 0=only non-erased (recommended), 1=only erased, omitted=no filter (erased empty rows mixed in; customers keep deletedAt so erased rows stay in list)",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                0,
+                1
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "paginated (masked); each item carries erasedAt (null=not erased, unix seconds=erased)"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Create customer (TA/TM)",
+        "responses": {
+          "201": {
+            "description": "created"
+          }
+        }
+      }
+    },
+    "/api/tenant/customers/batch-delete": {
+      "post": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Batch soft-delete customers (TA; max 100)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "customerIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "customerIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "deleted"
+          }
+        }
+      }
+    },
+    "/api/tenant/customers/{id}": {
+      "get": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Customer detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "detail with source lead+followups; carries erasedAt (null=not erased, unix seconds=erased)"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Update customer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "updated"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Soft-delete customer (TA; single)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "soft deleted"
+          }
+        }
+      }
+    },
+    "/api/tenant/customers/{id}/assign": {
+      "post": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Assign customer (TA/TM)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ownerId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "ownerId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "assigned"
+          }
+        }
+      }
+    },
+    "/api/tenant/customers/{id}/erase": {
+      "post": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "PIPL erase customer (TA; cascading)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "erased; body: { id, erased: true, erasedAt: unix seconds } (deletedAt preserved, so erased row stays in list)"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads": {
+      "get": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "List leads (general query+scope)",
+        "parameters": [
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mine",
+                "public",
+                "all",
+                "blocked"
+              ]
+            },
+            "description": "TE scope=mine(默认); scope=public 需 allowSelfClaim(REQ-02); TM/TA 可用 all"
+          },
+          {
+            "name": "erased",
+            "in": "query",
+            "description": "PIPL erase filter: 0=only non-erased (recommended), 1=only erased, omitted=no filter (erased empty rows mixed in)",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                0,
+                1
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "paginated (masked); each item carries erasedAt (null=not erased, unix seconds=erased)"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Create lead (TA/TM)",
+        "responses": {
+          "201": {
+            "description": "created"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/batch-assign": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Batch assign leads (TA/TM; max 100)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "leadIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "ownerId": {
+                    "type": "string"
+                  },
+                  "staleDays": {
+                    "type": "integer",
+                    "description": "only leads in pool > N days"
+                  }
+                },
+                "required": [
+                  "leadIds",
+                  "ownerId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "assigned"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/batch-delete": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Batch soft-delete leads (TA; max 100)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "leadIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "leadIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "deleted"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/batch-reactivate": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Batch reactivate invalid leads (TA/TM)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "leadIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "leadIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "reactivated"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/batch-status": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Batch status change (TA/TM; max 100)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "leadIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "assigned",
+                      "following",
+                      "invalid"
+                    ]
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "leadIds",
+                  "status"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "updated"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/import": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Import leads (TA, max 500)",
+        "responses": {
+          "200": {
+            "description": "importId/success/failed/blocked/duplicates"
+          },
+          "413": {
+            "description": "BATCH_TOO_LARGE"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/imports": {
+      "get": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Import batch history (TA)",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "paginated"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/imports/{id}": {
+      "get": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Import batch detail (TA)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "detail"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/{id}": {
+      "get": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Lead detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "detail with timeline; carries erasedAt (null=not erased, unix seconds=erased)"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Update lead (role-gated)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "updated"
+          },
+          "400": {
+            "description": "STATUS_ROLLBACK_FORBIDDEN"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/{id}/assign": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Assign lead to user (TA/TM; auto-migrates pending schedules)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ownerId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "ownerId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "assigned"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/{id}/assignments": {
+      "get": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Assignment history for lead (TA/TM)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "分配记录列表，封装于标准信封 { success, data: { items:[Assignment], total, page, size, pages } }；每条记录含 batchId 字段，同一批操作共享同一 UUID、单条操作为独立 UUID。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "分配记录主键(UUID)"
+                    },
+                    "leadId": {
+                      "type": "string",
+                      "description": "关联线索 ID"
+                    },
+                    "action": {
+                      "type": "string",
+                      "enum": [
+                        "assign",
+                        "reassign",
+                        "recycle",
+                        "claim"
+                      ],
+                      "description": "assign=分配 / reassign=改派 / recycle=回收公海 / claim=自领"
+                    },
+                    "fromUserId": {
+                      "type": "string",
+                      "description": "原归属(退回公海为 null)"
+                    },
+                    "toUserId": {
+                      "type": "string",
+                      "description": "新归属(退回公海为 null)"
+                    },
+                    "operatorId": {
+                      "type": "string",
+                      "description": "操作人"
+                    },
+                    "operatorRole": {
+                      "type": "string",
+                      "description": "操作人角色(审计用)"
+                    },
+                    "note": {
+                      "type": "string",
+                      "description": "操作备注"
+                    },
+                    "batchId": {
+                      "type": "string",
+                      "description": "批次标识；同一批操作(如批量分配100条)共享同一 UUID，单条操作各自独立 UUID"
+                    },
+                    "createdAt": {
+                      "type": "integer",
+                      "description": "创建时间(unix秒)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/{id}/claim": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Self-claim lead from pool (if allowSelfClaim enabled)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "claimed"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/{id}/convert": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Convert lead to customer (TA/TM)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "converted"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/{id}/erase": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "PIPL erase (TA)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "erased; body: { id, erased: true, erasedAt: unix seconds }"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/{id}/followups": {
+      "get": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Follow-up timeline (TA/TM/TE)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "list"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Create follow-up (TA/TM/TE)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  },
+                  "answerType": {
+                    "type": "string",
+                    "enum": [
+                      "answered",
+                      "no_answer",
+                      "rejected",
+                      "empty_number",
+                      "suspended"
+                    ]
+                  },
+                  "duration": {
+                    "type": "integer"
+                  },
+                  "categoryId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "content"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "created"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/{id}/followups/{fid}": {
+      "patch": {
+        "tags": ["Leads"],
+        "summary": "Edit follow-up content (REQ-01; TE 5min own, TM/TA any)",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "fid", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "content": { "type": "string", "maxLength": 2000 } },
+                "required": ["content"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "updated" } }
+      },
+      "delete": {
+        "tags": ["Leads"],
+        "summary": "Soft-delete follow-up (REQ-01; TE own only, TM/TA any)",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "fid", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "deleted" } }
+      }
+    },
+    "/api/tenant/leads/{id}/reactivate": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Reactivate invalid lead (TA/TM; moves to pending)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "reactivated"
+          }
+        }
+      }
+    },
+    "/api/tenant/leads/{id}/recycle": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Recycle lead to pool (TA/TM)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "recycled"
+          }
+        }
+      }
+    },
+    "/api/tenant/options/categories": {
+      "get": {
+        "tags": [
+          "Options"
+        ],
+        "summary": "分类下拉选项 (id + name, sorted by sort, limit 100)",
+        "responses": {
+          "200": {
+            "description": "分类选项数组"
+          }
+        }
+      }
+    },
+    "/api/tenant/options/projects": {
+      "get": {
+        "tags": [
+          "Options"
+        ],
+        "summary": "项目下拉选项 (id + name, limit 100)",
+        "responses": {
+          "200": {
+            "description": "项目选项数组"
+          }
+        }
+      }
+    },
+    "/api/tenant/options/quick-notes": {
+      "get": {
+        "tags": [
+          "Options"
+        ],
+        "summary": "快捷备注下拉选项 (id + content, sorted by sort, limit 100)",
+        "responses": {
+          "200": {
+            "description": "快捷备注选项数组"
+          }
+        }
+      }
+    },
+    "/api/tenant/options/users": {
+      "get": {
+        "tags": [
+          "Options"
+        ],
+        "summary": "员工下拉选项 (id + name + role, limit 100)",
+        "responses": {
+          "200": {
+            "description": "员工选项数组"
+          }
+        }
+      }
+    },
+    "/api/tenant/projects": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "List projects (TA/TM/TE; general query)",
+        "responses": {
+          "200": {
+            "description": "paginated"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Create project (TA)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "archived"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "created"
+          }
+        }
+      }
+    },
+    "/api/tenant/projects/{id}": {
+      "patch": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Edit project (TA; system project locked)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "updated"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Archive project (TA; system project locked)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "archived"
+          }
+        }
+      }
+    },
+    "/api/tenant/quick-notes": {
+      "get": {
+        "tags": [
+          "QuickNotes"
+        ],
+        "summary": "List quick notes (TA/TM/TE; sorted by sort+createdAt)",
+        "responses": {
+          "200": {
+            "description": "list"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "QuickNotes"
+        ],
+        "summary": "Create quick note (TA; no PATCH, delete+recreate)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "sort": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "content"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "created"
+          }
+        }
+      }
+    },
+    "/api/tenant/quick-notes/{id}": {
+      "delete": {
+        "tags": [
+          "QuickNotes"
+        ],
+        "summary": "Soft-delete quick note (TA)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "deleted"
+          }
+        }
+      }
+    },
+    "/api/tenant/schedules": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "List schedules (JOIN leads, phone masked for TE/TM)",
+        "parameters": [
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "completed",
+                "cancelled"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "paginated with lead snapshot"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Create schedule",
+        "responses": {
+          "201": {
+            "description": "created"
+          }
+        }
+      }
+    },
+    "/api/tenant/schedules/stats": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Team stats (TA/TM)",
+        "responses": {
+          "200": {
+            "description": "byStatus+overdue"
+          }
+        }
+      }
+    },
+    "/api/tenant/schedules/stats/mine": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Personal stats (TE; dueToday by BJT)",
+        "responses": {
+          "200": {
+            "description": "byStatus+overdue+dueToday"
+          }
+        }
+      }
+    },
+    "/api/tenant/schedules/{id}": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Schedule detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "detail with lead+call"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Edit (scheduledAt/title/content only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "updated"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Soft-delete schedule (TA or owner)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "deleted"
+          }
+        }
+      }
+    },
+    "/api/tenant/schedules/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Cancel schedule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "cancelled"
+          }
+        }
+      }
+    },
+    "/api/tenant/schedules/{id}/complete": {
+      "post": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Complete schedule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "completed"
+          }
+        }
+      }
+    },
+    "/api/tenant/schedules/{id}/reopen": {
+      "post": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Reopen schedule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "reopened"
+          }
+        }
+      }
+    },
+    "/api/tenant/stats": {
+      "get": {
+        "tags": [
+          "Stats"
+        ],
+        "summary": "Tenant stats (TA/TM)",
+        "parameters": [
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "total/byStatus/byProject/agentPerf/funnel"
+          }
+        }
+      }
+    },
+    "/api/tenant/stats/mine": {
+      "get": {
+        "tags": [
+          "Stats"
+        ],
+        "summary": "Personal stats (TE)",
+        "parameters": [
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "personal stats"
+          }
+        }
+      }
+    },
+    "/api/tenant/users": {
+      "get": {
+        "tags": [
+          "Tenant"
+        ],
+        "summary": "List users",
+        "responses": {
+          "200": {
+            "description": "paginated"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Tenant"
+        ],
+        "summary": "Create user (TA)",
+        "responses": {
+          "201": {
+            "description": "created"
+          }
+        }
+      }
+    },
+    "/api/tenant/users/batch": {
+      "post": {
+        "tags": [
+          "Tenant"
+        ],
+        "summary": "Batch create users (TA)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "users": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "email": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "tenant_employee",
+                            "tenant_manager"
+                          ]
+                        },
+                        "password": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "email",
+                        "name",
+                        "role",
+                        "password"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "users"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "batch result"
+          }
+        }
+      }
+    },
+    "/api/tenant/users/{id}": {
+      "patch": {
+        "tags": [
+          "Tenant"
+        ],
+        "summary": "Edit user (TA; disable/role change)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "disabled"
+                    ]
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "tenant_admin",
+                      "tenant_manager",
+                      "tenant_employee"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "updated"
+          }
+        }
+      }
+    },
+    "/api/tenant/users/{id}/reset-password": {
+      "post": {
+        "tags": [
+          "Tenant"
+        ],
+        "summary": "Reset password (TA)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "newPassword": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "newPassword"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "password reset"
+          }
+        }
+      }
+    },
+    "/api/tenant/profile": {
+      "get": {
+        "tags": [
+          "Tenant"
+        ],
+        "summary": "Current tenant profile (TA/TM/TE)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "tenant info with parsed settings"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Tenant"],
+        "summary": "Update tenant profile (TA only)",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "contactName": { "type": "string" },
+                  "contactPhone": { "type": "string" },
+                  "contactEmail": { "type": "string" },
+                  "industry": { "type": "string" },
+                  "address": { "type": "string" },
+                  "intro": { "type": "string" },
+                  "website": { "type": "string" },
+                  "settings": {
+                    "type": "object",
+                    "properties": {
+                      "allowSelfClaim": { "type": "boolean" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "updated tenant info" }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "security": [],
+        "summary": "Health check (incl version)",
+        "responses": {
+          "200": {
+            "description": "OK with version"
+          }
+        }
+      }
+    }
+  }
+}
