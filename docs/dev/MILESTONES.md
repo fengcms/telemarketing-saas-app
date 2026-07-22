@@ -126,9 +126,57 @@ FlutterSecureStorage (Android Keystore)
 
 ---
 
+## 节点 v0.4 — 强制改密页（2026-07-22）
+
+### 完成内容
+
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| User 模型扩展 | ✅ | 新增 `mustResetPassword` 字段，登录响应自动读取 |
+| AuthService 新增强制改密 | ✅ | `forceChangePassword()` 无旧密码版本 |
+| ApiClient 423 兜底拦截 | ✅ | 捕获 `FORCE_CHANGE_PASSWORD` 状态码，不走 refresh→retry |
+| AuthNotifier 状态扩展 | ✅ | 新增 `forceChangePassword` 状态，登录检测自动跳转改密页 |
+| 改密页完整 UI | ✅ | 安全提示卡片 + 密码强度指示器(8段) + 双密码框 + 返回确认弹窗 |
+| 密码强度计算 | ✅ | 弱(2段)/中(5段)/强(8段)，实时动画切换 |
+| 前端表单校验 | ✅ | 长度≥8、含字母+数字、两次一致，实时校验 |
+| 返回确认弹窗 | ✅ | Material AlertDialog，"确定退出"清空 Token 跳转登录页 |
+| 系统返回键拦截 | ✅ | PopScope 阻止直接返回 |
+
+### 技术架构变动
+
+```
+AuthGate 路由新增分支：
+  AuthStatus.forceChangePassword → ForceChangePasswordPage
+
+ApiClient 拦截器链：
+  onError → 423 FORCE_CHANGE_PASSWORD
+    └─ onForceChangePassword callback
+        └─ AuthNotifier.forceRedirect()
+            └─ state = AuthStatus.forceChangePassword
+                └─ AuthGate → ForceChangePasswordPage
+
+完整认证流程（含强制改密）：
+  登录 → mustResetPassword==1
+    → 改密页 → POST /api/auth/change-password { newPassword }
+      → 成功 → 清空 Token → 跳转登录页 → 新密码重新登录 → 首页
+```
+
+### 涉及文件
+
+| 文件 | 改动类型 |
+|------|---------|
+| `lib/models/user.dart` | ✅ 修改 |
+| `lib/services/auth_service.dart` | ✅ 修改 |
+| `lib/services/api_client.dart` | ✅ 修改 |
+| `lib/providers/auth_provider.dart` | ✅ 修改 |
+| `lib/app.dart` | ✅ 修改 |
+| `lib/pages/force_change_password/force_change_password_page.dart` | 🆕 新建 |
+
+---
+
 ## 下一步节点规划
 
-### P0 - 核心流程（下一节点 v0.3）
+### P0 - 核心流程（下一节点 v0.5）
 
 | 模块 | 优先级 | 估算 |
 |------|:------:|:----:|
@@ -150,4 +198,4 @@ FlutterSecureStorage (Android Keystore)
 ---
 
 > 本文档与 `docs/dev/HANDOVER.md`（交接文档）配套使用。
-> 节点版本：v0.3 | 更新日期：2026-07-22
+> 节点版本：v0.4 | 更新日期：2026-07-22

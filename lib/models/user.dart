@@ -4,12 +4,14 @@ class User {
   final String email;
   final String name;
   final String role;
+  final bool mustResetPassword;
 
   const User({
     required this.id,
     required this.email,
     required this.name,
     required this.role,
+    this.mustResetPassword = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -18,6 +20,8 @@ class User {
       email: json['email']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       role: json['role']?.toString() ?? '',
+      mustResetPassword: json['mustResetPassword'] == 1 ||
+          json['mustResetPassword'] == true,
     );
   }
 
@@ -26,5 +30,6 @@ class User {
         'email': email,
         'name': name,
         'role': role,
+        'mustResetPassword': mustResetPassword,
       };
 }

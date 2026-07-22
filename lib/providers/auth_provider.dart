@@ -43,6 +43,8 @@ enum AuthStatus {
   authenticating,
   /// 已登录
   authenticated,
+  /// 需强制改密
+  forceChangePassword,
 }
 
 /// 认证状态数据
@@ -102,10 +104,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final authService = _ref.read(authServiceProvider);
       final result = await authService.login(email: email, password: password);
-      state = AuthState(
-        status: AuthStatus.authenticated,
-        user: result.user,
-      );
+
+      if (result.mustResetPassword) {
+        // 管理员重置了密码，跳转强制改密页
+        state = AuthState(
+          status: AuthStatus.forceChangePassword,
+          user: result.user,
+        );
+      } else {
+        state = AuthState(
+          status: AuthStatus.authenticated,
+          user: result.user,
+        );
+      }
       return true;
     } on ApiException catch (e) {
       state = state.copyWith(
@@ -120,6 +131,51 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return false;
     }
+  }
+
+  /// 强制改密
+  Future<bool> forceChangePassword({
+    required String newPassword,
+  }) async {
+    state = state.copyWith(errorMessage: null);
+
+    try {
+      final authService = _ref.read(authServiceProvider);
+      await authService.forceChangePassword(newPassword: newPassword);
+      // 改密成功 → 清空 Token → 跳转登录页
+      final tokenStorage = _ref.read(tokenStorageProvider);
+      await tokenStorage.clearAll();
+      state = const AuthState(
+        status: AuthStatus.unauthenticated,
+        errorMessage: '密码修改成功，请重新登录',
+      );
+      return true;
+    } on ApiException catch (e) {
+      state = state.copyWith(
+        errorMessage: e.message,
+      );
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: '修改失败，请稍后再试',
+      );
+      return false;
+    }
+  }
+
+  /// 退出强制改密（用户点击返回确认后）
+  Future<void> cancelForceChangePassword() async {
+    final tokenStorage = _ref.read(tokenStorageProvider);
+    await tokenStorage.clearAll();
+    state = const AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  /// 网络层 423 兜底触发：强制跳转改密页
+  void forceRedirect() {
+    state = AuthState(
+      status: AuthStatus.forceChangePassword,
+      errorMessage: '密码已被管理员重置，请设置新密码',
+    );
   }
 
   /// 登出
@@ -137,5 +193,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
 /// 认证状态 Provider
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(ref);
+  // 设置 423 兜底回调：ApiClient 捕获 FORCE_CHANGE_PASSWORD 后触发跳转
+  final apiClient = ref.read(apiClientProvider);
+  final notifier = AuthNotifier(ref);
+  apiClient.onForceChangePassword = () => notifier.forceRedirect();
+  return notifier;
 });

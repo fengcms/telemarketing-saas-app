@@ -20,6 +20,9 @@ class ApiClient {
   /// 等待刷新完成的请求队列
   final List<_PendingRequest> _refreshQueue = [];
 
+  /// 423 FORCE_CHANGE_PASSWORD 回调（由 AuthNotifier 设置）
+  void Function()? onForceChangePassword;
+
   ApiClient({required TokenStorage tokenStorage})
       : _tokenStorage = tokenStorage {
     _dio = Dio(
@@ -45,6 +48,17 @@ class ApiClient {
         return handler.next(options);
       },
       onError: (error, handler) async {
+        // 423 FORCE_CHANGE_PASSWORD — 不走 refresh→retry，直接跳转改密页
+        if (error.response?.statusCode == 423) {
+          final data = error.response?.data;
+          if (data is Map &&
+              data['error'] is Map &&
+              (data['error'] as Map)['code'] == 'FORCE_CHANGE_PASSWORD') {
+            onForceChangePassword?.call();
+            return handler.next(error);
+          }
+        }
+
         if (error.response?.statusCode == 401 &&
             !_isPublicEndpoint(error.requestOptions.path)) {
           final retryResponse = await _refreshAndRetry(error.requestOptions);

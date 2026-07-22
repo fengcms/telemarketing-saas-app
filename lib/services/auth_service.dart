@@ -50,7 +50,7 @@ class AuthService {
           userRole: user.role,
         );
 
-        return (user: user, mustResetPassword: false);
+        return (user: user, mustResetPassword: user.mustResetPassword);
       }
 
       throw const ApiException(
@@ -101,7 +101,24 @@ class AuthService {
     );
   }
 
-  /// 修改密码
+  /// 强制改密（管理员重置密码后首次登录场景）
+  ///
+  /// 调用 POST /api/auth/change-password，无需传入旧密码。
+  /// 成功响应后后端自增 tv 使当前 Token 失效，APP 需清空本地 Token 并跳转登录页。
+  Future<void> forceChangePassword({
+    required String newPassword,
+  }) async {
+    try {
+      await _apiClient.dio.post(
+        ApiConstants.changePassword,
+        data: {'newPassword': newPassword},
+      );
+    } on DioException catch (e) {
+      throw ApiClient.parseError(e);
+    }
+  }
+
+  /// 修改密码（用户主动修改，需旧密码复核）
   Future<void> changePassword({
     required String oldPassword,
     required String newPassword,

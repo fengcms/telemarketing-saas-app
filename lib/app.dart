@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'pages/login/login_page.dart';
 import 'pages/home/home_page.dart';
+import 'pages/force_change_password/force_change_password_page.dart';
 import 'providers/auth_provider.dart';
 
 void main() {
@@ -49,6 +50,7 @@ class AuthGate extends ConsumerWidget {
           body: Center(child: CircularProgressIndicator()),
         ),
       AuthStatus.authenticated => const HomePage(),
+      AuthStatus.forceChangePassword => const ForceChangePasswordPage(),
       AuthStatus.authenticating || AuthStatus.unauthenticated =>
         const LoginPage(),
     };
