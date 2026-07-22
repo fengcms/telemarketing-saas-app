@@ -12,6 +12,12 @@ final leadServiceProvider = Provider<LeadService>((ref) {
   return LeadService(apiClient: ref.read(apiClientProvider));
 });
 
+/// 用于区分"未传参"和"传 null"的 sentinel 值
+class _Unset {
+  const _Unset();
+}
+const _unset = _Unset();
+
 /// 线索列表状态
 class LeadListState {
   final bool isInitialLoading;
@@ -63,13 +69,13 @@ class LeadListState {
     int? currentPage,
     bool? isLoadingMore,
     bool? hasMore,
-    String? errorMessage,
+    Object? errorMessage = _unset,
     String? keyword,
-    String? statusFilter,
-    String? categoryId,
-    String? projectId,
-    int? dateFrom,
-    int? dateTo,
+    Object? statusFilter = _unset,
+    Object? categoryId = _unset,
+    Object? projectId = _unset,
+    Object? dateFrom = _unset,
+    Object? dateTo = _unset,
     String? sortBy,
     List<OptionItem>? categories,
     List<OptionItem>? projects,
@@ -82,13 +88,13 @@ class LeadListState {
       currentPage: currentPage ?? this.currentPage,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasMore: hasMore ?? this.hasMore,
-      errorMessage: errorMessage,
+      errorMessage: errorMessage is _Unset ? this.errorMessage : errorMessage as String?,
       keyword: keyword ?? this.keyword,
-      statusFilter: statusFilter,
-      categoryId: categoryId,
-      projectId: projectId,
-      dateFrom: dateFrom,
-      dateTo: dateTo,
+      statusFilter: statusFilter is _Unset ? this.statusFilter : statusFilter as String?,
+      categoryId: categoryId is _Unset ? this.categoryId : categoryId as String?,
+      projectId: projectId is _Unset ? this.projectId : projectId as String?,
+      dateFrom: dateFrom is _Unset ? this.dateFrom : dateFrom as int?,
+      dateTo: dateTo is _Unset ? this.dateTo : dateTo as int?,
       sortBy: sortBy ?? this.sortBy,
       categories: categories ?? this.categories,
       projects: projects ?? this.projects,

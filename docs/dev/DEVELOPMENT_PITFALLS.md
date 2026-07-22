@@ -393,6 +393,44 @@ Future<void> clearAll() async {
 
 ---
 
+### 6.3 `copyWith` 可空参数覆盖陷阱
+
+**严重级别**：🔴 **阻断性（P0）**
+
+**现象**：选择筛选条件→确定→接口返回数据后，筛选条件被清空（角标消失，筛选面板条件丢失）。
+
+**原因**：`LeadListState.copyWith()` 中对 `statusFilter`、`categoryId` 等可空字段直接赋值：
+
+```dart
+// ❌ 错误写法：不传参数时默认为 null，覆盖了当前值
+LeadListState copyWith({..., String? statusFilter, ...}) {
+  return LeadListState(
+    ..., statusFilter: statusFilter, // ← null 覆盖了当前筛选条件
+  );
+}
+```
+
+当 `_reloadPage()` 调用 `state.copyWith(isInitialLoading: false, leads: ...)` 时，因为没有传 `statusFilter`，Dart 将其默认设为 `null`，导致筛选条件被清空。
+
+**解决方案**：使用 sentinel 对象区分"未传参"和"传 null"：
+
+```dart
+class _Unset { const _Unset(); }
+const _unset = _Unset();
+
+LeadListState copyWith({..., Object? statusFilter = _unset, ...}) {
+  return LeadListState(
+    ..., 
+    statusFilter: statusFilter is _Unset ? this.statusFilter : statusFilter as String?,
+  );
+}
+```
+
+调用 `copyWith(statusFilter: null)` → 显式传 null → 清除筛选条件。
+调用 `copyWith()`（不传 statusFilter）→ 使用 `_unset` → 保留当前值。
+
+**教训**：在 Dart 中，可空类型参数 `String? param` 不传时默认值为 `null`，这与"显式传 null"无法区分。处理可空字段的 `copyWith` 必须使用 sentinel 模式。这是一个 Dart 语言层面的常见陷阱。
+
 ## 7. 搜索交互坑点
 
 ### 7.1 自动搜索浪费服务器带宽
