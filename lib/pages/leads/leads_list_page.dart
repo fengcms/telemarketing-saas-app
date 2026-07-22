@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
+import '../../constants/lead_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/lead_list_provider.dart';
 import '../../providers/options_provider.dart';
@@ -68,21 +69,8 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
           children: [
             _buildTopBar(state),
             _buildSearchBar(state),
-            Expanded(
-              child: Stack(
-                children: [
-                  _buildBody(state, isManager),
-                  // 筛选标签浮层（不影响卡片布局）
-                  if (state.hasActiveFilters)
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: _buildFilterTags(state),
-                    ),
-                ],
-              ),
-            ),
+            if (state.hasActiveFilters) _buildFilterTags(state),
+            Expanded(child: _buildBody(state, isManager)),
           ],
         ),
       ),
@@ -269,10 +257,11 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
 
   Widget _buildFilterTags(LeadListState state) {
     return Container(
+      width: double.infinity,
       height: 48,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
             color: Color(0x1A000000),
             blurRadius: 4,
@@ -288,7 +277,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
             if (state.statusFilter != null && state.statusFilter!.isNotEmpty)
               _buildTag(
                 '状态',
-                state.statusFilter!,
+                LeadConstants.displayName(state.statusFilter),
                 () => ref.read(leadListProvider.notifier).clearFilter('status'),
               ),
             if (state.categoryId != null && state.categoryId!.isNotEmpty)

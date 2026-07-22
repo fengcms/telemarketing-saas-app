@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://tm-api-test.kao9.com"
+      "url": "https://api.example.com"
     }
   ],
   "components": {
@@ -1554,7 +1554,46 @@
         ],
         "responses": {
           "200": {
-            "description": "paginated (masked); each item carries erasedAt (null=not erased, unix seconds=erased)"
+            "description": "paginated (masked); each item carries erasedAt (null=not erased, unix seconds=erased)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "string" },
+                              "name": { "type": "string" },
+                              "phone": { "type": "string" },
+                              "status": { "type": "string", "enum": ["pending","assigned","following","converted","invalid"] },
+                              "ownerId": { "type": "string" },
+                              "isBlocked": { "type": "integer" },
+                              "lastFollowupAt": { "type": "integer" },
+                              "nextFollowupAt": { "type": "integer" },
+                              "createdAt": { "type": "integer" },
+                              "updatedAt": { "type": "integer" },
+                              "erasedAt": { "type": "integer", "nullable": true }
+                            }
+                          }
+                        },
+                        "total": { "type": "integer" },
+                        "page": { "type": "integer" },
+                        "size": { "type": "integer" },
+                        "pages": { "type": "integer" }
+                      }
+                    },
+                    "error": { "type": "null" }
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -1810,9 +1849,48 @@
         ],
         "responses": {
           "200": {
-            "description": "detail with timeline; carries erasedAt (null=not erased, unix seconds=erased)"
+            "description": "detail with timeline; carries erasedAt (null=not erased, unix seconds=erased)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "name": { "type": "string" },
+                        "phone": { "type": "string" },
+                        "status": { "type": "string" },
+                        "ownerId": { "type": "string" },
+                        "projectId": { "type": "string" },
+                        "isBlocked": { "type": "integer" },
+                        "createdAt": { "type": "integer" },
+                        "erasedAt": { "type": "integer", "nullable": true },
+                        "timeline": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "string" },
+                              "type": { "type": "string", "enum": ["followup","call"] },
+                              "content": { "type": "string" },
+                              "answerType": { "type": "string" },
+                              "createdAt": { "type": "integer" }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "error": { "type": "null" }
+                  }
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [{ "BearerAuth": [] }]
       },
       "patch": {
         "tags": [

@@ -11,7 +11,7 @@
 
 | 项目 | 值 |
 |------|-----|
-| 线上测试环境地址 | `https://tm-api-test.kao9.com/` |
+| 本地开发地址 | `https://tm-api-test.kao9.com` |
 | JSON 请求头 | `Content-Type: application/json` |
 | 认证请求头 | `Authorization: Bearer <accessToken>` |
 | AccessToken 有效期 | 15 分钟（JWT） |
@@ -401,6 +401,39 @@ curl 'https://tm-api-test.kao9.com/api/tenant/users?page=1&size=20' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
+**响应（分页列表）：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "user-uuid",
+        "tenantId": "tenant-uuid",
+        "email": "staff@qq.com",
+        "name": "张伟",
+        "role": "tenant_employee",
+        "status": "active",
+        "mustResetPassword": 0,
+        "lastLoginAt": 1700000000,
+        "createdBy": "admin-uuid",
+        "createdAt": 1699990000,
+        "updatedAt": 1700000000,
+        "deletedAt": null
+      }
+    ],
+    "total": 15,
+    "page": 1,
+    "size": 20,
+    "pages": 1
+  },
+  "error": null
+}
+```
+
+> 角色枚举：`platform_super_admin` / `tenant_admin` / `tenant_manager` / `tenant_employee`。`status` 枚举：`active` / `disabled`。`mustResetPassword` 为 `0/1`，1 表示首次登录需强制改密。
+
 ### POST /api/tenant/users
 
 创建用户（仅 TA）。
@@ -584,6 +617,36 @@ curl 'https://tm-api-test.kao9.com/api/tenant/projects?status=active' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
+**响应（分页列表）：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "project-uuid",
+        "tenantId": "tenant-uuid",
+        "name": "凤凰城A区-高层",
+        "address": "广东省广州市天河区凤凰路88号",
+        "status": "active",
+        "isSystem": 0,
+        "createdAt": 1699990000,
+        "updatedAt": 1699990000,
+        "deletedAt": null
+      }
+    ],
+    "total": 4,
+    "page": 1,
+    "size": 20,
+    "pages": 1
+  },
+  "error": null
+}
+```
+
+> `isSystem` 为 `0/1`，`1` 表示系统预设"未分类"项目（不可删除）。`status` 枚举 `active` / `archived`。
+
 ### POST /api/tenant/projects
 
 新增项目（TA）。
@@ -761,6 +824,56 @@ curl 'https://tm-api-test.kao9.com/api/tenant/leads?scope=all&erased=0' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
+**响应（分页列表）：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "lead-uuid",
+        "tenantId": "tenant-uuid",
+        "projectId": "project-uuid",
+        "name": "张三",
+        "phone": "138****5678",
+        "company": "碧桂园集团",
+        "position": "经理",
+        "gender": "男",
+        "age": 35,
+        "wechat": "wx_****5678",
+        "address": "广东省广州市天河区",
+        "source": "电话咨询",
+        "intention": "投资自住",
+        "remark": "客户关注A户型",
+        "status": "following",
+        "ownerId": "user-uuid",
+        "categoryId": "category-uuid",
+        "isBlocked": 0,
+        "customFields": {},
+        "importBatchId": null,
+        "assignedAt": 1700000000,
+        "lastFollowupAt": 1700001000,
+        "nextFollowupAt": 1700080000,
+        "pooledAt": 1699990000,
+        "consentAt": 1699900000,
+        "createdAt": 1699990000,
+        "updatedAt": 1700001000,
+        "deletedAt": null,
+        "erasedAt": null
+      }
+    ],
+    "total": 120,
+    "page": 1,
+    "size": 20,
+    "pages": 6
+  },
+  "error": null
+}
+```
+
+> 字段说明：`status` 枚举 `pending/assigned/following/converted/invalid`；`isBlocked` 为 `0/1`；所有时间戳为 unix 秒；`erasedAt` 非 null 表示 PIPL 擦除；手机号/微信号列表默认脱敏，`raw=1` 返回明文。
+
 ### POST /api/tenant/leads
 
 创建单条线索（TA/TM，电话会标准化 + 禁拨校验 + 去重）。
@@ -794,6 +907,70 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/leads \
 curl https://tm-api-test.kao9.com/api/tenant/leads/<lead_id> \
   -H 'Authorization: Bearer <ta_token>'
 ```
+
+**响应：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "lead-uuid",
+    "tenantId": "tenant-uuid",
+    "projectId": "project-uuid",
+    "name": "张三",
+    "phone": "13800138000",
+    "company": "碧桂园集团",
+    "position": "经理",
+    "gender": "男",
+    "age": 35,
+    "wechat": "wx_abcd1234",
+    "address": "广东省广州市天河区",
+    "source": "电话咨询",
+    "intention": "投资自住",
+    "remark": "客户关注A户型",
+    "status": "following",
+    "ownerId": "user-uuid",
+    "categoryId": "category-uuid",
+    "isBlocked": 0,
+    "customFields": {},
+    "importBatchId": null,
+    "assignedAt": 1700000000,
+    "lastFollowupAt": 1700001000,
+    "nextFollowupAt": 1700080000,
+    "pooledAt": 1699990000,
+    "consentAt": 1699900000,
+    "createdAt": 1699990000,
+    "updatedAt": 1700001000,
+    "deletedAt": null,
+    "erasedAt": null,
+    "timeline": [
+      {
+        "id": "followup-uuid",
+        "type": "followup",
+        "content": "客户表示需要和家里人商量",
+        "answerType": "answered",
+        "duration": 120,
+        "categoryId": "category-uuid",
+        "userId": "user-uuid",
+        "userName": "张伟",
+        "createdAt": 1700000000
+      },
+      {
+        "id": "call-uuid",
+        "type": "call",
+        "answerType": "answered",
+        "duration": 90,
+        "userId": "user-uuid",
+        "userName": "张伟",
+        "startedAt": 1699990000
+      }
+    ]
+  },
+  "error": null
+}
+```
+
+> 详情返回完整手机号（不脱敏）。`timeline` 为跟进记录 + 通话记录的合并时间线，按 `createdAt`/`startedAt` 倒序。`type` 区分 `followup` 与 `call`。
 
 ### PATCH /api/tenant/leads/:id
 
@@ -1193,6 +1370,37 @@ curl https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id> \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
+**响应：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "schedule-uuid",
+    "tenantId": "tenant-uuid",
+    "userId": "user-uuid",
+    "leadId": "lead-uuid",
+    "callRecordId": null,
+    "title": "回访确认意向",
+    "content": "客户说周三下午方便接电话",
+    "scheduledAt": 1700000000,
+    "status": "pending",
+    "completedAt": null,
+    "createdAt": 1699990000,
+    "updatedAt": 1699990000,
+    "deletedAt": null,
+    "lead": {
+      "name": "张三",
+      "phone": "13800138000"
+    },
+    "call": null
+  },
+  "error": null
+}
+```
+
+> `status` 枚举 `pending` / `completed` / `cancelled`。`lead` 为线索快照（含姓名+手机号）。`call` 为关联通话摘要（含 `answerType` / `duration`），无关联则为 `null`。
+
 ### POST /api/tenant/schedules
 
 创建日程。
@@ -1359,6 +1567,39 @@ curl 'https://tm-api-test.kao9.com/api/tenant/customers?scope=all&erased=0' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
+**响应（分页列表）：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "customer-uuid",
+        "tenantId": "tenant-uuid",
+        "leadId": "lead-uuid",
+        "name": "张三",
+        "phone": "138****5678",
+        "ownerId": "user-uuid",
+        "level": "normal",
+        "convertedAt": 1700000000,
+        "createdAt": 1700000000,
+        "updatedAt": 1700001000,
+        "deletedAt": null,
+        "erasedAt": null
+      }
+    ],
+    "total": 15,
+    "page": 1,
+    "size": 20,
+    "pages": 1
+  },
+  "error": null
+}
+```
+
+> `level` 枚举 `normal` / `important` / `vip` / `lost`。手机号列表默认脱敏。`leadId` 为来源线索 ID。
+
 ### POST /api/tenant/customers
 
 手动创建客户（TA/TM）。
@@ -1392,6 +1633,40 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/customers \
 curl https://tm-api-test.kao9.com/api/tenant/customers/<customer_id> \
   -H 'Authorization: Bearer <ta_token>'
 ```
+
+**响应：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "customer-uuid",
+    "tenantId": "tenant-uuid",
+    "leadId": "lead-uuid",
+    "name": "张三",
+    "phone": "13800138000",
+    "company": "碧桂园集团",
+    "address": "广东省广州市天河区",
+    "position": "经理",
+    "gender": "男",
+    "age": 35,
+    "wechat": "wx_abcd1234",
+    "source": "电话咨询",
+    "remark": "客户关注A户型",
+    "ownerId": "user-uuid",
+    "level": "normal",
+    "customFields": {},
+    "convertedAt": 1700000000,
+    "createdAt": 1700000000,
+    "updatedAt": 1700001000,
+    "deletedAt": null,
+    "erasedAt": null
+  },
+  "error": null
+}
+```
+
+> 详情返回完整手机号（不脱敏）。`level` 枚举 `normal` / `important` / `vip` / `lost`。
 
 ### DELETE /api/tenant/customers/:id
 
@@ -1447,6 +1722,45 @@ curl 'https://tm-api-test.kao9.com/api/tenant/calls?dateFrom=2026-07-18&dateTo=2
   -H 'Authorization: Bearer <ta_token>'
 ```
 
+**响应（分页列表）：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "call-uuid",
+        "tenantId": "tenant-uuid",
+        "leadId": "lead-uuid",
+        "userId": "user-uuid",
+        "projectId": "project-uuid",
+        "phone": "13800138000",
+        "direction": "outbound",
+        "answerType": "answered",
+        "startedAt": 1700000000,
+        "endedAt": 1700000120,
+        "duration": 120,
+        "recordingUrl": null,
+        "externalCallId": "ext-001",
+        "trunk": null,
+        "cost": null,
+        "violation": 0,
+        "createdAt": 1700000000,
+        "deletedAt": null
+      }
+    ],
+    "total": 160,
+    "page": 1,
+    "size": 20,
+    "pages": 8
+  },
+  "error": null
+}
+```
+
+> `direction` 枚举 `outbound` / `inbound`。`answerType` 枚举 `answered` / `no_answer` / `rejected` / `empty_number` / `suspended`。`violation` 为 `0/1`，`1` 表示命中免打扰时段。
+
 ### POST /api/tenant/calls
 
 创建通话记录（幂等：`externalCallId` 同租户唯一，重复则复活已删记录）。支持可选地原子创建跟进：传 `content` 后，后端在同一 batch 内创建通话记录 + 跟进记录 + 更新线索状态为 `following`。
@@ -1495,7 +1809,7 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/calls \
 
 ### GET /api/tenant/calls/:id
 
-通话详情（含录音链接）。
+通话详情。
 
 **curl：**
 
@@ -1503,6 +1817,37 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/calls \
 curl https://tm-api-test.kao9.com/api/tenant/calls/<call_id> \
   -H 'Authorization: Bearer <ta_token>'
 ```
+
+**响应：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "call-uuid",
+    "tenantId": "tenant-uuid",
+    "leadId": "lead-uuid",
+    "userId": "user-uuid",
+    "projectId": "project-uuid",
+    "phone": "13800138000",
+    "direction": "outbound",
+    "answerType": "answered",
+    "startedAt": 1700000000,
+    "endedAt": 1700000120,
+    "duration": 120,
+    "recordingUrl": "https://...",
+    "externalCallId": "ext-001",
+    "trunk": null,
+    "cost": null,
+    "violation": 0,
+    "createdAt": 1700000000,
+    "deletedAt": null
+  },
+  "error": null
+}
+```
+
+> 详情不脱敏。`recordingUrl` 仅在已录音时返回，当前 MVP 恒为 NULL。
 
 ### DELETE /api/tenant/calls/:id
 

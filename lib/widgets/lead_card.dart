@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
+import '../../constants/lead_constants.dart';
 import '../../models/lead.dart';
 import '../../providers/options_provider.dart';
 
@@ -185,22 +186,8 @@ class LeadCard extends ConsumerWidget {
     );
   }
 
-  (Color, Color, String) _statusStyle(String status) {
-    switch (status) {
-      case 'pending':
-        return (const Color(0x1AE37318), const Color(0xFFE37318), '待分配');
-      case 'assigned':
-        return (const Color(0xFFD9E1FF), const Color(0xFF003CAB), '待跟进');
-      case 'following':
-        return (const Color(0x1A0052D9), const Color(0xFF0052D9), '跟进中');
-      case 'converted':
-        return (const Color(0xFF2BA471), const Color(0xFFFFFFFF), '已转化');
-      case 'invalid':
-        return (const Color(0x4DDCDCDC), const Color(0xFFA6A6A6), '无效');
-      default:
-        return (const Color(0x1AE37318), const Color(0xFFE37318), status);
-    }
-  }
+  (Color, Color, String) _statusStyle(String status) =>
+      LeadConstants.statusColorStyle(status);
 
   // ── 跟进倒计时徽章 ──
 
