@@ -12,6 +12,7 @@ import '../../../providers/lead_detail_provider.dart';
 import '../../../providers/lead_list_provider.dart';
 import '../../../providers/options_provider.dart';
 import '../../../models/option_item.dart';
+import '../../../utils/duration_format.dart';
 
 /// 跟进面板接入点：显示底部弹出面板
 ///
@@ -417,7 +418,7 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
 
     // 无匹配通话记录 → 显示 0
     // 有匹配记录 → 显示通话时长 (x分x秒 / x秒)
-    final dur = _formatDuration(_callDurationSec);
+    final dur = formatDuration(_callDurationSec);
     return Text(
       dur,
       style: TextStyle(
@@ -429,13 +430,6 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
   }
 
   /// 将秒格式化为"x分x秒"或"x秒"
-  String _formatDuration(int seconds) {
-    if (seconds <= 0) return '0秒';
-    if (seconds < 60) return '$seconds秒';
-    final min = seconds ~/ 60;
-    final sec = seconds % 60;
-    return '$min分$sec秒';
-  }
 
   // ── 修改分类（可选） ──
 

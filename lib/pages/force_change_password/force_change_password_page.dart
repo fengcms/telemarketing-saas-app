@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import '../../providers/auth_provider.dart';
+import 'password_rules_hint.dart';
 
 /// 强制改密页
 ///
@@ -240,7 +241,7 @@ class _ForceChangePasswordPageState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildSecurityHint(),
+                          const SecurityHint(),
                           const SizedBox(height: 24),
                           _buildNewPasswordInput(),
                           const SizedBox(height: 8),
@@ -248,7 +249,7 @@ class _ForceChangePasswordPageState
                           const SizedBox(height: 16),
                           _buildConfirmPasswordInput(),
                           const SizedBox(height: 8),
-                          _buildPasswordRule(),
+                          const PasswordRuleHint(),
                           const SizedBox(height: 32),
                           _buildSubmitButton(),
                           const SizedBox(height: 16),
@@ -308,52 +309,6 @@ class _ForceChangePasswordPageState
     );
   }
 
-  Widget _buildSecurityHint() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF2F3FF),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.shield_outlined,
-                  size: 24, color: Color(0xFF0052D9)),
-              const SizedBox(width: 8),
-              const Text(
-                '安全提示',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF00287A),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            '为了您的账号安全，请重新设置密码。设置完成后，请使用新密码重新登录。',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xB3003CAB),
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildNewPasswordInput() {
     final hasError = _newPwdError != null;
@@ -561,23 +516,6 @@ class _ForceChangePasswordPageState
     );
   }
 
-  Widget _buildPasswordRule() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Icon(TDIcons.info_circle,
-            size: 14, color: Color(0xFFA6A6A6)),
-        const SizedBox(width: 4),
-        const Expanded(
-          child: Text(
-            '密码至少 8 位，且须同时包含字母和数字；'
-            '建议包含大小写字母、数字和特殊字符',
-            style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildSubmitButton() {
     return SizedBox(
