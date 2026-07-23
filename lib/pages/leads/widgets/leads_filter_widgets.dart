@@ -21,23 +21,16 @@ class SelectChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 36,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF0052D9) : Colors.white,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: selected
-                ? const Color(0xFF0052D9)
-                : const Color(0xFFE7E7E7),
-          ),
+          color: selected ? const Color(0xFF0052D9) : const Color(0xFFF3F3F3),
+          borderRadius: BorderRadius.circular(8),
         ),
-        alignment: Alignment.center,
         child: Text(
           label,
           style: TextStyle(
             fontSize: 13,
-            color: selected ? Colors.white : const Color(0xFF181818),
+            color: selected ? Colors.white : const Color(0xFF4E5969),
           ),
         ),
       ),

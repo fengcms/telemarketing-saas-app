@@ -1,7 +1,7 @@
-/// 编辑线索弹窗
+/// 编辑线索面板（底部抽屉样式）
 ///
 /// 设计文档 §2.4 - 编辑线索弹窗
-/// 分类下拉 + 状态下拉（TE仅前向流转）
+/// 分类平铺 + 状态平铺（TE仅前向流转）
 library;
 
 import 'package:flutter/material.dart';
@@ -9,23 +9,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import '../../../constants/lead_constants.dart';
 import '../../../models/lead_detail.dart';
+import '../../../models/option_item.dart';
 import '../../../providers/lead_detail_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/lead_list_provider.dart';
 import '../../../providers/options_provider.dart';
 
-/// 编辑线索弹窗
-///
-/// 设计文档 §2.4 - 编辑线索弹窗
-/// 分类下拉 + 状态下拉（TE仅前向流转）
+/// 显示编辑线索面板（底部抽屉）
 void showEditLeadDialog(
   BuildContext context, {
   required String leadId,
   required LeadDetail detail,
 }) {
-  showDialog(
+  showModalBottomSheet(
     context: context,
-    builder: (_) => _EditLeadDialog(
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _EditLeadPanel(
       leadId: leadId,
       detail: detail,
     ),
@@ -41,24 +41,24 @@ const Map<String, List<String>> _forwardStatusMap = {
   'invalid': ['invalid', 'pending'], // 无效可重新激活
 };
 
-class _EditLeadDialog extends ConsumerStatefulWidget {
+class _EditLeadPanel extends ConsumerStatefulWidget {
   final String leadId;
   final LeadDetail detail;
 
-  const _EditLeadDialog({
+  const _EditLeadPanel({
     required this.leadId,
     required this.detail,
   });
 
   @override
-  ConsumerState<_EditLeadDialog> createState() => _EditLeadDialogState();
+  ConsumerState<_EditLeadPanel> createState() => _EditLeadPanelState();
 }
 
-class _EditLeadDialogState extends ConsumerState<_EditLeadDialog> {
+class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
   String? _selectedCategoryId;
   String? _selectedStatus;
   bool _isSubmitting = false;
-  List<String> _availableCategories = [];
+  List<OptionItem> _categories = [];
   List<String> _availableStatuses = [];
 
   @override
@@ -86,7 +86,7 @@ class _EditLeadDialogState extends ConsumerState<_EditLeadDialog> {
       final cats = await cache.getCategories();
       if (mounted) {
         setState(() {
-          _availableCategories = cats.map((c) => c.id).toList();
+          _categories = cats;
         });
       }
     } catch (_) {
@@ -96,183 +96,197 @@ class _EditLeadDialogState extends ConsumerState<_EditLeadDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text(
-        '编辑线索',
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF181818),
-        ),
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      padding: EdgeInsets.only(bottom: bottom),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 分类
-            _buildSelector(
-              label: '分类',
-              value: _selectedCategoryId ?? '请选择',
-              onTap: () => _showCategoryPicker(),
-            ),
-            const SizedBox(height: 16),
-            // 状态
-            _buildSelector(
-              label: '状态',
-              value: LeadConstants.displayName(_selectedStatus),
-              onTap: () => _showStatusPicker(),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text(
-            '取消',
-            style: TextStyle(color: Color(0xFF181818)),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── 标题行 ──
+              _buildHeader(),
+              const SizedBox(height: 20),
+
+              // ── 线索分类 ──
+              _buildCategorySelector(),
+              const SizedBox(height: 16),
+
+              // ── 状态 ──
+              _buildStatusSelector(),
+
+              const SizedBox(height: 24),
+
+              // ── 提交按钮 ──
+              _buildSubmitButton(),
+            ],
           ),
         ),
-        TextButton(
-          onPressed: _isSubmitting ? null : _submit,
-          child: _isSubmitting
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text(
-                  '保存',
-                  style: TextStyle(color: Color(0xFF0052D9)),
-                ),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildSelector({
-    required String label,
-    required String value,
-    required VoidCallback onTap,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  // ── 标题行 ──
+
+  Widget _buildHeader() {
+    return Row(
       children: [
+        Container(
+          width: 32,
+          height: 4,
+          decoration: BoxDecoration(
+            color: const Color(0xFFDCDCDC),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const Spacer(),
         Text(
-          label,
+          '编辑 ${widget.detail.name} 线索',
           style: const TextStyle(
-            fontSize: 14,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
             color: Color(0xFF181818),
           ),
         ),
-        const SizedBox(height: 8),
+        const Spacer(),
         GestureDetector(
-          onTap: onTap,
-          child: Container(
-            height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F3F3),
-              borderRadius: BorderRadius.circular(4),
-            ),
+          onTap: () => Navigator.of(context).pop(),
+          child: const Icon(Icons.close, size: 20, color: Color(0xFFA6A6A6)),
+        ),
+      ],
+    );
+  }
+
+  // ── 分类选择器（横向平铺 chips） ──
+
+  Widget _buildCategorySelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '线索分类',
+          style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
+        ),
+        const SizedBox(height: 8),
+        if (_categories.isEmpty)
+          const Text(
+            '暂无可选分类',
+            style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
+          )
+        else
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF181818),
+                ..._categories.map((c) => Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: _chip(
+                    c.name,
+                    _selectedCategoryId == c.id,
+                    () => setState(() => _selectedCategoryId = c.id),
                   ),
-                ),
-                const Spacer(),
-                const Icon(
-                  Icons.arrow_drop_down,
-                  color: Color(0xFFA6A6A6),
-                ),
+                )),
+                const SizedBox(width: 4),
               ],
             ),
+          ),
+      ],
+    );
+  }
+
+  // ── 状态选择器（横向平铺 chips） ──
+
+  Widget _buildStatusSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '状态',
+          style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
+        ),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              ..._availableStatuses.map((s) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _chip(
+                  LeadConstants.displayName(s),
+                  _selectedStatus == s,
+                  () => setState(() => _selectedStatus = s),
+                ),
+              )),
+              const SizedBox(width: 4),
+            ],
           ),
         ),
       ],
     );
   }
 
-  void _showCategoryPicker() {
-    if (_availableCategories.isEmpty) {
-      TDToast.showText('暂无可选分类', context: context);
-      return;
-    }
-    // 简单底部滚动选择
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(bottom: 8),
-              child: Text(
-                '选择分类',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            const Divider(),
-            ..._availableCategories.map((cat) => ListTile(
-                  title: Text(cat),
-                  trailing: cat == _selectedCategoryId
-                      ? const Icon(Icons.check, color: Color(0xFF0052D9))
-                      : null,
-                  onTap: () {
-                    setState(() => _selectedCategoryId = cat);
-                    Navigator.of(ctx).pop();
-                  },
-                )),
-          ],
+  /// 平铺 chip（选中态高亮）
+  Widget _chip(String label, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF0052D9) : Colors.white,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF0052D9)
+                : const Color(0xFFE7E7E7),
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            color: isSelected ? Colors.white : const Color(0xFF181818),
+          ),
         ),
       ),
     );
   }
 
-  void _showStatusPicker() {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(bottom: 8),
-              child: Text(
-                '选择状态',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+  // ── 提交按钮 ──
+
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: TDButton(
+        text: _isSubmitting ? '' : '保存',
+        theme: TDButtonTheme.primary,
+        shape: TDButtonShape.round,
+        iconWidget: _isSubmitting
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
-              ),
-            ),
-            const Divider(),
-            ..._availableStatuses.map((status) => ListTile(
-                  title: Text(LeadConstants.displayName(status)),
-                  subtitle: Text(status),
-                  trailing: status == _selectedStatus
-                      ? const Icon(Icons.check, color: Color(0xFF0052D9))
-                      : null,
-                  onTap: () {
-                    setState(() => _selectedStatus = status);
-                    Navigator.of(ctx).pop();
-                  },
-                )),
-          ],
-        ),
+              )
+            : null,
+        disabled: _isSubmitting,
+        onTap: _isSubmitting ? null : _submit,
       ),
     );
   }
+
+  // ── 提交 ──
 
   Future<void> _submit() async {
     setState(() => _isSubmitting = true);
