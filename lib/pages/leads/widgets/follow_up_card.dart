@@ -32,24 +32,14 @@ class FollowUpCard extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final currentUser = authState.user;
     final isManager = _isManager(currentUser?.role);
-
-    // 解析跟进人姓名
     final followerNameAsync = ref.watch(userNameProvider(record.userId));
-
-    // 解析分类名称（当前记录分类）
     final categoryNameAsync = record.categoryId != null
         ? ref.watch(categoryNameProvider(record.categoryId!))
         : null;
-
-    // 解析上一条记录的分类名称
     final prevCategoryNameAsync = previousCategoryId != null
         ? ref.watch(categoryNameProvider(previousCategoryId!))
         : null;
-
-    // 编辑按钮可见性
     final canEdit = _canEdit(currentUser?.id, isManager);
-
-    // 删除按钮可见性
     final canDelete = _canDelete(currentUser?.id, isManager);
 
     return Padding(
@@ -57,103 +47,129 @@ class FollowUpCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 时间
-          Text(
-            _formatDateTime(record.createdAt),
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF181818),
-            ),
-          ),
+          _buildTimeRow(),
           const SizedBox(height: 4),
-          // 跟进人
-          Text(
-            '跟进人: ${_resolvedFollowerName(followerNameAsync, currentUser)}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFFA6A6A6),
-            ),
-          ),
-          // 接听类型 + 时长
+          _buildFollowerRow(followerNameAsync, currentUser),
           if (record.hasAnswerType) ...[
             const SizedBox(height: 2),
             _buildAnswerTypeRow(),
           ],
           const SizedBox(height: 4),
-          // 跟进内容
-          Text(
-            record.content,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF181818),
-              height: 1.43,
-            ),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
-          // 分类变更（使用已解析的名称）
+          _buildContentRow(),
           if (_hasCategoryChanged) ...[
             const SizedBox(height: 4),
-            Text(
-              '分类变更: ${_resolveCategoryName(prevCategoryNameAsync)} → ${_resolveCategoryName(categoryNameAsync)}',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF366EF4),
-              ),
-            ),
+            _buildCategoryChangeRow(prevCategoryNameAsync, categoryNameAsync),
           ],
-          // 编辑/删除按钮
           if (canEdit || canDelete)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (canEdit)
-                    GestureDetector(
-                      onTap: onEdit,
-                      behavior: HitTestBehavior.opaque,
-                      child: const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(TDIcons.edit, size: 14,
-                                color: Color(0xFF0052D9)),
-                            SizedBox(width: 2),
-                            Text(
-                              '编辑',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF0052D9),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  if (canEdit && canDelete) const SizedBox(width: 8),
-                  if (canDelete)
-                    GestureDetector(
-                      onTap: onDelete,
-                      behavior: HitTestBehavior.opaque,
-                      child: const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Text(
-                          '删除',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFFD54941),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+              child: _buildActionButtons(canEdit, canDelete),
             ),
         ],
       ),
+    );
+  }
+
+  // ── 时间行 ──
+
+  Widget _buildTimeRow() {
+    return Text(
+      _formatDateTime(record.createdAt),
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: Color(0xFF181818),
+      ),
+    );
+  }
+
+  // ── 跟进人行 ──
+
+  Widget _buildFollowerRow(
+      AsyncValue<String> nameAsync, User? currentUser) {
+    return Text(
+      '跟进人: ${_resolvedFollowerName(nameAsync, currentUser)}',
+      style: const TextStyle(
+        fontSize: 12,
+        color: Color(0xFFA6A6A6),
+      ),
+    );
+  }
+
+  // ── 跟进内容 ──
+
+  Widget _buildContentRow() {
+    return Text(
+      record.content,
+      style: const TextStyle(
+        fontSize: 14,
+        color: Color(0xFF181818),
+        height: 1.43,
+      ),
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  // ── 分类变更行 ──
+
+  Widget _buildCategoryChangeRow(
+      AsyncValue<String>? prevName, AsyncValue<String>? currName) {
+    return Text(
+      '分类变更: ${_resolveCategoryName(prevName)} → ${_resolveCategoryName(currName)}',
+      style: const TextStyle(
+        fontSize: 12,
+        color: Color(0xFF366EF4),
+      ),
+    );
+  }
+
+  // ── 编辑/删除按钮 ──
+
+  Widget _buildActionButtons(bool canEdit, bool canDelete) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        if (canEdit)
+          GestureDetector(
+            onTap: onEdit,
+            behavior: HitTestBehavior.opaque,
+            child: const Padding(
+              padding: EdgeInsets.all(8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(TDIcons.edit, size: 14,
+                      color: Color(0xFF0052D9)),
+                  SizedBox(width: 2),
+                  Text(
+                    '编辑',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF0052D9),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        if (canEdit && canDelete) const SizedBox(width: 8),
+        if (canDelete)
+          GestureDetector(
+            onTap: onDelete,
+            behavior: HitTestBehavior.opaque,
+            child: const Padding(
+              padding: EdgeInsets.all(8),
+              child: Text(
+                '删除',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFD54941),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 

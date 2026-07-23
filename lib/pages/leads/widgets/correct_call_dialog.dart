@@ -82,103 +82,10 @@ class _CorrectCallDialogState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 接听类型
-            const Text(
-              '接听类型',
-              style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _answerTypes.map((type) {
-                final (value, label) = type;
-                final isSelected = _selectedAnswerType == value;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedAnswerType = value;
-                      _showDuration = value == 'answered';
-                    });
-                  },
-                  child: Container(
-                    height: 36,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFF0052D9)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: isSelected
-                            ? const Color(0xFF0052D9)
-                            : const Color(0xFFE7E7E7),
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isSelected
-                            ? Colors.white
-                            : const Color(0xFF181818),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            // 通话时长（已接听时显示）
+            _buildAnswerTypeSelector(),
             if (_showDuration) ...[
               const SizedBox(height: 16),
-              const Text(
-                '通话时长',
-                style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 80,
-                    child: TDStepper(
-                      value: _durationMinutes,
-                      min: 0,
-                      max: 99,
-                      onChange: (v) =>
-                          setState(() => _durationMinutes = v),
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      '分',
-                      style:
-                          TextStyle(fontSize: 13, color: Color(0xFFA6A6A6)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 80,
-                    child: TDStepper(
-                      value: _durationSeconds,
-                      min: 0,
-                      max: 59,
-                      step: 5,
-                      onChange: (v) =>
-                          setState(() => _durationSeconds = v),
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      '秒',
-                      style:
-                          TextStyle(fontSize: 13, color: Color(0xFFA6A6A6)),
-                    ),
-                  ),
-                ],
-              ),
+              _buildDurationInput(),
             ],
           ],
         ),
@@ -203,6 +110,119 @@ class _CorrectCallDialogState
                   '保存',
                   style: TextStyle(color: Color(0xFF0052D9)),
                 ),
+        ),
+      ],
+    );
+  }
+
+  // ── 接听类型选择 ──
+
+  Widget _buildAnswerTypeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '接听类型',
+          style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _answerTypes.map((type) {
+            final (value, label) = type;
+            final isSelected = _selectedAnswerType == value;
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedAnswerType = value;
+                  _showDuration = value == 'answered';
+                });
+              },
+              child: Container(
+                height: 36,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? const Color(0xFF0052D9)
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: isSelected
+                        ? const Color(0xFF0052D9)
+                        : const Color(0xFFE7E7E7),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isSelected
+                        ? Colors.white
+                        : const Color(0xFF181818),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  // ── 通话时长 ──
+
+  Widget _buildDurationInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '通话时长',
+          style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            SizedBox(
+              width: 80,
+              child: TDStepper(
+                value: _durationMinutes,
+                min: 0,
+                max: 99,
+                onChange: (v) =>
+                    setState(() => _durationMinutes = v),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                '分',
+                style:
+                    TextStyle(fontSize: 13, color: Color(0xFFA6A6A6)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 80,
+              child: TDStepper(
+                value: _durationSeconds,
+                min: 0,
+                max: 59,
+                step: 5,
+                onChange: (v) =>
+                    setState(() => _durationSeconds = v),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                '秒',
+                style:
+                    TextStyle(fontSize: 13, color: Color(0xFFA6A6A6)),
+              ),
+            ),
+          ],
         ),
       ],
     );

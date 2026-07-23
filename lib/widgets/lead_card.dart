@@ -4,6 +4,7 @@ import 'package:tdesign_flutter/tdesign_flutter.dart';
 import '../../constants/lead_constants.dart';
 import '../../models/lead.dart';
 import '../../providers/options_provider.dart';
+import '../../services/options_cache_service.dart';
 
 /// 线索卡片组件
 ///
@@ -45,125 +46,142 @@ class LeadCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── 行1：姓名 + 状态标签 ──
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    lead.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF181818),
-                    ),
-                  ),
-                ),
-                _buildStatusTag(lead.status),
-              ],
-            ),
+            _buildNameRow(),
             const SizedBox(height: 8),
-
-            // ── 行2：电话 ──
-            Row(
-              children: [
-                const Icon(TDIcons.call, size: 14, color: Color(0xFFA6A6A6)),
-                const SizedBox(width: 6),
-                Text(
-                  lead.phone,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFFA6A6A6),
-                    letterSpacing: 0.2,
-                  ),
-                ),
-              ],
-            ),
+            _buildPhoneRow(),
             const SizedBox(height: 6),
-
-            // ── 行3：分类标签 + 项目名 ──
-            FutureBuilder<List<dynamic>>(
-              future: Future.wait([
-                cache.getCategoryName(lead.categoryId),
-                cache.getProjectName(lead.projectId ?? lead.project?.id),
-              ]),
-              builder: (_, snapshot) {
-                final catName = snapshot.data?[0] as String?;
-                final projName = snapshot.data?[1] as String? ??
-                    lead.project?.name;
-                final hasC = catName != null && catName.isNotEmpty;
-                final hasP = projName != null && projName.isNotEmpty;
-                return Row(
-                  children: [
-                    if (hasC)
-                      Container(
-                        height: 20,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFD9E1FF),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(catName,
-                            style: const TextStyle(
-                                fontSize: 12, color: Color(0xFF003CAB))),
-                      ),
-                    if (hasC && hasP) const SizedBox(width: 8),
-                    if (hasP)
-                      Expanded(
-                        child: Text(projName,
-                            style: const TextStyle(
-                                fontSize: 13, color: Color(0xFFA6A6A6)),
-                            overflow: TextOverflow.ellipsis),
-                      ),
-                    if (!hasC && !hasP) const SizedBox(height: 20),
-                  ],
-                );
-              },
-            ),
+            _buildCategoryRow(cache),
             const SizedBox(height: 6),
-
-            // ── 行4：最后跟进时间 + 跟进倒计时徽章 ──
-            Row(
-              children: [
-                const Icon(TDIcons.time, size: 14, color: Color(0xFFA6A6A6)),
-                const SizedBox(width: 4),
-                Text(
-                  '最后跟进: ${_formatTime(lead.lastFollowupAt)}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFFA6A6A6),
-                  ),
-                ),
-                const Spacer(),
-                if (lead.nextFollowupAt != null && lead.nextFollowupAt! > 0)
-                  _buildFollowUpBadge(lead.nextFollowupAt!),
-              ],
-            ),
-
-            // ── 行5（TM/TA 可见）：归属人 ──
+            _buildFollowUpRow(),
             if (showOwner)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Row(
-                  children: [
-                    const Icon(
-                      TDIcons.user,
-                      size: 14,
-                      color: Color(0xFFA6A6A6),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '归属: ${lead.owner?.name ?? "--"}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFFA6A6A6),
-                      ),
-                    ),
-                  ],
-                ),
+                child: _buildOwnerRow(),
               ),
           ],
         ),
       ),
+    );
+  }
+
+  // ── 行1：姓名 + 状态标签 ──
+
+  Widget _buildNameRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            lead.name,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF181818),
+            ),
+          ),
+        ),
+        _buildStatusTag(lead.status),
+      ],
+    );
+  }
+
+  // ── 行2：电话 ──
+
+  Widget _buildPhoneRow() {
+    return Row(
+      children: [
+        const Icon(TDIcons.call, size: 14, color: Color(0xFFA6A6A6)),
+        const SizedBox(width: 6),
+        Text(
+          lead.phone,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Color(0xFFA6A6A6),
+            letterSpacing: 0.2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── 行3：分类标签 + 项目名 ──
+
+  Widget _buildCategoryRow(OptionsCacheService cache) {
+    return FutureBuilder<List<dynamic>>(
+      future: Future.wait([
+        cache.getCategoryName(lead.categoryId),
+        cache.getProjectName(lead.projectId ?? lead.project?.id),
+      ]),
+      builder: (_, snapshot) {
+        final catName = snapshot.data?[0] as String?;
+        final projName =
+            snapshot.data?[1] as String? ?? lead.project?.name;
+        final hasC = catName != null && catName.isNotEmpty;
+        final hasP = projName != null && projName.isNotEmpty;
+        return Row(
+          children: [
+            if (hasC)
+              Container(
+                height: 20,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD9E1FF),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(catName,
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF003CAB))),
+              ),
+            if (hasC && hasP) const SizedBox(width: 8),
+            if (hasP)
+              Expanded(
+                child: Text(projName,
+                    style: const TextStyle(
+                        fontSize: 13, color: Color(0xFFA6A6A6)),
+                    overflow: TextOverflow.ellipsis),
+              ),
+            if (!hasC && !hasP) const SizedBox(height: 20),
+          ],
+        );
+      },
+    );
+  }
+
+  // ── 行4：最后跟进时间 + 跟进倒计时徽章 ──
+
+  Widget _buildFollowUpRow() {
+    return Row(
+      children: [
+        const Icon(TDIcons.time, size: 14, color: Color(0xFFA6A6A6)),
+        const SizedBox(width: 4),
+        Text(
+          '最后跟进: ${_formatTime(lead.lastFollowupAt)}',
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFFA6A6A6),
+          ),
+        ),
+        const Spacer(),
+        if (lead.nextFollowupAt != null && lead.nextFollowupAt! > 0)
+          _buildFollowUpBadge(lead.nextFollowupAt!),
+      ],
+    );
+  }
+
+  // ── 行5（TM/TA 可见）：归属人 ──
+
+  Widget _buildOwnerRow() {
+    return Row(
+      children: [
+        const Icon(TDIcons.user, size: 14, color: Color(0xFFA6A6A6)),
+        const SizedBox(width: 4),
+        Text(
+          '归属: ${lead.owner?.name ?? "--"}',
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFFA6A6A6),
+          ),
+        ),
+      ],
     );
   }
 
