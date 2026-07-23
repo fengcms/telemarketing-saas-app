@@ -106,8 +106,9 @@ class LeadsSearchBar extends ConsumerWidget {
           ),
         ),
 
-        // ── 筛选标签栏 ──
-        Container(
+        // ── 筛选标签栏（有筛选条件时才显示）──
+        if (state.hasActiveFilters)
+          Container(
           width: double.infinity,
           height: 48,
           decoration: const BoxDecoration(
