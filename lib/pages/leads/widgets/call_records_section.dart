@@ -131,13 +131,13 @@ class CallRecordsSection extends ConsumerWidget {
 
   Widget _buildEmptyState() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       width: double.infinity,
       child: const Column(
         children: [
           Icon(
             TDIcons.call,
-            size: 48,
+            size: 40,
             color: Color(0xFFDCDCDC),
           ),
           SizedBox(height: 8),

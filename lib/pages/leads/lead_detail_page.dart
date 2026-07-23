@@ -121,6 +121,9 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
           ),
           SliverToBoxAdapter(child: _buildActionBar(detail)),
           SliverToBoxAdapter(
+            child: ScheduleSection(schedules: state.schedules),
+          ),
+          SliverToBoxAdapter(
             child: _buildFollowUpSection(state),
           ),
           SliverToBoxAdapter(
@@ -130,9 +133,6 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
               isLoading: false,
               errorMessage: null,
             ),
-          ),
-          SliverToBoxAdapter(
-            child: ScheduleSection(schedules: state.schedules),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],

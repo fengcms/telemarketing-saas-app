@@ -151,16 +151,16 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
 
   Widget _buildEmptyState() {
     return Container(
-      padding: const EdgeInsets.only(top: 32, bottom: 32),
+      padding: const EdgeInsets.only(top: 16, bottom: 16),
       width: double.infinity,
       child: Column(
         children: [
           Icon(
-            TDIcons.edit,
-            size: 64,
+            TDIcons.rollback,
+            size: 40,
             color: const Color(0xFFDCDCDC),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           const Text(
             '暂无跟进记录',
             style: TextStyle(

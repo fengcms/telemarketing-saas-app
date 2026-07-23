@@ -63,13 +63,13 @@ class ScheduleSection extends StatelessWidget {
 
   Widget _buildEmptyState() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       width: double.infinity,
       child: const Column(
         children: [
           Icon(
             Icons.calendar_today,
-            size: 48,
+            size: 40,
             color: Color(0xFFDCDCDC),
           ),
           SizedBox(height: 8),
