@@ -30,7 +30,7 @@ class OptionsCacheService {
   static const _keyProjects = 'cache_options_projects';
   static const _keyUsers = 'cache_options_users';
 
-  OptionsCacheService({required ApiClient apiClient}) : _apiClient = apiClient;
+  OptionsCacheService({required this._apiClient});
 
   /// 缓存是否有效（未过期）
   bool get _isValid =>

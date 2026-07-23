@@ -32,8 +32,7 @@ class ApiClient {
   /// 423 FORCE_CHANGE_PASSWORD 回调（由 AuthNotifier 设置）
   void Function()? onForceChangePassword;
 
-  ApiClient({required TokenStorage tokenStorage})
-      : _tokenStorage = tokenStorage {
+  ApiClient({required this._tokenStorage}) {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,

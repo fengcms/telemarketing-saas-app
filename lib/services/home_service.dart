@@ -24,7 +24,7 @@ import '../models/schedule.dart';
 class HomeService {
   final ApiClient _apiClient;
 
-  HomeService({required ApiClient apiClient}) : _apiClient = apiClient;
+  HomeService({required this._apiClient});
 
   /// 获取今日个人统计数据
   ///

@@ -18,10 +18,9 @@ class AuthService {
   final TokenStorage _tokenStorage;
 
   AuthService({
-    required ApiClient apiClient,
-    required TokenStorage tokenStorage,
-  })  : _apiClient = apiClient,
-        _tokenStorage = tokenStorage;
+    required this._apiClient,
+    required this._tokenStorage,
+  });
 
   /// 登录
   ///

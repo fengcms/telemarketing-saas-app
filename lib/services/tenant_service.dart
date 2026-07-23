@@ -8,7 +8,7 @@ import '../services/api_constants.dart';
 class TenantService {
   final ApiClient _apiClient;
 
-  TenantService({required ApiClient apiClient}) : _apiClient = apiClient;
+  TenantService({required this._apiClient});
 
   /// 获取租户配置（含 noCallWindow）
   Future<Map<String, dynamic>> fetchProfile() async {

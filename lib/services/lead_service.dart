@@ -14,7 +14,7 @@ import '../models/option_item.dart';
 class LeadService {
   final ApiClient _apiClient;
 
-  LeadService({required ApiClient apiClient}) : _apiClient = apiClient;
+  LeadService({required this._apiClient});
 
   // ── 线索详情 ──
 

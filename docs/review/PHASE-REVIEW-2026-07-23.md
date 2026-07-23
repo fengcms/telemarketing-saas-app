@@ -168,4 +168,46 @@
 
 **审阅结论**：整改质量高、响应快、客观达标。建议优先接入 CI `flutter analyze` 卡点，守住 0-issues 成果；巨型文件拆分与常量规范作为下一迭代的演进目标。总体给予 **A-** 评级，准予进入下一阶段开发。
 
+---
+
+## 八、组长对"未执行项"（巨型文件拆分）的复核意见
+
+### 背景
+团队在 RESPONSE 中将 `force_change_password_page.dart`(633 行) 与 `follow_up_panel.dart`(574 行) 的文件级拆分列为"开放/延后"，理由：前者"组件紧密依赖状态变量，抽离成本高收益低"，后者"MethodChannel 逻辑耦合状态，可后续优化"。
+
+作为组长，我**未直接采信该理由**，而是通读两个文件、逐方法核对耦合度，结论如下。
+
+### 客观判断
+1. **两个文件均不违反硬规则**：方法级拆分已达标（最大方法 78/79 行，无 >120 上帝方法），`flutter analyze` 0 issues。文件行数本身不是 lint 错误。
+2. **"延后"决定对单人私有 MVP 项目是可接受的**：文件级拆分属"锦上添花"非阻塞项；尤其在单人维护场景下，巨型文件的可维护性代价有限。
+3. **但团队给出的理由不够严谨**：两文件被"一刀切"描述为"紧密耦合"，实际每个文件都有 2–4 个**纯展示、零状态依赖**的块，抽离成本极低却被一并带过。这是表述问题，不是决策问题——延后可接受，但别把"耦合"当 blanket 借口。
+
+### 逐文件复核与低价抽离目标
+
+**`force_change_password_page.dart`（633 行）**
+- **真实高成本（同意保留）**：`_buildNewPasswordInput` / `_buildConfirmPasswordInput` —— 直接持有 2 个 `TextEditingController` + 2 个 `FocusNode` + obscure 开关 + 错误态 + `setState` 切换，抽离需上抛 4+ 控制器/回调，摩擦真实。
+- **低价可抽（被遗漏）**：
+  - `_buildSecurityHint`(311–356，~45 行)：纯静态文案+装饰，零状态 → 直接提为独立 `StatelessWidget` 或顶层函数，**零风险**。
+  - `_buildPasswordRule`(564–580)：纯文案 → 提为常量/小组件。
+  - `_buildNavBar`(271–309)：仅依赖 `_onBack` 回调 → 提为 `Widget navBar({required VoidCallback onBack})`。
+  - `_buildStrengthIndicator`(437–483)：仅读 `_newPwdCtrl.text` + 已静态化的 `_calculateStrength` → 提为 `Widget strengthIndicator(String password)`，**且强度指示器可能在注册页复用**。
+
+**`follow_up_panel.dart`（574 行）**
+- **真实高成本（同意保留/延后）**：`_checkCallLog`(299–357，~60 行 MethodChannel 异步 + 状态映射) 及其 3 个状态变量(`_callTimeMs`/`_callDurationSec`/`_isCheckingCallLog`) + 触发它的 `_buildAnswerTypeSelector`(216–294)。这组是真正的耦合簇，干净抽离需上提为 `CallLogController`/provider，工作量真实，适合"后续优化"。
+- **低价可抽（被遗漏）**：
+  - `_buildHeader`(141–170)：纯展示，仅关闭键用 `Navigator.pop` → 提为小组件。
+  - `_buildCallLogContent`(382–429)：读 3 个通话记录状态，但可收敛为一个 `({bool checking, int? timeMs, int durationSec})` 数据记录 → 提为 `CallLogResultView(record)`，把"展示"与"状态"解耦，成本中等偏低。
+
+### 给开发团队的调整建议
+- **接受**：两个文件的"文件级拆分"作为 P2 低优先级延后，不要求立即执行。
+- **要求修正表述**：不要笼统说"耦合、成本高"，应区分"真耦合簇"（保留）与"纯展示块"（可零成本抽）。
+- **推荐通用模式**：
+  1. 先把**纯展示、零状态依赖**的 `_build*` 提为独立 `StatelessWidget` 或顶层函数——零行为风险，却能立刻削掉 100–150 行、提升可读性；
+  2. 仅当某子块需要 ≥3 个父状态变量 **且** 触发异步/平台调用时，才上提为小 `ChangeNotifier`/Riverpod provider（scope 到该页面/面板），再做组件拆分；
+  3. 复用性线索优先：如 `strengthIndicator` 可能在注册页复用，应优先抽成共享组件。
+- **重审触发条件**（避免"永久开放"）：① 任一文件超过 ~700 行；② 某区块需在别处复用；③ 某区块自身逻辑超过 ~120 行；④ 该文件的 diff 审阅开始变难读。满足任一即排入下一迭代。
+
+### 复核结论
+未执行项**定性为"合理延后（P2，低优先级）"**，而非"未整改失败"。评级不受影响（仍 A-）。但团队回复中"成本高收益低"的笼统表述需修正——两文件内均存在被遗漏的零成本抽离点，建议在下次顺手迭代时吃掉，不必专门排期。
+
 — Mobile App Builder（移动端小组组长），2026-07-23
