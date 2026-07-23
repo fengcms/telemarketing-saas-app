@@ -4,96 +4,73 @@ library;
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/lead_detail.dart';
+import 'package:telemarketing_app/models/lead_detail_bundle.dart';
 import 'package:telemarketing_app/models/follow_up_record.dart';
 import 'package:telemarketing_app/models/call_record.dart';
+import 'package:telemarketing_app/models/schedule.dart';
 import 'package:telemarketing_app/models/lead_list_context.dart';
 import 'package:telemarketing_app/services/lead_service.dart';
+import 'package:telemarketing_app/services/lead_detail_cache.dart';
 import 'auth_provider.dart';
 import 'lead_list_provider.dart';
 
 // ── 线索详情状态 ──
 
 /// 线索详情状态
+///
+/// 重构为单一聚合源 [bundle]：一次请求拿齐 lead / followups /
+/// calls(≤5) / schedules(≤5)，各区块通过 getter 取数。
 class LeadDetailState {
-  // 线索详情
-  final bool isLoadingDetail;
-  final LeadDetail? detail;
-  final String? detailError;
+  /// 是否正在首次加载（缓存未命中时）
+  final bool isLoading;
 
-  // 跟进时间线
-  final bool isLoadingFollowUps;
-  final List<FollowUpRecord> allFollowUps; // 全量数据
-  final String? followUpsError;
+  /// 聚合数据（缓存命中或请求成功后为非 null）
+  final LeadDetailBundle? bundle;
 
-  // 通话记录摘要
-  final bool isLoadingCalls;
-  final List<CallRecord> calls;
-  final int callsTotal;
-  final String? callsError;
+  /// 加载错误（bundle 为 null 时有效）
+  final String? error;
 
-  // 列表上下文（底部导航条用）
+  /// 列表上下文（决定底部导航条显隐）
   final LeadListContext? listContext;
 
   const LeadDetailState({
-    this.isLoadingDetail = true,
-    this.detail,
-    this.detailError,
-    this.isLoadingFollowUps = true,
-    this.allFollowUps = const [],
-    this.followUpsError,
-    this.isLoadingCalls = true,
-    this.calls = const [],
-    this.callsTotal = 0,
-    this.callsError,
+    this.isLoading = true,
+    this.bundle,
+    this.error,
     this.listContext,
   });
 
   LeadDetailState copyWith({
-    bool? isLoadingDetail,
-    Object? detail = _unset,
-    Object? detailError = _unset,
-    bool? isLoadingFollowUps,
-    List<FollowUpRecord>? allFollowUps,
-    Object? followUpsError = _unset,
-    bool? isLoadingCalls,
-    List<CallRecord>? calls,
-    int? callsTotal,
-    Object? callsError = _unset,
+    bool? isLoading,
+    Object? bundle = _unset,
+    Object? error = _unset,
     Object? listContext = _unset,
   }) {
     return LeadDetailState(
-      isLoadingDetail: isLoadingDetail ?? this.isLoadingDetail,
-      detail: detail is _Unset ? this.detail : detail as LeadDetail?,
-      detailError: detailError is _Unset
-          ? this.detailError
-          : detailError as String?,
-      isLoadingFollowUps:
-          isLoadingFollowUps ?? this.isLoadingFollowUps,
-      allFollowUps: allFollowUps ?? this.allFollowUps,
-      followUpsError: followUpsError is _Unset
-          ? this.followUpsError
-          : followUpsError as String?,
-      isLoadingCalls: isLoadingCalls ?? this.isLoadingCalls,
-      calls: calls ?? this.calls,
-      callsTotal: callsTotal ?? this.callsTotal,
-      callsError: callsError is _Unset
-          ? this.callsError
-          : callsError as String?,
-      listContext: listContext is _Unset
-          ? this.listContext
-          : listContext as LeadListContext?,
+      isLoading: isLoading ?? this.isLoading,
+      bundle: bundle is _Unset ? this.bundle : bundle as LeadDetailBundle?,
+      error: error is _Unset ? this.error : error as String?,
+      listContext:
+          listContext is _Unset ? this.listContext : listContext as LeadListContext?,
     );
   }
 
-  /// 所有数据是否都已加载完成
-  bool get isAllLoaded =>
-      !isLoadingDetail && !isLoadingFollowUps && !isLoadingCalls;
+  // ── 便捷 getter：代理到 bundle，兼容既有 widget 读取 ──
 
-  /// 是否有加载错误
-  bool get hasAnyError =>
-      detailError != null ||
-      followUpsError != null ||
-      callsError != null;
+  /// 线索对象
+  LeadDetail? get detail => bundle?.lead;
+
+  /// 全量跟进时间线
+  List<FollowUpRecord> get allFollowUps => bundle?.followups ?? const [];
+
+  /// 最近通话
+  List<CallRecord> get calls => bundle?.calls ?? const [];
+
+  /// 最近日程
+  List<Schedule> get schedules => bundle?.schedules ?? const [];
+
+  /// 是否处于错误态（无数据）
+  bool get hasError => error != null;
 }
 
 class _Unset {
@@ -101,38 +78,58 @@ class _Unset {
 }
 const _unset = _Unset();
 
+// ── Provider ──
+
+/// 线索详情缓存（内存，10 分钟 TTL）
+final leadDetailCacheProvider = Provider<LeadDetailCache>((ref) {
+  return LeadDetailCache();
+});
+
 // ── Notifier ──
 
 /// 线索详情状态管理器
 class LeadDetailNotifier extends StateNotifier<LeadDetailState> {
   final Ref _ref;
   late final LeadService _service;
+  late final LeadDetailCache _cache;
   String? _currentLeadId;
-  StreamSubscription? _authSub;
 
   LeadDetailNotifier(this._ref) : super(const LeadDetailState()) {
     _service = _ref.read(leadServiceProvider);
+    _cache = _ref.read(leadDetailCacheProvider);
   }
 
   /// 加载线索详情
   ///
+  /// 缓存优先：命中即秒开渲染，并后台静默刷新 + 预加载下一个；
+  /// 未命中则显示骨架屏，单请求拉取后写入缓存。
+  ///
   /// [leadId] 线索 ID
   /// [listContext] 从列表页携带的列表上下文（可选）
-  /// [raw] TA 角色传 true
+  /// [raw] TA/TM 角色传 true 获取明文姓名/电话
   Future<void> loadLead({
     required String leadId,
     LeadListContext? listContext,
     bool raw = false,
   }) async {
     _currentLeadId = leadId;
-    state = LeadDetailState(listContext: listContext);
 
-    // 并行发起 3 个请求，使用 unawaited 避免分析警告
-    unawaited(Future.wait([
-      _fetchDetail(leadId, raw),
-      _fetchFollowUps(leadId),
-      _fetchCalls(leadId),
-    ]));
+    final cached = _cache.get(leadId);
+    if (cached != null) {
+      // 秒开：直接渲染缓存，后台刷新保证新鲜
+      state = LeadDetailState(
+        isLoading: false,
+        bundle: cached,
+        listContext: listContext,
+      );
+      unawaited(_fetchBundle(leadId, raw));
+      unawaited(_preloadNext(listContext));
+      return;
+    }
+
+    state = LeadDetailState(isLoading: true, listContext: listContext);
+    await _fetchBundle(leadId, raw);
+    await _preloadNext(listContext);
   }
 
   /// 重新加载当前线索
@@ -141,101 +138,59 @@ class LeadDetailNotifier extends StateNotifier<LeadDetailState> {
     loadLead(leadId: _currentLeadId!, listContext: state.listContext);
   }
 
-  // ── 数据获取 ──
-
-  Future<void> _fetchDetail(String leadId, bool raw) async {
+  /// 单请求拉取聚合数据并写入缓存
+  ///
+  /// [raw] TA/TM 角色传 true。
+  /// 失败时：若当前已有数据则静默保留（后台刷新场景），
+  /// 仅当无任何数据时展示错误。
+  Future<void> _fetchBundle(String leadId, bool raw) async {
     try {
-      final detail = await _service.fetchLeadDetail(
-        id: leadId,
-        raw: raw,
-      );
-      if (mounted) {
+      final bundle = await _service.fetchLeadDetail(id: leadId, raw: raw);
+      // 先无条件写入缓存：保证数据新鲜（即便本次结果因导航离开而不展示）
+      if (bundle != null) _cache.put(leadId, bundle);
+      // 守卫：仅当「本次请求对应的线索，仍是当前正在查看的线索」时才写回 UI。
+      // 避免上一个/下一个线索的静默刷新（unawaited）姗姗来迟时覆盖当前页 → 闪跳。
+      if (mounted && leadId == _currentLeadId) {
         state = state.copyWith(
-          isLoadingDetail: false,
-          detail: detail,
-          detailError: detail == null ? '线索已删除或不存在' : null,
+          isLoading: false,
+          bundle: bundle,
+          error: bundle == null ? '线索已删除或不存在' : null,
         );
       }
     } catch (e) {
-      if (mounted) {
-        state = state.copyWith(
-          isLoadingDetail: false,
-          detailError: '加载失败，请重试',
-        );
+      if (mounted && leadId == _currentLeadId && state.bundle == null) {
+        state = state.copyWith(isLoading: false, error: '加载失败，请重试');
       }
     }
   }
 
-  Future<void> _fetchFollowUps(String leadId) async {
+  /// 预加载下一个线索（底部导航条存在时）
+  ///
+  /// 后台静默拉取并写入缓存，供「下一个」秒开。
+  /// 已缓存或加载失败均不影响主流程。
+  Future<void> _preloadNext(LeadListContext? ctx) async {
+    if (ctx == null || !ctx.hasNext) return;
+    final nextId = ctx.nextId;
+    if (nextId == null || _cache.get(nextId) != null) return;
     try {
-      final items = await _service.fetchFollowUps(leadId);
-      if (mounted) {
-        state = state.copyWith(
-          isLoadingFollowUps: false,
-          allFollowUps: items,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        state = state.copyWith(
-          isLoadingFollowUps: false,
-          followUpsError: '加载失败',
-        );
-      }
+      final bundle = await _service.fetchLeadDetail(id: nextId);
+      if (bundle != null) _cache.put(nextId, bundle);
+    } catch (_) {
+      // 预加载失败静默忽略
     }
   }
 
-  Future<void> _fetchCalls(String leadId) async {
-    try {
-      final result = await _service.fetchCalls(
-        leadId: leadId,
-        size: 3,
-      );
-      if (mounted) {
-        state = state.copyWith(
-          isLoadingCalls: false,
-          calls: result.items,
-          callsTotal: result.total,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        state = state.copyWith(
-          isLoadingCalls: false,
-          callsError: '加载失败',
-        );
-      }
-    }
-  }
+  // ── 写操作后刷新 ──
 
-  // ── 操作回调 ──
-
-  /// 创建跟进记录后刷新跟进时间线（不刷新全部，保持其他数据不变）
-  Future<void> refreshFollowUps() async {
+  /// 任一写操作后调用：失效缓存 + 单请求整体刷新。
+  ///
+  /// 保留旧 bundle 显示，后台拉取新数据后无缝替换。
+  Future<void> refreshBundle() async {
     if (_currentLeadId == null) return;
-    state = state.copyWith(isLoadingFollowUps: true);
-    await _fetchFollowUps(_currentLeadId!);
-  }
-
-  /// 刷新通话记录摘要
-  Future<void> refreshCalls() async {
-    if (_currentLeadId == null) return;
-    state = state.copyWith(isLoadingCalls: true);
-    await _fetchCalls(_currentLeadId!);
-  }
-
-  /// 刷新全部数据
-  Future<void> refreshAll() async {
-    if (_currentLeadId == null) return;
-    // TA/TM 角色传 true 以获取明文姓名/电话
+    _cache.invalidate(_currentLeadId!);
     final user = _ref.read(authProvider).user;
     final raw = user?.role == 'tenant_admin' || user?.role == 'tenant_manager';
-    state = LeadDetailState(listContext: state.listContext);
-    await Future.wait([
-      _fetchDetail(_currentLeadId!, raw),
-      _fetchFollowUps(_currentLeadId!),
-      _fetchCalls(_currentLeadId!),
-    ]);
+    unawaited(_fetchBundle(_currentLeadId!, raw));
   }
 
   // ── 底部导航条 ──
@@ -244,22 +199,18 @@ class LeadDetailNotifier extends StateNotifier<LeadDetailState> {
   Future<void> goToPrev() async {
     final ctx = state.listContext;
     if (ctx == null || !ctx.hasPrev) return;
-    final prevId = ctx.prevId!;
-    loadLead(
-      leadId: prevId,
-      listContext: ctx.prev(),
-    );
+    final prevId = ctx.prevId;
+    if (prevId == null) return;
+    await loadLead(leadId: prevId, listContext: ctx.prev());
   }
 
   /// 切换到下一个线索
   Future<void> goToNext() async {
     final ctx = state.listContext;
     if (ctx == null || !ctx.hasNext) return;
-    final nextId = ctx.nextId!;
-    loadLead(
-      leadId: nextId,
-      listContext: ctx.next(),
-    );
+    final nextId = ctx.nextId;
+    if (nextId == null) return;
+    await loadLead(leadId: nextId, listContext: ctx.next());
   }
 
   /// 移除已失效的线索 ID 并跳转下一条
@@ -268,14 +219,11 @@ class LeadDetailNotifier extends StateNotifier<LeadDetailState> {
     if (ctx == null) return;
     final newCtx = ctx.skipAndNext(removedId: removedId);
     if (newCtx.hasNext || newCtx.hasPrev) {
-      loadLead(leadId: newCtx.ids[newCtx.index], listContext: newCtx);
+      loadLead(
+        leadId: newCtx.ids[newCtx.index],
+        listContext: newCtx,
+      );
     }
-  }
-
-  @override
-  void dispose() {
-    _authSub?.cancel();
-    super.dispose();
   }
 }
 

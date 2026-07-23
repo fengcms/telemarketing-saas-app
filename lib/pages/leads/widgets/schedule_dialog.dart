@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/models/lead_detail.dart';
+import 'package:telemarketing_app/providers/lead_detail_provider.dart';
 import 'package:telemarketing_app/providers/lead_list_provider.dart';
 import 'package:telemarketing_app/widgets/sheet_header.dart';
 import 'package:telemarketing_app/widgets/tag_chip.dart';
@@ -378,6 +379,8 @@ class _SchedulePanelState extends ConsumerState<_SchedulePanel> {
 
       if (!mounted) return;
       Navigator.of(context).pop();
+      // 刷新详情聚合数据（更新最近日程区块）
+      ref.read(leadDetailProvider.notifier).refreshBundle();
       TDToast.showText('预约成功', context: context);
     } catch (e) {
       if (!mounted) return;

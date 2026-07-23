@@ -10,14 +10,15 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import 'package:telemarketing_app/models/lead_list_context.dart';
 import 'package:telemarketing_app/models/lead_detail.dart';
+import 'package:telemarketing_app/models/lead_list_context.dart';
 import 'package:telemarketing_app/providers/lead_detail_provider.dart';
 import 'widgets/lead_header_section.dart';
 import 'widgets/lead_action_bar.dart';
 import 'widgets/follow_up_panel.dart';
 import 'widgets/follow_up_timeline.dart';
 import 'widgets/call_records_section.dart';
+import 'widgets/schedule_section.dart';
 import 'widgets/lead_bottom_nav.dart';
 
 /// 线索详情页
@@ -75,7 +76,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
         // 用 addPostFrameCallback 确保 build 完成后执行
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            showFollowUpPanel(context, leadId: widget.leadId);
+            showFollowUpPanel(context, leadId: widget.leadId, fromDial: true);
           }
         });
       }
@@ -88,7 +89,8 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
   Widget build(BuildContext context) {
     final state = ref.watch(leadDetailProvider);
 
-    if (state.isLoadingDetail) {
+    // 首次加载且无缓存：骨架屏
+    if (state.isLoading && state.bundle == null) {
       return Scaffold(
         backgroundColor: const Color(0xFFF3F3F3),
         appBar: _buildNavBar(),
@@ -96,11 +98,12 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
       );
     }
 
-    if (state.detail == null) {
+    // 加载失败 / 已删除：错误态
+    if (state.bundle == null) {
       return Scaffold(
         backgroundColor: const Color(0xFFF3F3F3),
         appBar: _buildNavBar(),
-        body: _buildErrorBody(state.detailError),
+        body: _buildErrorBody(state.error),
       );
     }
 
@@ -123,10 +126,13 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
           SliverToBoxAdapter(
             child: CallRecordsSection(
               records: state.calls,
-              total: state.callsTotal,
-              isLoading: state.isLoadingCalls,
-              errorMessage: state.callsError,
+              total: 0,
+              isLoading: false,
+              errorMessage: null,
             ),
+          ),
+          SliverToBoxAdapter(
+            child: ScheduleSection(schedules: state.schedules),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
@@ -288,8 +294,8 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
   Widget _buildFollowUpSection(LeadDetailState state) {
     return FollowUpTimeline(
       allRecords: state.allFollowUps,
-      isLoading: state.isLoadingFollowUps,
-      errorMessage: state.followUpsError,
+      isLoading: false,
+      errorMessage: null,
       leadId: state.detail?.id ?? '',
     );
   }

@@ -23,19 +23,21 @@ import 'package:telemarketing_app/widgets/tag_chip.dart';
 void showFollowUpPanel(
   BuildContext context, {
   required String leadId,
+  bool fromDial = false,
 }) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => _FollowUpPanel(leadId: leadId),
+    builder: (_) => _FollowUpPanel(leadId: leadId, fromDial: fromDial),
   );
 }
 
 class _FollowUpPanel extends ConsumerStatefulWidget {
   final String leadId;
+  final bool fromDial;
 
-  const _FollowUpPanel({required this.leadId});
+  const _FollowUpPanel({required this.leadId, this.fromDial = false});
 
   @override
   ConsumerState<_FollowUpPanel> createState() => _FollowUpPanelState();
@@ -490,25 +492,50 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
 
     try {
       final service = ref.read(leadServiceProvider);
-      final duration = (_showDuration && _callTimeMs != null && _callTimeMs! >= 0)
-          ? _callDurationSec
-          : null;
+      final content = _contentController.text.trim();
 
-      await service.createFollowUp(
-        leadId: widget.leadId,
-        content: _contentController.text.trim(),
-        answerType: _selectedAnswerType!,
-        duration: duration != null && duration > 0 ? duration : null,
-        categoryId: _selectedCategoryId,
-      );
+      if (widget.fromDial) {
+        // 拨号返回：走复合端点，原子创建通话+跟进
+        final externalCallId =
+            'dial_${widget.leadId}_${DateTime.now().microsecondsSinceEpoch}';
+        final startedAt = (_callTimeMs != null && _callTimeMs! >= 0)
+            ? _callTimeMs! ~/ 1000
+            : DateTime.now().millisecondsSinceEpoch ~/ 1000;
+        final duration = (_showDuration && _callTimeMs != null && _callTimeMs! >= 0)
+            ? _callDurationSec
+            : null;
+
+        await service.createCall(
+          leadId: widget.leadId,
+          startedAt: startedAt,
+          externalCallId: externalCallId,
+          answerType: _selectedAnswerType!,
+          duration: duration != null && duration > 0 ? duration : null,
+          content: content.isNotEmpty ? content : null,
+          categoryId: _selectedCategoryId,
+        );
+      } else {
+        // 手动跟进：走原有接口，仅创建跟进记录
+        final duration = (_showDuration && _callTimeMs != null && _callTimeMs! >= 0)
+            ? _callDurationSec
+            : null;
+
+        await service.createFollowUp(
+          leadId: widget.leadId,
+          content: content,
+          answerType: _selectedAnswerType!,
+          duration: duration != null && duration > 0 ? duration : null,
+          categoryId: _selectedCategoryId,
+        );
+      }
 
       if (!mounted) return;
 
       // 关闭面板
       Navigator.of(context).pop();
 
-      // 刷新跟进时间线
-      ref.read(leadDetailProvider.notifier).refreshFollowUps();
+      // 刷新详情聚合数据（跟进 + 通话）
+      ref.read(leadDetailProvider.notifier).refreshBundle();
 
       // 显示成功提示
       TDToast.showText('跟进记录已添加', context: context);

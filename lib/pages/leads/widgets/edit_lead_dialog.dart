@@ -232,7 +232,7 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
 
       if (!mounted) return;
       Navigator.of(context).pop();
-      ref.read(leadDetailProvider.notifier).refreshAll();
+      ref.read(leadDetailProvider.notifier).refreshBundle();
       TDToast.showText('线索已更新', context: context);
     } catch (e) {
       if (!mounted) return;

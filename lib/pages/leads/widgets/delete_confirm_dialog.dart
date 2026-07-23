@@ -97,7 +97,7 @@ class _DeleteConfirmDialogState
 
       if (!mounted) return;
       Navigator.of(context).pop();
-      ref.read(leadDetailProvider.notifier).refreshFollowUps();
+      ref.read(leadDetailProvider.notifier).refreshBundle();
       TDToast.showText('跟进记录已删除', context: context);
     } catch (e) {
       if (!mounted) return;

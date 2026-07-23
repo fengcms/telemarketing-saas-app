@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:telemarketing_app/services/api_client.dart';
 import 'package:telemarketing_app/services/api_constants.dart';
 import 'package:telemarketing_app/models/lead.dart';
-import 'package:telemarketing_app/models/lead_detail.dart';
+import 'package:telemarketing_app/models/lead_detail_bundle.dart';
 import 'package:telemarketing_app/models/follow_up_record.dart';
 import 'package:telemarketing_app/models/call_record.dart';
 import 'package:telemarketing_app/models/option_item.dart';
@@ -18,11 +18,14 @@ class LeadService {
 
   // ── 线索详情 ──
 
-  /// 获取线索详情
+  /// 获取线索详情（聚合接口）
   ///
-  /// [raw] TA 角色传 true 获取明文姓名/电话。
+  /// 后端一次请求返回 `lead` + `followups` + `calls`(最近5) +
+  /// `schedules`(最近5)，封装为 [LeadDetailBundle]。
+  ///
+  /// [raw] TA/TM 角色传 true 获取明文姓名/电话。
   /// 返回 null 表示线索已被删除/擦除（404）。
-  Future<LeadDetail?> fetchLeadDetail({
+  Future<LeadDetailBundle?> fetchLeadDetail({
     required String id,
     bool raw = false,
   }) async {
@@ -36,13 +39,8 @@ class LeadService {
       final data = response.data;
       if (data is Map && data['success'] == true && data['data'] != null) {
         final body = data['data'] as Map<String, dynamic>;
-        // 真实 API 将线索详情嵌套在 data.lead 中
-        if (body.containsKey('lead') && body['lead'] != null) {
-          return LeadDetail.fromJson(
-              body['lead'] as Map<String, dynamic>);
-        }
-        // 兼容旧版直接返回 data 字段
-        return LeadDetail.fromJson(body);
+        // 新接口：data 内含 lead / followups / calls / schedules
+        return LeadDetailBundle.fromJson(body);
       }
       return null;
     } on DioException catch (e) {
@@ -162,6 +160,55 @@ class LeadService {
         return data['data']?['id']?.toString();
       }
       return null;
+    } on DioException catch (e) {
+      throw ApiClient.parseError(e);
+    }
+  }
+
+  // ── 创建通话记录（含原子创建跟进） ──
+
+  /// 复合「完成通话」端点。
+  ///
+  /// POST /api/tenant/leads/:id/calls
+  /// 一次请求原子创建通话记录 + 跟进记录（content 非空时）。
+  ///
+  /// [startedAt] 通话开始时间（epoch 秒）
+  /// [externalCallId] 客户端唯一 ID，用于幂等防重
+  /// [phone] 电话号码（选填，缺省取线索手机号）
+  /// [duration] 通话时长（秒）
+  /// [answerType] 接听类型
+  /// [content] 跟进内容（选填，非空时自动建跟进）
+  /// [categoryId] 更新线索分类（选填）
+  Future<Map<String, dynamic>> createCall({
+    required String leadId,
+    required int startedAt,
+    required String externalCallId,
+    required String answerType,
+    String? phone,
+    int? duration,
+    String? content,
+    String? categoryId,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'startedAt': startedAt,
+        'externalCallId': externalCallId,
+        'answerType': answerType,
+        'direction': 'outbound',
+      };
+      if (phone != null) body['phone'] = phone;
+      if (duration != null) body['duration'] = duration;
+      if (content != null && content.isNotEmpty) body['content'] = content;
+      if (categoryId != null) body['categoryId'] = categoryId;
+      final response = await _apiClient.dio.post(
+        '${ApiConstants.leads}/$leadId/calls',
+        data: body,
+      );
+      final data = response.data;
+      if (data is Map && data['success'] == true) {
+        return data['data'] as Map<String, dynamic>? ?? {};
+      }
+      throw Exception(data['error']?.toString() ?? '提交失败');
     } on DioException catch (e) {
       throw ApiClient.parseError(e);
     }

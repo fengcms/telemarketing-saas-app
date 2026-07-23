@@ -445,7 +445,45 @@ LeadListState copyWith({..., Object? statusFilter = _unset, ...}) {
 
 ---
 
-## 8. 已知待解决问题
+## 8. 异步状态竞态坑点
+
+### 8.1 unawaited 静默刷新覆盖当前页导致翻页闪跳
+
+**严重级别**：🟠 **正确性（P2）**
+
+**现象**：线索详情页反复「下一个 ×N → 上一个 ×N」时，页面会从当前线索突然闪跳到别的线索（如停在 A，却闪现 B/C）。
+
+**原因**：详情重构后 `loadLead` 为做到「缓存命中秒开」，在缓存命中分支里用 `unawaited(_fetchBundle(leadId))` 发射一个**后台静默刷新**并立刻 `return`。快速翻页时，多个 `_fetchBundle` 的 Future 重叠在飞；而 `_fetchBundle` 写回 `state.bundle` 时只检查了 `mounted`，**没有校验「这个请求对应的 leadId 是否还是当前正在看的线索」**。于是哪个网络请求最后落地，哪个就无条件覆盖 `state`——迟到的旧请求把当前页盖掉，表现为闪跳。
+
+```dart
+// ❌ 错误：只查 mounted，未校验 leadId 是否仍是当前线索
+Future<void> _fetchBundle(String leadId, bool raw) async {
+  final bundle = await _service.fetchLeadDetail(id: leadId, raw: raw);
+  if (bundle != null) _cache.put(leadId, bundle);
+  if (mounted) {                          // ← 旧请求落地时 mounted 永远为 true
+    state = state.copyWith(bundle: bundle); // ← 无条件覆盖当前页
+  }
+}
+```
+
+**解决方案**：写回 UI 前加 `_currentLeadId` 守卫；`_cache.put` 仍无条件执行（保证缓存新鲜，再翻回去数据依旧新）。`refreshBundle`（写操作后刷新）走同一方法，守卫自然通过。
+
+```dart
+// ✅ 正确：仅当「请求对应的线索 == 当前正在看的线索」才写回 UI
+Future<void> _fetchBundle(String leadId, bool raw) async {
+  final bundle = await _service.fetchLeadDetail(id: leadId, raw: raw);
+  if (bundle != null) _cache.put(leadId, bundle); // 缓存照写
+  if (mounted && leadId == _currentLeadId) {       // ← 关键守卫
+    state = state.copyWith(bundle: bundle, ...);
+  }
+}
+```
+
+**教训**：任何「`unawaited` 静默刷新 / 预加载 + 写 `state`」的模式，必须带「目标 id == 当前 id」守卫，否则在快速导航 / 翻页场景下必然产生竞态覆盖。`mounted` 只能防止组件销毁后的写入，挡不住「导航到别的实体后旧请求落地」这类覆盖。
+
+---
+
+## 9. 已知待解决问题
 
 | # | 问题 | 优先级 | 状态 | 说明 |
 |---|------|--------|------|------|
@@ -457,5 +495,5 @@ LeadListState copyWith({..., Object? statusFilter = _unset, ...}) {
 
 ---
 
-> 最后更新：2026-07-22  
+> 最后更新：2026-07-23  
 > 维护人：Mobile App Builder

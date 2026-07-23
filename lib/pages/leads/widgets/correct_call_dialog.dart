@@ -251,7 +251,7 @@ class _CorrectCallDialogState
 
       if (!mounted) return;
       Navigator.of(context).pop();
-      ref.read(leadDetailProvider.notifier).refreshCalls();
+      ref.read(leadDetailProvider.notifier).refreshBundle();
       TDToast.showText('通话记录已补正', context: context);
     } catch (e) {
       if (!mounted) return;
