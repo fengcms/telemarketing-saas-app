@@ -5,8 +5,6 @@
 /// 等分 4 列，TDButton(text) 竖向布局
 library;
 
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
@@ -85,7 +83,8 @@ class LeadActionBar extends ConsumerWidget {
     final noCallWindow = settings['noCallWindow'] as Map<String, dynamic>?;
     handleDial(
       phone: detail.phone,
-      context: context,
+      // ignore: use_build_context_synchronously
+      context: context,  // 安全：按钮点击触发的异步，context 在事件循环中依然有效
       noCallWindow: noCallWindow,
     );
   }

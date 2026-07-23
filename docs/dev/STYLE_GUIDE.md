@@ -15,6 +15,9 @@
 6. [导入规范](#6-导入规范)
 7. [错误处理规范](#7-错误处理规范)
 8. [提交规范](#8-提交规范)
+   - 8.1 [Commit Message 格式](#81-commit-message-格式)
+   - 8.2 [提交规范强制性规则](#82-提交规范强制性规则)
+   - 8.3 [提交前检查清单](#83-提交前检查清单)
 
 ---
 
@@ -417,7 +420,50 @@ Future<void> _loadVersion() async {
 | `style` | 样式/UI | `style(login): 复选框改为左对齐` |
 | `chore` | 构建/工具 | `chore: 添加 dependency_overrides` |
 
-### 8.2 提交前检查清单
+### 8.2 提交规范强制性规则
+
+#### 类型必须真实
+
+commit message 的 `<type>` 必须如实反映改动内容。禁止将功能代码标注为 `docs:` 或 `chore:`。
+
+```
+# ❌ 禁止：2230 行功能代码标为 docs
+docs: 更新文档          # 实际合入 2230 行业务代码
+
+# ✅ 正确：功能代码标 feat
+feat(leads): 线索列表页  # 2230 行功能代码用 feat
+```
+
+违反此规则的提交需返工。
+
+#### scope 必填规则
+
+`feat` / `fix` / `refactor` / `style` 类型**必须包含 scope**。`docs` / `chore` 类型可选。
+
+```
+# ❌ 缺少 scope
+feat: 新增线索详情页
+
+# ✅ 带 scope
+feat(leads): 新增线索详情页
+```
+
+scope 使用小写英文，表示影响的模块（见 §8.1 表意 scope）。
+
+#### 单提交单一职责
+
+一个提交只做一件事。不相关的改动（如 UI 调整 + 新 API 集成）应分拆为多个提交，便于 revert / bisect。
+
+```
+# ❌ kitchen-sink：UI + API + 文档混在一起
+fix: 跟进面板调整 + 通话记录API
+
+# ✅ 分拆
+fix(follow-up-panel): 跟进面板多项 UI 调整
+feat: 新增通话记录查询 API
+```
+
+### 8.3 提交前检查清单
 
 - [ ] `flutter analyze` 无错误
 - [ ] 文件头添加了注释说明
