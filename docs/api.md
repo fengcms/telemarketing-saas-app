@@ -512,37 +512,26 @@ curl https://tm-api-test.kao9.com/api/tenant/profile \
 
 ```json
 {
-    "success": true,
-    "data": {
-        "id": "t1000001-0000-0000-0000-000000000001",
-        "name": "碧桂园·凤凰城",
-        "slug": "dev-phoenix",
-        "status": "active",
-        "expireAt": null,
-        "maxUsers": 50,
-        "maxLeads": 10000,
-        "contactName": "李明",
-        "contactPhone": "13800001000",
-        "contactEmail": "liming@bgydemo.com",
-        "industry": "房地产",
-        "address": "广东省广州市天河区凤凰路88号",
-        "intro": "广州碧桂园凤凰城项目，高端住宅区",
-        "website": "https://bgydemo.com",
-        "createdBy": null,
-        "createdAt": 1784720387,
-        "updatedAt": 1784720387,
-        "settings": {
-            "customFields": [],
-            "dedup": "phone",
-            "allowSelfClaim": false,
-            "noCallWindow": {
-                "enabled": true,
-                "start": "21:00",
-                "end": "09:00"
-            }
-        }
-    },
-    "error": null
+  "success": true,
+  "data": {
+    "id": "租户 UUID",
+    "name": "租户名称",
+    "slug": "唯一标识",
+    "status": "active | suspended",
+    "expireAt": 1700000000,
+    "maxUsers": 50,
+    "maxLeads": 10000,
+    "contactName": "联系人姓名",
+    "contactPhone": "联系电话",
+    "contactEmail": "联系邮箱",
+    "industry": "行业",
+    "address": "地址",
+    "intro": "公司简介",
+    "website": "官网",
+    "settings": {},
+    "createdAt": 1700000000,
+    "updatedAt": 1700000000
+  }
 }
 ```
 
@@ -910,7 +899,7 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/leads \
 
 ### GET /api/tenant/leads/:id
 
-线索详情（含跟进时间线）。返回对象含 `erasedAt` 字段（`null`=未擦除，非 `null`=擦除时间）。
+线索详情（含跟进时间线 + 最近 5 条通话 + 最近 5 条日程）。返回对象含 `erasedAt` 字段（`null`=未擦除，非 `null`=擦除时间）。
 
 **curl：**
 
@@ -923,60 +912,100 @@ curl https://tm-api-test.kao9.com/api/tenant/leads/<lead_id> \
 
 ```json
 {
-  "success": true,
-  "data": {
-    "lead": {
-      "id": "lead-uuid",
-      "tenantId": "tenant-uuid",
-      "projectId": "project-uuid",
-      "name": "张三",
-      "phone": "13800138000",
-      "company": "碧桂园集团",
-      "position": "经理",
-      "gender": "男",
-      "age": 35,
-      "wechat": "wx_abcd1234",
-      "address": "广东省广州市天河区",
-      "source": "电话咨询",
-      "intention": "投资自住",
-      "remark": "客户关注A户型",
-      "status": "following",
-      "ownerId": "user-uuid",
-      "categoryId": "category-uuid",
-      "isBlocked": 0,
-      "customFields": {},
-      "importBatchId": null,
-      "assignedAt": 1700000000,
-      "lastFollowupAt": 1700001000,
-      "nextFollowupAt": 1700080000,
-      "pooledAt": 1699990000,
-      "consentAt": 1699900000,
-      "createdAt": 1699990000,
-      "updatedAt": 1700001000,
-      "deletedAt": null,
-      "erasedAt": null
+    "success": true,
+    "data": {
+        "lead": {
+            "id": "25cfa352-0271-448f-99ff-66f6308c27ad",
+            "tenantId": "t1000001-0000-0000-0000-000000000001",
+            "name": "王磊",
+            "phone": "15500010045",
+            "company": null,
+            "position": "教师",
+            "gender": null,
+            "age": 30,
+            "wechat": "wx_00010045",
+            "address": null,
+            "source": "广告投放",
+            "intention": "投资出租",
+            "remark": "客户关注凤凰城A区-高层项目，需持续跟进",
+            "status": "following",
+            "ownerId": "u00000004-0000-0000-0000-000000000004",
+            "categoryId": "c000100c-0000-0000-0000-000000000001",
+            "isBlocked": 0,
+            "projectId": "p0010a-0000-0000-0000-000000000001",
+            "customFields": "{}",
+            "importBatchId": null,
+            "assignedAt": 1784291091,
+            "lastFollowupAt": 1784632464,
+            "nextFollowupAt": 1785065987,
+            "pooledAt": 1784288387,
+            "consentAt": 1783324120,
+            "createdAt": 1784288387,
+            "updatedAt": 1784288387,
+            "deletedAt": null,
+            "erasedAt": null
+        },
+        "followups": [
+            {
+                "id": "1a33a5c9-0c82-4a93-9e8a-04b9eb5f9769",
+                "tenantId": "t1000001-0000-0000-0000-000000000001",
+                "leadId": "25cfa352-0271-448f-99ff-66f6308c27ad",
+                "userId": "u00000004-0000-0000-0000-000000000004",
+                "content": "客户明确表示暂不考虑，可列为无效",
+                "categoryId": "c000100a-0000-0000-0000-000000000001",
+                "answerType": "no_answer",
+                "duration": null,
+                "nextFollowupAt": null,
+                "createdAt": 1784632464,
+                "deletedAt": null,
+                "callId": null
+            },
+        ],
+        "calls": [
+            {
+                "id": "98e87251-5020-48b5-bab6-0cca0c5fa761",
+                "tenantId": "t1000001-0000-0000-0000-000000000001",
+                "leadId": "25cfa352-0271-448f-99ff-66f6308c27ad",
+                "userId": "u00000004-0000-0000-0000-000000000004",
+                "projectId": null,
+                "phone": "18800010189",
+                "direction": "outbound",
+                "answerType": "rejected",
+                "startedAt": 1783847718,
+                "endedAt": 1783847743,
+                "duration": null,
+                "recordingUrl": null,
+                "trunk": null,
+                "cost": null,
+                "externalCallId": "ext-rich-64ff7eb2",
+                "violation": 0,
+                "createdAt": 1783847718,
+                "deletedAt": null
+            }
+        ],
+        "schedules": [
+            {
+                "id": "3cb04ac1-58d2-46e2-88b4-7a891e358912",
+                "tenantId": "t1000001-0000-0000-0000-000000000001",
+                "userId": "u00000004-0000-0000-0000-000000000004",
+                "leadId": "25cfa352-0271-448f-99ff-66f6308c27ad",
+                "callRecordId": null,
+                "title": "确认联系方式",
+                "content": "客户说等发工资再聊",
+                "scheduledAt": 1785526368,
+                "status": "pending",
+                "completedAt": null,
+                "createdAt": 1784720387,
+                "updatedAt": 1784720387,
+                "deletedAt": null
+            }
+        ]
     },
-    "category": {
-      "id": "category-uuid",
-      "name": "意向客户",
-      "type": "default"
-    },
-    "followups": [
-      {
-        "id": "followup-uuid",
-        "content": "客户表示需要和家里人商量",
-        "answerType": "answered",
-        "duration": 120,
-        "userName": "张伟",
-        "createdAt": 1700000000
-      }
-    ]
-  },
-  "error": null
+    "error": null
 }
 ```
 
-> 详情返回完整手机号（不脱敏）。`lead` 为线索对象，`category` 为分类快照（可能为 null），`followups` 为跟进记录列表（按 `createdAt` 倒序）。
+> 详情返回完整手机号（不脱敏）。`lead` 为线索对象（含 `categoryId`，前端用 `GET /api/tenant/options/categories` 映射分类名）；`followups` 为跟进记录列表（按 `createdAt` 倒序，含 `callId` 可关联通话）；`calls` 为该线索**最近 5 条通话记录**（按 `startedAt` 倒序），如需更多请调 `GET /api/tenant/calls?leadId=<lead_id>`；`schedules` 为该线索**最近 5 条日程**（按 `scheduledAt` 倒序，含 `pending`/`completed`/`cancelled` 全部未删），如需更多请调 `GET /api/tenant/schedules?leadId=<lead_id>`。
 
 ### PATCH /api/tenant/leads/:id
 
@@ -1720,6 +1749,8 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/customers/<customer_id>/ass
 ### GET /api/tenant/calls
 
 通话记录列表。TE 强制 `user_id` 等于自己。`dateFrom`/`dateTo` 筛选 `startedAt`。
+
+支持 `q` 跨字段模糊搜索（按 **手机号片段** + **externalCallId** 做 `LIKE %q%` OR），如 `?q=444` 可搜出号码含 444 的通话；未配置时传 `q` 会返回 `INVALID_PARAMS(400)`。
 
 **curl：**
 
