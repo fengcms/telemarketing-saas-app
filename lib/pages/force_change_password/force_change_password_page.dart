@@ -10,7 +10,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../../providers/auth_provider.dart';
+import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'password_rules_hint.dart';
 import 'password_nav_bar.dart';
 

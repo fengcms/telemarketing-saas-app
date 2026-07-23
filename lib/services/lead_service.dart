@@ -2,13 +2,13 @@
 library;
 
 import 'package:dio/dio.dart';
-import '../services/api_client.dart';
-import '../services/api_constants.dart';
-import '../models/lead.dart';
-import '../models/lead_detail.dart';
-import '../models/follow_up_record.dart';
-import '../models/call_record.dart';
-import '../models/option_item.dart';
+import 'package:telemarketing_app/services/api_client.dart';
+import 'package:telemarketing_app/services/api_constants.dart';
+import 'package:telemarketing_app/models/lead.dart';
+import 'package:telemarketing_app/models/lead_detail.dart';
+import 'package:telemarketing_app/models/follow_up_record.dart';
+import 'package:telemarketing_app/models/call_record.dart';
+import 'package:telemarketing_app/models/option_item.dart';
 
 /// 线索相关接口服务
 class LeadService {

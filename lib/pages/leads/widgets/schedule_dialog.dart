@@ -7,9 +7,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../../../models/lead_detail.dart';
-import '../../../providers/lead_list_provider.dart';
-import '../../../widgets/sheet_header.dart';
+import 'package:telemarketing_app/models/lead_detail.dart';
+import 'package:telemarketing_app/providers/lead_list_provider.dart';
+import 'package:telemarketing_app/widgets/sheet_header.dart';
 
 /// 显示预约下次跟进面板（底部抽屉）
 void showScheduleDialog(

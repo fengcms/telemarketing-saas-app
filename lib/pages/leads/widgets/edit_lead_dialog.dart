@@ -7,14 +7,14 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../../../constants/lead_constants.dart';
-import '../../../models/lead_detail.dart';
-import '../../../models/option_item.dart';
-import '../../../providers/lead_detail_provider.dart';
-import '../../../providers/auth_provider.dart';
-import '../../../providers/lead_list_provider.dart';
-import '../../../providers/options_provider.dart';
-import '../../../widgets/sheet_header.dart';
+import 'package:telemarketing_app/constants/lead_constants.dart';
+import 'package:telemarketing_app/models/lead_detail.dart';
+import 'package:telemarketing_app/models/option_item.dart';
+import 'package:telemarketing_app/providers/lead_detail_provider.dart';
+import 'package:telemarketing_app/providers/auth_provider.dart';
+import 'package:telemarketing_app/providers/lead_list_provider.dart';
+import 'package:telemarketing_app/providers/options_provider.dart';
+import 'package:telemarketing_app/widgets/sheet_header.dart';
 
 /// 显示编辑线索面板（底部抽屉）
 void showEditLeadDialog(

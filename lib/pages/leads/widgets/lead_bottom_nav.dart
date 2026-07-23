@@ -7,8 +7,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../models/lead_list_context.dart';
-import '../../../providers/lead_detail_provider.dart';
+import 'package:telemarketing_app/models/lead_list_context.dart';
+import 'package:telemarketing_app/providers/lead_detail_provider.dart';
 
 /// 底部线索导航条
 ///

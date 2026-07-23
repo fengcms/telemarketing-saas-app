@@ -180,12 +180,16 @@ lib/
 ```dart
 /// 文件头注释（说明文件用途）
 
-// 1. 导入语句（标准 → 第三方 → 本地）
+// 1. 导入语句（标准 → 第三方 → 本包，统一用 `package:` 绝对引用）
+
+> **规则**：本包内部引用必须使用 `package:` 绝对路径（如 `package:telemarketing_app/foo/bar.dart`），禁止使用 `../../` 相对路径。统一风格、文件移动不断链。
+
+```dart
 import 'package:flutter/material.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import '../../widgets/app_bar.dart';
+import 'package:telemarketing_app/widgets/app_bar.dart';
 
 // 2. 常量定义
 const double _kDefaultPadding = 16.0;

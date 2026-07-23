@@ -7,8 +7,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../../../providers/lead_detail_provider.dart';
-import '../../../providers/lead_list_provider.dart';
+import 'package:telemarketing_app/providers/lead_detail_provider.dart';
+import 'package:telemarketing_app/providers/lead_list_provider.dart';
 
 /// 删除跟进记录确认弹窗
 ///

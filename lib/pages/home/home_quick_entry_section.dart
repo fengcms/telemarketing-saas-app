@@ -4,8 +4,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../../providers/home_provider.dart';
-import '../coming_soon_page.dart';
+import 'package:telemarketing_app/providers/home_provider.dart';
+import 'package:telemarketing_app/pages/coming_soon_page.dart';
 
 /// 快捷入口卡片 Section
 class HomeQuickEntrySection extends ConsumerWidget {

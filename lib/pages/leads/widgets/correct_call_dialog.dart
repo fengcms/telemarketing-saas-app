@@ -7,9 +7,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../../../models/call_record.dart';
-import '../../../providers/lead_detail_provider.dart';
-import '../../../providers/lead_list_provider.dart';
+import 'package:telemarketing_app/models/call_record.dart';
+import 'package:telemarketing_app/providers/lead_detail_provider.dart';
+import 'package:telemarketing_app/providers/lead_list_provider.dart';
 
 /// 通话记录补正弹窗
 ///

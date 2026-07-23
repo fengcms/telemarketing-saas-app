@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../../../providers/lead_list_provider.dart';
+import 'package:telemarketing_app/providers/lead_list_provider.dart';
 
 /// 线索列表顶部导航栏：标题 + 排序按钮 + 筛选按钮
 class LeadsTopBar extends StatelessWidget {

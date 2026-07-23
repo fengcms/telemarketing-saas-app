@@ -5,7 +5,7 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/options_cache_service.dart';
+import 'package:telemarketing_app/services/options_cache_service.dart';
 import 'auth_provider.dart';
 
 /// 下拉选项缓存 Provider

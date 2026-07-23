@@ -7,10 +7,10 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../../constants/lead_constants.dart';
-import '../../models/lead.dart';
-import '../../providers/options_provider.dart';
-import '../../services/options_cache_service.dart';
+import 'package:telemarketing_app/constants/lead_constants.dart';
+import 'package:telemarketing_app/models/lead.dart';
+import 'package:telemarketing_app/providers/options_provider.dart';
+import 'package:telemarketing_app/services/options_cache_service.dart';
 
 /// 线索卡片组件
 ///

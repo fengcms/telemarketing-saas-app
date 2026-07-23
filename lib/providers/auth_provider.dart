@@ -2,13 +2,13 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/user.dart';
-import '../services/api_client.dart';
-import '../services/api_exception.dart';
-import '../services/auth_service.dart';
-import '../services/token_storage.dart';
-import '../services/local_storage_service.dart';
-import '../services/tenant_service.dart';
+import 'package:telemarketing_app/models/user.dart';
+import 'package:telemarketing_app/services/api_client.dart';
+import 'package:telemarketing_app/services/api_exception.dart';
+import 'package:telemarketing_app/services/auth_service.dart';
+import 'package:telemarketing_app/services/token_storage.dart';
+import 'package:telemarketing_app/services/local_storage_service.dart';
+import 'package:telemarketing_app/services/tenant_service.dart';
 
 // ── Service Providers ──
 

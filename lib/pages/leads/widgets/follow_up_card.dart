@@ -7,11 +7,11 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../../../constants/lead_constants.dart';
-import '../../../models/follow_up_record.dart';
-import '../../../models/user.dart';
-import '../../../providers/auth_provider.dart';
-import '../../../providers/options_provider.dart';
+import 'package:telemarketing_app/constants/lead_constants.dart';
+import 'package:telemarketing_app/models/follow_up_record.dart';
+import 'package:telemarketing_app/models/user.dart';
+import 'package:telemarketing_app/providers/auth_provider.dart';
+import 'package:telemarketing_app/providers/options_provider.dart';
 
 /// 跟进时间线单条记录卡片
 ///

@@ -3,9 +3,9 @@ library;
 
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/home_stats.dart';
-import '../models/schedule.dart';
-import '../services/home_service.dart';
+import 'package:telemarketing_app/models/home_stats.dart';
+import 'package:telemarketing_app/models/schedule.dart';
+import 'package:telemarketing_app/services/home_service.dart';
 import 'auth_provider.dart';
 
 // ── HomeService Provider ──

@@ -7,7 +7,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../../../models/follow_up_record.dart';
+import 'package:telemarketing_app/models/follow_up_record.dart';
 import 'follow_up_card.dart';
 import 'edit_follow_up_dialog.dart';
 import 'delete_confirm_dialog.dart';

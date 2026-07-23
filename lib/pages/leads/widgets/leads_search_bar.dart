@@ -4,9 +4,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../../../constants/lead_constants.dart';
-import '../../../models/option_item.dart';
-import '../../../providers/lead_list_provider.dart';
+import 'package:telemarketing_app/constants/lead_constants.dart';
+import 'package:telemarketing_app/models/option_item.dart';
+import 'package:telemarketing_app/providers/lead_list_provider.dart';
 
 /// 搜索栏 + 筛选标签栏
 class LeadsSearchBar extends ConsumerWidget {

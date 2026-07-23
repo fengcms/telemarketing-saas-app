@@ -1,8 +1,8 @@
 /// 租户信息服务
 library;
 
-import '../services/api_client.dart';
-import '../services/api_constants.dart';
+import 'package:telemarketing_app/services/api_client.dart';
+import 'package:telemarketing_app/services/api_constants.dart';
 
 /// 租户信息服务
 class TenantService {

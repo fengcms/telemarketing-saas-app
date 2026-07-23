@@ -8,12 +8,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../../../providers/lead_detail_provider.dart';
-import '../../../providers/lead_list_provider.dart';
-import '../../../providers/options_provider.dart';
-import '../../../models/option_item.dart';
-import '../../../utils/duration_format.dart';
-import '../../../widgets/sheet_header.dart';
+import 'package:telemarketing_app/providers/lead_detail_provider.dart';
+import 'package:telemarketing_app/providers/lead_list_provider.dart';
+import 'package:telemarketing_app/providers/options_provider.dart';
+import 'package:telemarketing_app/models/option_item.dart';
+import 'package:telemarketing_app/utils/duration_format.dart';
+import 'package:telemarketing_app/widgets/sheet_header.dart';
 
 /// 跟进面板接入点：显示底部弹出面板
 ///

@@ -3,8 +3,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/schedule.dart';
-import '../../providers/home_provider.dart';
+import 'package:telemarketing_app/models/schedule.dart';
+import 'package:telemarketing_app/providers/home_provider.dart';
 import 'home_skeletons.dart';
 
 /// 待办日程卡片 Section

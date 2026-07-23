@@ -8,11 +8,11 @@
 library;
 
 import 'package:dio/dio.dart';
-import '../services/api_client.dart';
-import '../services/api_constants.dart';
-import '../services/api_exception.dart';
-import '../models/home_stats.dart';
-import '../models/schedule.dart';
+import 'package:telemarketing_app/services/api_client.dart';
+import 'package:telemarketing_app/services/api_constants.dart';
+import 'package:telemarketing_app/services/api_exception.dart';
+import 'package:telemarketing_app/models/home_stats.dart';
+import 'package:telemarketing_app/models/schedule.dart';
 
 /// 首页看板数据服务
 ///

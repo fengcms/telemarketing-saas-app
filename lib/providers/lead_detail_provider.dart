@@ -3,11 +3,11 @@ library;
 
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/lead_detail.dart';
-import '../models/follow_up_record.dart';
-import '../models/call_record.dart';
-import '../models/lead_list_context.dart';
-import '../services/lead_service.dart';
+import 'package:telemarketing_app/models/lead_detail.dart';
+import 'package:telemarketing_app/models/follow_up_record.dart';
+import 'package:telemarketing_app/models/call_record.dart';
+import 'package:telemarketing_app/models/lead_list_context.dart';
+import 'package:telemarketing_app/services/lead_service.dart';
 import 'auth_provider.dart';
 import 'lead_list_provider.dart';
 

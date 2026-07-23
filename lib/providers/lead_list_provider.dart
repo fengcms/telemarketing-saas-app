@@ -3,9 +3,9 @@ library;
 
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/lead.dart';
-import '../models/option_item.dart';
-import '../services/lead_service.dart';
+import 'package:telemarketing_app/models/lead.dart';
+import 'package:telemarketing_app/models/option_item.dart';
+import 'package:telemarketing_app/services/lead_service.dart';
 import 'auth_provider.dart';
 
 // ── Providers ──

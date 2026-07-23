@@ -3,12 +3,12 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/lead_list_provider.dart';
-import '../../models/lead.dart';
-import '../../models/lead_list_context.dart';
-import '../../models/option_item.dart';
-import '../../widgets/lead_card.dart';
+import 'package:telemarketing_app/providers/auth_provider.dart';
+import 'package:telemarketing_app/providers/lead_list_provider.dart';
+import 'package:telemarketing_app/models/lead.dart';
+import 'package:telemarketing_app/models/lead_list_context.dart';
+import 'package:telemarketing_app/models/option_item.dart';
+import 'package:telemarketing_app/widgets/lead_card.dart';
 import 'lead_detail_page.dart';
 import 'widgets/leads_skeletons.dart';
 import 'widgets/leads_filter_widgets.dart';

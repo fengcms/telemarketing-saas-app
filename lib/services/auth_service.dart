@@ -8,7 +8,7 @@ import 'api_client.dart';
 import 'api_constants.dart';
 import 'api_exception.dart';
 import 'token_storage.dart';
-import '../models/user.dart';
+import 'package:telemarketing_app/models/user.dart';
 
 /// 认证服务
 ///

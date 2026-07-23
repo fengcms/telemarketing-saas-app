@@ -7,9 +7,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../../../constants/lead_constants.dart';
-import '../../../models/lead_detail.dart';
-import '../../../providers/options_provider.dart';
+import 'package:telemarketing_app/constants/lead_constants.dart';
+import 'package:telemarketing_app/models/lead_detail.dart';
+import 'package:telemarketing_app/providers/options_provider.dart';
 import 'dial_helper.dart';
 
 /// 线索详情页头部信息区（Section A）

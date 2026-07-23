@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import '../../providers/auth_provider.dart';
+import 'package:telemarketing_app/providers/auth_provider.dart';
 
 /// 登录页
 ///

@@ -7,9 +7,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
-import '../../../constants/lead_constants.dart';
-import '../../../models/call_record.dart';
-import '../../../providers/auth_provider.dart';
+import 'package:telemarketing_app/constants/lead_constants.dart';
+import 'package:telemarketing_app/models/call_record.dart';
+import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'correct_call_dialog.dart';
 
 /// 通话记录摘要组件（Section D）

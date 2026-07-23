@@ -7,7 +7,7 @@ import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'home/home_page.dart';
 import 'leads/leads_list_page.dart';
 import 'coming_soon_page.dart';
-import '../providers/auth_provider.dart';
+import 'package:telemarketing_app/providers/auth_provider.dart';
 
 /// 当前选中的底部 Tab 索引
 final currentTabProvider = StateProvider<int>((ref) => 0);
