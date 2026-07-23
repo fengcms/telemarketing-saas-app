@@ -4,7 +4,6 @@ import 'package:tdesign_flutter/tdesign_flutter.dart';
 import '../../constants/lead_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/lead_list_provider.dart';
-import '../../providers/options_provider.dart';
 import '../../models/lead.dart';
 import '../../models/lead_list_context.dart';
 import '../../models/option_item.dart';
@@ -22,7 +21,6 @@ class LeadsListPage extends ConsumerStatefulWidget {
 class _LeadsListPageState extends ConsumerState<LeadsListPage> {
   final ScrollController _scrollCtrl = ScrollController();
   final TextEditingController _searchCtrl = TextEditingController();
-  bool _showFilterPopup = false;
 
   // 筛选面板临时状态
   String? _tempStatus;
@@ -421,9 +419,6 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
     _tempDateFrom = state.dateFrom;
     _tempDateTo = state.dateTo;
 
-    // 从缓存获取选项数据
-    final cache = ref.read(optionsCacheProvider);
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -697,7 +692,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       itemCount: 4,
-      itemBuilder: (_, __) => Container(
+      itemBuilder: (_, _) => Container(
         margin: const EdgeInsets.only(bottom: 12),
         height: 140,
         decoration: BoxDecoration(

@@ -97,8 +97,10 @@ class ApiClient {
 
       final data = response.data;
       if (data is Map && data['success'] == true) {
-        final newAccess = data['data']['accessToken'] as String;
-        final newRefresh = data['data']['refreshToken'] as String;
+        final d = data['data'];
+        if (d is! Map) return null;
+        final newAccess = d['accessToken'] as String? ?? '';
+        final newRefresh = d['refreshToken'] as String? ?? '';
         await _tokenStorage.saveTokens(
             accessToken: newAccess, refreshToken: newRefresh);
 

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/lead.dart';
 import '../models/option_item.dart';
-import '../services/api_client.dart';
 import '../services/lead_service.dart';
 import 'auth_provider.dart';
 
@@ -183,8 +182,8 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
         service.fetchCategories(),
         service.fetchProjects(),
       ]);
-      final cats = results[0] as List<OptionItem>;
-      final projs = results[1] as List<OptionItem>;
+      final cats = results[0];
+      final projs = results[1];
       state = state.copyWith(categories: cats, projects: projs);
     } catch (_) {}
   }
@@ -353,11 +352,6 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
         );
       }
     });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }
 

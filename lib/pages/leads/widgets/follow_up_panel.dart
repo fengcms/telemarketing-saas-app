@@ -425,10 +425,10 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
   /// 将秒格式化为"x分x秒"或"x秒"
   String _formatDuration(int seconds) {
     if (seconds <= 0) return '0秒';
-    if (seconds < 60) return '${seconds}秒';
+    if (seconds < 60) return '$seconds秒';
     final min = seconds ~/ 60;
     final sec = seconds % 60;
-    return '${min}分${sec}秒';
+    return '$min分$sec秒';
   }
 
   // ── 修改分类（可选） ──

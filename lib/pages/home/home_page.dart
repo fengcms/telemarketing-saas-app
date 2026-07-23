@@ -31,14 +31,12 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage>
     with WidgetsBindingObserver {
   StreamSubscription? _connectivitySubscription;
-  bool _hasInitialized = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _setupConnectivity();
-    _hasInitialized = true;
   }
 
   @override

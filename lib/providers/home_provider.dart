@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/home_stats.dart';
 import '../models/schedule.dart';
-import '../services/api_client.dart';
 import '../services/home_service.dart';
 import 'auth_provider.dart';
 
@@ -175,15 +174,14 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
 
     // 处理日程统计（合并 dueToday）
     if (scheduleStatsResult != null && scheduleStatsResult is HomeStats) {
-      final scheduleStats = scheduleStatsResult as HomeStats;
+      final scheduleStats = scheduleStatsResult;
       mergedStats = (mergedStats ?? const HomeStats()).merge(scheduleStats);
     }
 
     // 处理日程列表
     if (schedulesResult != null &&
         schedulesResult is ({List<Schedule> schedules, int total})) {
-      final result =
-          schedulesResult as ({List<Schedule> schedules, int total});
+      final result = schedulesResult;
       schedules = result.schedules;
       scheduleTotal = result.total;
       schedulesError = null;
@@ -196,7 +194,7 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
       stats: mergedStats,
       schedules: schedules,
       scheduleTotal: scheduleTotal,
-      dueSoonCount: dueSoonCount as int,
+      dueSoonCount: dueSoonCount,
       isLoadingStats: false,
       isLoadingSchedules: false,
       statsError: statsError,
@@ -290,7 +288,7 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
       stats: mergedStats,
       schedules: scheduleList,
       scheduleTotal: total,
-      dueSoonCount: (dueSoonCount ?? 0) as int,
+      dueSoonCount: (dueSoonCount ?? 0),
     );
   }
 

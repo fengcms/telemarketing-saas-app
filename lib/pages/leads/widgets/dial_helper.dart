@@ -101,6 +101,6 @@ Future<void> _launchDialer(String phone) async {
   if (await canLaunchUrl(uri)) {
     await launchUrl(uri);
   } else {
-    debugPrint('无法启动拨号盘: $uri');
+    // 无法启动拨号盘，静默失败
   }
 }

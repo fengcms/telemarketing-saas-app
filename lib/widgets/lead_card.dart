@@ -102,7 +102,7 @@ class LeadCard extends ConsumerWidget {
                           color: const Color(0xFFD9E1FF),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: Text(catName!,
+                        child: Text(catName,
                             style: const TextStyle(
                                 fontSize: 12, color: Color(0xFF003CAB))),
                       ),
