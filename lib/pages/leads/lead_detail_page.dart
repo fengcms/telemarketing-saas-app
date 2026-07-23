@@ -15,6 +15,7 @@ import 'package:telemarketing_app/models/lead_detail.dart';
 import 'package:telemarketing_app/providers/lead_detail_provider.dart';
 import 'widgets/lead_header_section.dart';
 import 'widgets/lead_action_bar.dart';
+import 'widgets/follow_up_panel.dart';
 import 'widgets/follow_up_timeline.dart';
 import 'widgets/call_records_section.dart';
 import 'widgets/lead_bottom_nav.dart';
@@ -40,10 +41,15 @@ class LeadDetailPage extends ConsumerStatefulWidget {
   ConsumerState<LeadDetailPage> createState() => _LeadDetailPageState();
 }
 
-class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
+class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
+    with WidgetsBindingObserver {
+  /// 是否刚完成拨号（onResume 后自动弹跟进面板用）
+  bool _recentlyDialed = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // 首次加载完成后开始加载数据
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(leadDetailProvider.notifier).loadLead(
@@ -51,6 +57,31 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
             listContext: widget.listContext,
           );
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifeState) {
+    // 无论是否最近拨号，只要从后台回到前台就清除标记
+    if (lifeState == AppLifecycleState.resumed) {
+      if (_recentlyDialed) {
+        _recentlyDialed = false;
+        // 通话结束返回，自动弹出跟进面板
+        // 用 addPostFrameCallback 确保 build 完成后执行
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            showFollowUpPanel(context, leadId: widget.leadId);
+          }
+        });
+      }
+    } else if (lifeState == AppLifecycleState.paused) {
+      // app 进入后台时不操作，保持标记
+    }
   }
 
   @override
@@ -80,7 +111,10 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: LeadHeaderSection(detail: detail),
+            child: LeadHeaderSection(
+              detail: detail,
+              onDial: () => _recentlyDialed = true,
+            ),
           ),
           SliverToBoxAdapter(child: _buildActionBar(detail)),
           SliverToBoxAdapter(
@@ -159,14 +193,17 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
 
   Widget _buildActionBar(LeadDetail detail) {
     return Container(
-      height: 72,
+      height: 44,
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
           top: BorderSide(color: Color(0xFFEEEEEE), width: 0.5),
         ),
       ),
-      child: LeadActionBar(detail: detail, leadId: detail.id),
+      child: LeadActionBar(
+        detail: detail,
+        leadId: detail.id,
+      ),
     );
   }
 

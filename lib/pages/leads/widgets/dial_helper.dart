@@ -11,14 +11,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// 拨号辅助工具
-///
-/// 设计文档 §4.2 - 拨号流程
-/// 检查夜间禁呼时段 → 非禁呼直接拨号 → 禁呼弹出确认弹窗
-///
-/// [phone] 电话号码
-/// [context] BuildContext
-/// [noCallWindow] 禁呼时段配置，默认 {enabled: true, start: "21:00", end: "09:00"}
 Future<void> handleDial({
   required String phone,
   required BuildContext context,
@@ -109,7 +101,7 @@ Future<bool> _showNightCallDialog(
 Future<void> _launchDialer(String phone) async {
   final uri = Uri.parse('tel:${phone.replaceAll(RegExp(r'\s+'), '')}');
   if (await canLaunchUrl(uri)) {
-    await launchUrl(uri);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   } else {
     // 无法启动拨号盘，静默失败
   }

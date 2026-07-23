@@ -18,8 +18,9 @@ import 'dial_helper.dart';
 /// 包含：姓名+标签、电话号码、详细信息（公司/职位/归属）
 class LeadHeaderSection extends ConsumerWidget {
   final LeadDetail detail;
+  final VoidCallback? onDial;
 
-  const LeadHeaderSection({super.key, required this.detail});
+  const LeadHeaderSection({super.key, required this.detail, this.onDial});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -150,10 +151,13 @@ class LeadHeaderSection extends ConsumerWidget {
             width: 56,
             height: 56,
             child: FloatingActionButton(
-              onPressed: () => handleDial(
-                phone: detail.phone,
-                context: context,
-              ),
+              onPressed: () {
+                onDial?.call();
+                handleDial(
+                  phone: detail.phone,
+                  context: context,
+                );
+              },
               backgroundColor: const Color(0xFF0052D9),
               child: const Icon(
                 TDIcons.call,

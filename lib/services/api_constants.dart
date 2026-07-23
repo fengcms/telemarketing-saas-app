@@ -58,4 +58,5 @@ class ApiConstants {
   static const String optionsCategories = '/api/tenant/options/categories';
   static const String optionsProjects = '/api/tenant/options/projects';
   static const String optionsUsers = '/api/tenant/options/users';
+  static const String optionsQuickNotes = '/api/tenant/options/quick-notes';
 }

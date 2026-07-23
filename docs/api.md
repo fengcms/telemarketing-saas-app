@@ -923,109 +923,60 @@ curl https://tm-api-test.kao9.com/api/tenant/leads/<lead_id> \
 
 ```json
 {
-    "success": true,
-    "data": {
-        "lead": {
-            "id": "4b137d88-54d5-4880-8284-384eecf1d7ed",
-            "tenantId": "t1000001-0000-0000-0000-000000000001",
-            "name": "徐华",
-            "phone": "156****0034",
-            "company": "中海集团",
-            "position": null,
-            "gender": "女",
-            "age": 34,
-            "wechat": "w*********4",
-            "address": "广东省广州市天河区凤凰路88号",
-            "source": "电话咨询",
-            "intention": null,
-            "remark": null,
-            "status": "following",
-            "ownerId": "u00000007-0000-0000-0000-000000000007",
-            "categoryId": "c000100c-0000-0000-0000-000000000001",
-            "isBlocked": 0,
-            "projectId": "p0010c-0000-0000-0000-000000000001",
-            "customFields": "{}",
-            "importBatchId": null,
-            "assignedAt": 1784721007,
-            "lastFollowupAt": 1784612332,
-            "nextFollowupAt": 1785065987,
-            "pooledAt": 1784720387,
-            "consentAt": 1784350313,
-            "createdAt": 1784720387,
-            "updatedAt": 1784720387,
-            "deletedAt": null,
-            "erasedAt": null
-        },
-        "category": {
-            "id": "c000100c-0000-0000-0000-000000000001",
-            "tenantId": "t1000001-0000-0000-0000-000000000001",
-            "name": "意向客户",
-            "type": "default",
-            "sort": 2,
-            "isSystem": 1,
-            "createdAt": 1784720387,
-            "deletedAt": null
-        },
-        "followups": [
-            {
-                "id": "054c1083-c3d2-4e38-bf99-cfdba59284f1",
-                "tenantId": "t1000001-0000-0000-0000-000000000001",
-                "leadId": "4b137d88-54d5-4880-8284-384eecf1d7ed",
-                "userId": "u00000007-0000-0000-0000-000000000007",
-                "content": "详细介绍了楼盘信息，客户有兴趣",
-                "categoryId": "c000100a-0000-0000-0000-000000000001",
-                "answerType": "empty_number",
-                "duration": null,
-                "nextFollowupAt": null,
-                "createdAt": 1784612332,
-                "deletedAt": null
-            },
-            {
-                "id": "19fa36bc-4baf-499f-9b50-36292e9ada79",
-                "tenantId": "t1000001-0000-0000-0000-000000000001",
-                "leadId": "4b137d88-54d5-4880-8284-384eecf1d7ed",
-                "userId": "u00000007-0000-0000-0000-000000000007",
-                "content": "客户对价格有异议，已记录预算要求",
-                "categoryId": "c000100a-0000-0000-0000-000000000001",
-                "answerType": "empty_number",
-                "duration": null,
-                "nextFollowupAt": null,
-                "createdAt": 1784374432,
-                "deletedAt": null
-            },
-            {
-                "id": "998009fa-9d08-4cb4-a3e7-b5f6a00c99b9",
-                "tenantId": "t1000001-0000-0000-0000-000000000001",
-                "leadId": "4b137d88-54d5-4880-8284-384eecf1d7ed",
-                "userId": "u00000007-0000-0000-0000-000000000007",
-                "content": "停机，需要更新联系方式",
-                "categoryId": "c000100b-0000-0000-0000-000000000001",
-                "answerType": "empty_number",
-                "duration": null,
-                "nextFollowupAt": null,
-                "createdAt": 1784027258,
-                "deletedAt": null
-            },
-            {
-                "id": "44627ba1-d479-4036-86b2-8a8bfe0f1c77",
-                "tenantId": "t1000001-0000-0000-0000-000000000001",
-                "leadId": "4b137d88-54d5-4880-8284-384eecf1d7ed",
-                "userId": "u00000007-0000-0000-0000-000000000007",
-                "content": "客户表示需要和家里人商量后再决定",
-                "categoryId": "c000100a-0000-0000-0000-000000000001",
-                "answerType": "no_answer",
-                "duration": null,
-                "nextFollowupAt": null,
-                "createdAt": 1783941024,
-                "deletedAt": null
-            }
-        ]
+  "success": true,
+  "data": {
+    "lead": {
+      "id": "lead-uuid",
+      "tenantId": "tenant-uuid",
+      "projectId": "project-uuid",
+      "name": "张三",
+      "phone": "13800138000",
+      "company": "碧桂园集团",
+      "position": "经理",
+      "gender": "男",
+      "age": 35,
+      "wechat": "wx_abcd1234",
+      "address": "广东省广州市天河区",
+      "source": "电话咨询",
+      "intention": "投资自住",
+      "remark": "客户关注A户型",
+      "status": "following",
+      "ownerId": "user-uuid",
+      "categoryId": "category-uuid",
+      "isBlocked": 0,
+      "customFields": {},
+      "importBatchId": null,
+      "assignedAt": 1700000000,
+      "lastFollowupAt": 1700001000,
+      "nextFollowupAt": 1700080000,
+      "pooledAt": 1699990000,
+      "consentAt": 1699900000,
+      "createdAt": 1699990000,
+      "updatedAt": 1700001000,
+      "deletedAt": null,
+      "erasedAt": null
     },
-    "error": null
+    "category": {
+      "id": "category-uuid",
+      "name": "意向客户",
+      "type": "default"
+    },
+    "followups": [
+      {
+        "id": "followup-uuid",
+        "content": "客户表示需要和家里人商量",
+        "answerType": "answered",
+        "duration": 120,
+        "userName": "张伟",
+        "createdAt": 1700000000
+      }
+    ]
+  },
+  "error": null
 }
 ```
 
-> 详情返回完整手机号（不脱敏）。`timeline` 为跟进记录 + 通话记录的合并时间线，按 `createdAt`/`startedAt` 倒序。`type` 区分 `followup` 与 `call`。
+> 详情返回完整手机号（不脱敏）。`lead` 为线索对象，`category` 为分类快照（可能为 null），`followups` 为跟进记录列表（按 `createdAt` 倒序）。
 
 ### PATCH /api/tenant/leads/:id
 
@@ -1861,6 +1812,58 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/calls \
   "data": { "id": "<call_id>", "updated": true, "violation": 0, "leadId": "<lead_id>", "followupCreated": false }
 }
 ```
+
+### POST /api/tenant/leads/:id/calls
+
+复合「完成通话」端点（推荐给安卓端）。一次请求在事务内**原子创建通话记录 `call_records` + 跟进 `lead_followups`**（仅当 `content` 非空时建跟进），替代「先 `POST /api/tenant/calls` 再 `POST /api/tenant/leads/:id/followups`」双提交。`leadId` 取自路径（线索必存在且经归属校验）。`externalCallId` 幂等防重：同租户重复提交仅更新原通话、不重复建跟进。命中租户免打扰时段仅软标记 `violation=1`（不拒绝）。
+
+**请求：**
+
+```json
+{
+  "startedAt": 1700000000,
+  "externalCallId": "client-uuid-xxx",
+  "phone": "13800138000（选填，缺省取线索手机号）",
+  "endedAt": 1700000120,
+  "duration": 120,
+  "answerType": "answered",
+  "direction": "outbound（选填，默认 outbound）",
+  "projectId": "<project_id>（选填）",
+  "content": "客户表示有兴趣（选填，非空时原子创建跟进）",
+  "categoryId": "<category_id>（选填，同步线索分类）"
+}
+```
+
+**curl：**
+
+```bash
+curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/calls \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <te_token>' \
+  -d '{"startedAt":1700000000,"externalCallId":"ext-001","answerType":"answered","duration":60,"content":"客户说考虑一下"}'
+```
+
+**响应（新建 + 自动跟进）：**
+
+```json
+{
+  "success": true,
+  "data": { "callId": "<call_id>", "followupId": "<fid>", "updated": false, "violation": 0, "followupCreated": true },
+  "error": null
+}
+```
+
+**响应（幂等更新：同 `externalCallId` 重复提交）：**
+
+```json
+{
+  "success": true,
+  "data": { "callId": "<call_id>", "followupId": null, "updated": true, "violation": 0, "followupCreated": false },
+  "error": null
+}
+```
+
+> 该端点是「提交反馈同时又建通话记录」的合并写法，前端只需一次请求。纯通话无备注（如拒接/空号）或纯备注无通话，仍可分别走 `POST /api/tenant/calls`、`POST /api/tenant/leads/:id/followups`。
 
 ### GET /api/tenant/calls/:id
 

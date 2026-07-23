@@ -10,7 +10,7 @@ class OptionItem {
   factory OptionItem.fromJson(Map<String, dynamic> json) {
     return OptionItem(
       id: json['id']?.toString() ?? '',
-      name: json['name']?.toString() ?? '',
+      name: json['name']?.toString() ?? json['content']?.toString() ?? '',
     );
   }
 }

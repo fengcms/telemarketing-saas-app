@@ -22,6 +22,7 @@ class OptionsCacheService {
   List<OptionItem> _categories = [];
   List<OptionItem> _projects = [];
   List<OptionItem> _users = [];
+  List<OptionItem> _quickNotes = [];
   DateTime? _lastFetchTime;
   bool _isLoading = false;
   bool _localLoaded = false;
@@ -29,6 +30,7 @@ class OptionsCacheService {
   static const _keyCategories = 'cache_options_categories';
   static const _keyProjects = 'cache_options_projects';
   static const _keyUsers = 'cache_options_users';
+  static const _keyQuickNotes = 'cache_options_quick_notes';
 
   OptionsCacheService({required this._apiClient});
 
@@ -59,9 +61,11 @@ class OptionsCacheService {
       final cats = prefs.getString(_keyCategories);
       final projs = prefs.getString(_keyProjects);
       final users = prefs.getString(_keyUsers);
+      final notes = prefs.getString(_keyQuickNotes);
       if (cats != null) _categories = _decodeList(cats);
       if (projs != null) _projects = _decodeList(projs);
       if (users != null) _users = _decodeList(users);
+      if (notes != null) _quickNotes = _decodeList(notes);
     } catch (_) {}
   }
 
@@ -72,6 +76,7 @@ class OptionsCacheService {
       await prefs.setString(_keyCategories, _encodeList(_categories));
       await prefs.setString(_keyProjects, _encodeList(_projects));
       await prefs.setString(_keyUsers, _encodeList(_users));
+      await prefs.setString(_keyQuickNotes, _encodeList(_quickNotes));
     } catch (_) {}
   }
 
@@ -94,10 +99,12 @@ class OptionsCacheService {
         _fetchCategories(),
         _fetchProjects(),
         _fetchUsers(),
+        _fetchQuickNotes(),
       ]);
       _categories = results[0];
       _projects = results[1];
       _users = results[2];
+      _quickNotes = results[3];
       _lastFetchTime = DateTime.now();
       await _saveToLocal();
     } catch (_) {
@@ -119,6 +126,12 @@ class OptionsCacheService {
 
   Future<List<OptionItem>> _fetchUsers() async {
     final response = await _apiClient.dio.get(ApiConstants.optionsUsers);
+    return _parseOptions(response.data);
+  }
+
+  Future<List<OptionItem>> _fetchQuickNotes() async {
+    final response =
+        await _apiClient.dio.get(ApiConstants.optionsQuickNotes);
     return _parseOptions(response.data);
   }
 
@@ -165,6 +178,12 @@ class OptionsCacheService {
   Future<List<OptionItem>> getProjects() async {
     await _ensureLoaded();
     return List.unmodifiable(_projects);
+  }
+
+  /// 获取快捷备注列表
+  Future<List<OptionItem>> getQuickNotes() async {
+    await _ensureLoaded();
+    return List.unmodifiable(_quickNotes);
   }
 
   Future<void> refresh() async {

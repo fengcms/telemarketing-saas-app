@@ -1,25 +1,23 @@
 /// 线索详情页操作按钮区（Section B）
 ///
 /// 设计文档 §3.3 - 操作区
-/// 4 个操作按钮：拨号 / 跟进 / 预约 / 编辑
-/// 等分 4 列，TDButton(text) 竖向布局
+/// 3 个操作按钮：跟进 / 预约 / 编辑
+/// 横向：图标 + 文字，间隔 6px
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/models/lead_detail.dart';
-import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'follow_up_panel.dart';
 import 'schedule_dialog.dart';
 import 'edit_lead_dialog.dart';
-import 'dial_helper.dart';
 
 /// 线索详情页操作按钮区（Section B）
 ///
 /// 设计文档 §3.3 - 操作区
-/// 4 个操作按钮：拨号 / 跟进 / 预约 / 编辑
-/// 等分 4 列，TDButton(text) 竖向布局
+/// 3 个操作按钮：跟进 / 预约 / 编辑
+/// 横向：图标 + 文字，间隔 6px
 class LeadActionBar extends ConsumerWidget {
   final LeadDetail detail;
   final String leadId;
@@ -33,18 +31,12 @@ class LeadActionBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      height: 72,
+      height: 44,
       color: Colors.white,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _actionButton(
-            icon: TDIcons.call,
-            label: '拨号',
-            onTap: detail.isConverted || detail.phone.isEmpty
-                ? null
-                : () => _onDial(context, ref),
-          ),
           _actionButton(
             icon: TDIcons.rollback,
             label: '跟进',
@@ -54,7 +46,7 @@ class LeadActionBar extends ConsumerWidget {
           ),
           _actionButton(
             icon: TDIcons.calendar,
-            label: '预约',
+            label: '日程',
             onTap: detail.isConverted
                 ? null
                 : () => showScheduleDialog(
@@ -77,31 +69,38 @@ class LeadActionBar extends ConsumerWidget {
     );
   }
 
-  void _onDial(BuildContext context, WidgetRef ref) async {
-    final tenantService = ref.read(tenantServiceProvider);
-    final settings = await tenantService.fetchProfile();
-    final noCallWindow = settings['noCallWindow'] as Map<String, dynamic>?;
-    handleDial(
-      phone: detail.phone,
-      // ignore: use_build_context_synchronously
-      context: context,  // 安全：按钮点击触发的异步，context 在事件循环中依然有效
-      noCallWindow: noCallWindow,
-    );
-  }
-
   Widget _actionButton({
     required IconData icon,
     required String label,
     VoidCallback? onTap,
   }) {
-    return SizedBox(
-      width: 64,
-      child: TDButton(
-        text: label,
-        type: TDButtonType.text,
-        icon: icon,
-        size: TDButtonSize.small,
-        onTap: onTap,
+    final isDisabled = onTap == null;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isDisabled
+                  ? const Color(0xFFDCDCDC)
+                  : const Color(0xFF0052D9),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDisabled
+                    ? const Color(0xFFDCDCDC)
+                    : const Color(0xFF181818),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

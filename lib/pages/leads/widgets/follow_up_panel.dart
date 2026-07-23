@@ -47,6 +47,7 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
   String? _selectedCategoryId;
   bool _isSubmitting = false;
   List<OptionItem> _categories = [];
+  List<OptionItem> _quickNotes = [];
 
   /// 通话记录查询相关
   bool _showDuration = false;
@@ -67,6 +68,7 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
   void initState() {
     super.initState();
     _loadCategories();
+    _loadQuickNotes();
   }
 
   /// 从 OptionsCacheService 加载分类列表（供「线索分类」平铺选择）
@@ -89,6 +91,17 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
       });
     } catch (_) {
       // 静默失败，保持空列表
+    }
+  }
+
+  /// 加载快捷备注选项
+  Future<void> _loadQuickNotes() async {
+    try {
+      final notes = await ref.read(optionsCacheProvider).getQuickNotes();
+      if (!mounted) return;
+      setState(() => _quickNotes = notes);
+    } catch (_) {
+      // 静默失败
     }
   }
 
@@ -120,6 +133,8 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
               const SizedBox(height: 20),
               // 跟进内容
               _buildContentField(),
+              // 快捷备注
+              _buildQuickNotes(),
               const SizedBox(height: 16),
               // 接听类型
               _buildAnswerTypeSelector(),
@@ -181,6 +196,46 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
           onChanged: (_) => setState(() {}),
         ),
       ],
+    );
+  }
+
+  // ── 快捷备注 ──
+
+  Widget _buildQuickNotes() {
+    if (_quickNotes.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '快捷备注',
+            style: TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
+          ),
+          const SizedBox(height: 8),
+          TagChipRow(
+            chips: _quickNotes.map((n) => TagChipData(
+              label: n.name,
+              selected: false,
+              onTap: () {
+                final text = _contentController.text;
+                final insert = text.isEmpty || text.endsWith('\n')
+                    ? n.name
+                    : '\n${n.name}';
+                final pos = _contentController.selection.baseOffset;
+                if (pos >= 0 && pos <= text.length) {
+                  final newText = '${text.substring(0, pos)}$insert${text.substring(pos)}';
+                  _contentController.text = newText;
+                  _contentController.selection = TextSelection.collapsed(offset: pos + insert.length);
+                } else {
+                  _contentController.text = text.isEmpty ? n.name : '$text\n${n.name}';
+                }
+                setState(() {});
+              },
+            )).toList(),
+          ),
+        ],
+      ),
     );
   }
 
