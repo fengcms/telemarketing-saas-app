@@ -10,6 +10,7 @@ import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/models/lead_detail.dart';
 import 'package:telemarketing_app/providers/lead_list_provider.dart';
 import 'package:telemarketing_app/widgets/sheet_header.dart';
+import 'package:telemarketing_app/widgets/tag_chip.dart';
 
 /// 显示预约下次跟进面板（底部抽屉）
 void showScheduleDialog(
@@ -175,61 +176,29 @@ class _SchedulePanelState extends ConsumerState<_SchedulePanel> {
         ),
         const SizedBox(height: 8),
         // 日期快捷项：小 tag 一行展示
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _quickDateTag('明天', 1),
-              const SizedBox(width: 8),
-              _quickDateTag('后天', 2),
-              const SizedBox(width: 8),
-              _quickDateTag('大后天', 3),
-              const SizedBox(width: 8),
-              _quickDateTag('五天后', 5),
-              const SizedBox(width: 8),
-              _quickDateTag('七天后', 7),
-            ],
-          ),
+        TagChipRow(
+          scrollable: true,
+          chips: _buildDateQuickTags(),
         ),
       ],
     );
   }
 
-  /// 日期快捷项 tag
-  Widget _quickDateTag(String label, int daysLater) {
-    final target = DateTime.now().add(Duration(days: daysLater));
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedDate = target;
-          _dateError = null;
-        });
-      },
-      child: Container(
-        height: 28,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          color: _selectedDate.year == target.year &&
-                  _selectedDate.month == target.month &&
-                  _selectedDate.day == target.day
-              ? const Color(0xFF0052D9)
-              : const Color(0xFFF3F3F3),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: _selectedDate.year == target.year &&
-                    _selectedDate.month == target.month &&
-                    _selectedDate.day == target.day
-                ? Colors.white
-                : const Color(0xFF181818),
-          ),
-        ),
-      ),
-    );
+  /// 日期快捷项列表
+  List<TagChipData> _buildDateQuickTags() {
+    final now = DateTime.now();
+    return [
+      TagChipData(label: '明天', selected: _isSameDay(_selectedDate, now.add(const Duration(days: 1))), onTap: () => setState(() { _selectedDate = now.add(const Duration(days: 1)); _dateError = null; })),
+      TagChipData(label: '后天', selected: _isSameDay(_selectedDate, now.add(const Duration(days: 2))), onTap: () => setState(() { _selectedDate = now.add(const Duration(days: 2)); _dateError = null; })),
+      TagChipData(label: '大后天', selected: _isSameDay(_selectedDate, now.add(const Duration(days: 3))), onTap: () => setState(() { _selectedDate = now.add(const Duration(days: 3)); _dateError = null; })),
+      TagChipData(label: '五天后', selected: _isSameDay(_selectedDate, now.add(const Duration(days: 5))), onTap: () => setState(() { _selectedDate = now.add(const Duration(days: 5)); _dateError = null; })),
+      TagChipData(label: '七天后', selected: _isSameDay(_selectedDate, now.add(const Duration(days: 7))), onTap: () => setState(() { _selectedDate = now.add(const Duration(days: 7)); _dateError = null; })),
+    ];
+  }
+
+  /// 判断两个日期是否是同一天
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   // ── 时间选择 ──
@@ -299,48 +268,18 @@ class _SchedulePanelState extends ConsumerState<_SchedulePanel> {
         // 时间快捷项：小 tag 一行展示
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _quickTimeTag('上午10点', 10, 0),
-              const SizedBox(width: 8),
-              _quickTimeTag('下午2点', 14, 0),
-              const SizedBox(width: 8),
-              _quickTimeTag('下午5点', 17, 0),
-              const SizedBox(width: 8),
-              _quickTimeTag('晚上7点', 19, 0),
-              const SizedBox(width: 8),
-              _quickTimeTag('晚上9点', 21, 0),
+          child: TagChipRow(
+            scrollable: true,
+            chips: [
+              TagChipData(label: '上午10点', selected: _selectedTime.hour == 10 && _selectedTime.minute == 0, onTap: () => setState(() => _selectedTime = const TimeOfDay(hour: 10, minute: 0))),
+              TagChipData(label: '下午2点', selected: _selectedTime.hour == 14 && _selectedTime.minute == 0, onTap: () => setState(() => _selectedTime = const TimeOfDay(hour: 14, minute: 0))),
+              TagChipData(label: '下午5点', selected: _selectedTime.hour == 17 && _selectedTime.minute == 0, onTap: () => setState(() => _selectedTime = const TimeOfDay(hour: 17, minute: 0))),
+              TagChipData(label: '晚上7点', selected: _selectedTime.hour == 19 && _selectedTime.minute == 0, onTap: () => setState(() => _selectedTime = const TimeOfDay(hour: 19, minute: 0))),
+              TagChipData(label: '晚上9点', selected: _selectedTime.hour == 21 && _selectedTime.minute == 0, onTap: () => setState(() => _selectedTime = const TimeOfDay(hour: 21, minute: 0))),
             ],
           ),
         ),
       ],
-    );
-  }
-
-  /// 时间快捷项 tag
-  Widget _quickTimeTag(String label, int hour, int minute) {
-    final isMatch =
-        _selectedTime.hour == hour && _selectedTime.minute == minute;
-    return GestureDetector(
-      onTap: () {
-        setState(() => _selectedTime = TimeOfDay(hour: hour, minute: minute));
-      },
-      child: Container(
-        height: 28,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          color: isMatch ? const Color(0xFF0052D9) : const Color(0xFFF3F3F3),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: isMatch ? Colors.white : const Color(0xFF181818),
-          ),
-        ),
-      ),
     );
   }
 

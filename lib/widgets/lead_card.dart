@@ -128,6 +128,7 @@ class LeadCard extends ConsumerWidget {
             if (hasC)
               Container(
                 height: 20,
+                alignment: Alignment.center,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFD9E1FF),

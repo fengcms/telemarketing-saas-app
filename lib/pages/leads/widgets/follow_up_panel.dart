@@ -14,6 +14,7 @@ import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/models/option_item.dart';
 import 'package:telemarketing_app/utils/duration_format.dart';
 import 'package:telemarketing_app/widgets/sheet_header.dart';
+import 'package:telemarketing_app/widgets/tag_chip.dart';
 
 /// 跟进面板接入点：显示底部弹出面板
 ///
@@ -202,22 +203,15 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
           ],
         ),
         const SizedBox(height: 8),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            const spacing = 8.0;
-            const count = 5;
-            final chipWidth =
-                (constraints.maxWidth - spacing * (count - 1)) / count;
-            return Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: _answerTypes.map((type) {
-                final (value, label) = type;
-                final isSelected = _selectedAnswerType == value;
-                return SizedBox(
-                  width: chipWidth,
-                  child: GestureDetector(
-                    onTap: () {
+        TagChipRow(
+          scrollable: true,
+          chips: _answerTypes.map((type) {
+            final (value, label) = type;
+            final isSelected = _selectedAnswerType == value;
+            return TagChipData(
+              label: label,
+              selected: isSelected,
+              onTap: () {
                       setState(() {
                         _selectedAnswerType = value;
                         _showDuration = value == 'answered';
@@ -228,38 +222,8 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
                         }
                       });
                     },
-                    child: Container(
-                      height: 36,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? const Color(0xFF0052D9)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: isSelected
-                              ? const Color(0xFF0052D9)
-                              : const Color(0xFFE7E7E7),
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isSelected
-                              ? Colors.white
-                              : const Color(0xFF181818),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
+                  );
               }).toList(),
-            );
-          },
         ),
       ],
     );
@@ -413,24 +377,13 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
           style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
         ),
         const SizedBox(height: 8),
-        // 横向滚动平铺，超出宽度可左右滑动
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              ..._categories.map(
-                (c) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: _categoryChip(
-                    c.name,
-                    _selectedCategoryId == c.id,
-                    () => setState(() => _selectedCategoryId = c.id),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
-            ],
-          ),
+        TagChipRow(
+          scrollable: true,
+          chips: _categories.map((c) => TagChipData(
+            label: c.name,
+            selected: _selectedCategoryId == c.id,
+            onTap: () => setState(() => _selectedCategoryId = c.id),
+          )).toList(),
         ),
         if (_categories.isEmpty)
           const Padding(
@@ -445,32 +398,6 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
   }
 
   /// 分类平铺 chip（选中态高亮）
-  Widget _categoryChip(String label, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 36,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0052D9) : Colors.white,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFF0052D9)
-                : const Color(0xFFE7E7E7),
-          ),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            color: isSelected ? Colors.white : const Color(0xFF181818),
-          ),
-        ),
-      ),
-    );
-  }
 
   // ── 提交按钮 ──
 

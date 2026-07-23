@@ -15,6 +15,7 @@ import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/lead_list_provider.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/widgets/sheet_header.dart';
+import 'package:telemarketing_app/widgets/tag_chip.dart';
 
 /// 显示编辑线索面板（底部抽屉）
 void showEditLeadDialog(
@@ -154,21 +155,13 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
             style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
           )
         else
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                ..._categories.map((c) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: _chip(
-                    c.name,
-                    _selectedCategoryId == c.id,
-                    () => setState(() => _selectedCategoryId = c.id),
-                  ),
-                )),
-                const SizedBox(width: 4),
-              ],
-            ),
+          TagChipRow(
+            scrollable: true,
+            chips: _categories.map((c) => TagChipData(
+              label: c.name,
+              selected: _selectedCategoryId == c.id,
+              onTap: () => setState(() => _selectedCategoryId = c.id),
+            )).toList(),
           ),
       ],
     );
@@ -185,53 +178,19 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
           style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
         ),
         const SizedBox(height: 8),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              ..._availableStatuses.map((s) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _chip(
-                  LeadConstants.displayName(s),
-                  _selectedStatus == s,
-                  () => setState(() => _selectedStatus = s),
-                ),
-              )),
-              const SizedBox(width: 4),
-            ],
-          ),
+        TagChipRow(
+          scrollable: true,
+          chips: _availableStatuses.map((s) => TagChipData(
+            label: LeadConstants.displayName(s),
+            selected: _selectedStatus == s,
+            onTap: () => setState(() => _selectedStatus = s),
+          )).toList(),
         ),
       ],
     );
   }
 
   /// 平铺 chip（选中态高亮）
-  Widget _chip(String label, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 36,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0052D9) : Colors.white,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFF0052D9)
-                : const Color(0xFFE7E7E7),
-          ),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            color: isSelected ? Colors.white : const Color(0xFF181818),
-          ),
-        ),
-      ),
-    );
-  }
 
   // ── 提交按钮 ──
 

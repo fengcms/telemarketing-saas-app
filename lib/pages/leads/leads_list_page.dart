@@ -9,9 +9,9 @@ import 'package:telemarketing_app/models/lead.dart';
 import 'package:telemarketing_app/models/lead_list_context.dart';
 import 'package:telemarketing_app/models/option_item.dart';
 import 'package:telemarketing_app/widgets/lead_card.dart';
+import 'package:telemarketing_app/widgets/tag_chip.dart';
 import 'lead_detail_page.dart';
 import 'widgets/leads_skeletons.dart';
-import 'widgets/leads_filter_widgets.dart';
 import 'widgets/leads_search_bar.dart';
 import 'widgets/leads_top_bar.dart';
 
@@ -253,11 +253,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _buildStatusChips(setSheetState),
-        ),
+        TagChipRow(chips: _buildStatusChips(setSheetState)),
       ],
     );
   }
@@ -271,10 +267,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _buildOptionChips(
+        TagChipRow(chips: _buildOptionChips(
             state.categories,
             _tempCategoryId,
             setSheetState,
@@ -283,8 +276,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
                 () => _tempCategoryId = _tempCategoryId == id ? null : id,
               );
             },
-          ),
-        ),
+          )),
       ],
     );
   }
@@ -298,10 +290,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _buildOptionChips(
+        TagChipRow(chips: _buildOptionChips(
             state.projects,
             _tempProjectId,
             setSheetState,
@@ -316,7 +305,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
     );
   }
 
-  List<Widget> _buildStatusChips(Function setSheetState) {
+  List<TagChipData> _buildStatusChips(Function setSheetState) {
     final statuses = [
       ('pending', '待分配'),
       ('assigned', '待跟进'),
@@ -326,8 +315,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
     ];
     return statuses.map((s) {
       final selected = _tempStatus == s.$1;
-      return SelectChip(
-          label: s.$2, selected: selected, onTap: () {
+      return TagChipData(label: s.$2, selected: selected, onTap: () {
         setSheetState(() {
           _tempStatus = selected ? null : s.$1;
         });
@@ -335,7 +323,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
     }).toList();
   }
 
-  List<Widget> _buildOptionChips(
+  List<TagChipData> _buildOptionChips(
     List<OptionItem> options,
     String? selectedId,
     Function setSheetState, {
@@ -343,8 +331,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
   }) {
     return options.map((o) {
       final selected = o.id == selectedId;
-      return SelectChip(
-          label: o.name, selected: selected, onTap: () => onSelected(o.id));
+      return TagChipData(label: o.name, selected: selected, onTap: () => onSelected(o.id));
     }).toList();
   }
 
