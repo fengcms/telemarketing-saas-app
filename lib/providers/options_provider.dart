@@ -21,3 +21,17 @@ final optionsCacheProvider = Provider<OptionsCacheService>((ref) {
 
   return cache;
 });
+
+/// 根据分类 ID 获取分类名称
+final categoryNameProvider =
+    FutureProvider.family<String, String>((ref, id) async {
+  final cache = ref.read(optionsCacheProvider);
+  return (await cache.getCategoryName(id)) ?? id;
+});
+
+/// 根据用户 ID 获取用户姓名
+final userNameProvider =
+    FutureProvider.family<String, String>((ref, id) async {
+  final cache = ref.read(optionsCacheProvider);
+  return (await cache.getUserName(id)) ?? id;
+});

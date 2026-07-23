@@ -6,8 +6,10 @@ import '../../providers/auth_provider.dart';
 import '../../providers/lead_list_provider.dart';
 import '../../providers/options_provider.dart';
 import '../../models/lead.dart';
+import '../../models/lead_list_context.dart';
 import '../../models/option_item.dart';
 import '../../widgets/lead_card.dart';
+import 'lead_detail_page.dart';
 
 /// 线索列表页
 class LeadsListPage extends ConsumerStatefulWidget {
@@ -625,7 +627,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
           if (index == state.leads.length) {
             return _buildFooter(state);
           }
-          return _buildLeadCard(state.leads[index], isManager);
+          return _buildLeadCard(state.leads[index], isManager, index);
         },
       ),
     );
@@ -633,12 +635,28 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
 
   // ── 线索卡片 ──
 
-  Widget _buildLeadCard(Lead lead, bool isManager) {
+  Widget _buildLeadCard(Lead lead, bool isManager, int index) {
     return LeadCard(
       lead: lead,
       showOwner: isManager,
       onTap: () {
-        // 跳转详情页 — 待开发
+        // 构建列表上下文（底部导航条用）
+        final ids = ref.read(leadListProvider).leads
+            .map((l) => l.id)
+            .toList();
+        final listContext = LeadListContext(
+          ids: ids,
+          index: index,
+          source: 'leads',
+        );
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => LeadDetailPage(
+              leadId: lead.id,
+              listContext: listContext,
+            ),
+          ),
+        );
       },
     );
   }

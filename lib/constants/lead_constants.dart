@@ -20,6 +20,19 @@ class LeadConstants {
     'invalid': '无效',
   };
 
+  /// 接听类型枚举 → 中文显示名
+  static const Map<String, String> answerTypeLabels = {
+    'answered': '已接听',
+    'no_answer': '无人接听',
+    'rejected': '拒接',
+    'empty_number': '空号',
+    'suspended': '停机',
+  };
+
+  /// 获取接听类型的中文显示名
+  static String answerTypeLabel(String? code) =>
+      answerTypeLabels[code] ?? code ?? '--';
+
   /// 获取状态的中文显示名，未知状态直接返回 code 本身
   static String labelOf(String code) => statusLabels[code] ?? code;
 

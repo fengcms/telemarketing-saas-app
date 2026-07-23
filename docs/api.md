@@ -912,61 +912,105 @@ curl https://tm-api-test.kao9.com/api/tenant/leads/<lead_id> \
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "lead-uuid",
-    "tenantId": "tenant-uuid",
-    "projectId": "project-uuid",
-    "name": "张三",
-    "phone": "13800138000",
-    "company": "碧桂园集团",
-    "position": "经理",
-    "gender": "男",
-    "age": 35,
-    "wechat": "wx_abcd1234",
-    "address": "广东省广州市天河区",
-    "source": "电话咨询",
-    "intention": "投资自住",
-    "remark": "客户关注A户型",
-    "status": "following",
-    "ownerId": "user-uuid",
-    "categoryId": "category-uuid",
-    "isBlocked": 0,
-    "customFields": {},
-    "importBatchId": null,
-    "assignedAt": 1700000000,
-    "lastFollowupAt": 1700001000,
-    "nextFollowupAt": 1700080000,
-    "pooledAt": 1699990000,
-    "consentAt": 1699900000,
-    "createdAt": 1699990000,
-    "updatedAt": 1700001000,
-    "deletedAt": null,
-    "erasedAt": null,
-    "timeline": [
-      {
-        "id": "followup-uuid",
-        "type": "followup",
-        "content": "客户表示需要和家里人商量",
-        "answerType": "answered",
-        "duration": 120,
-        "categoryId": "category-uuid",
-        "userId": "user-uuid",
-        "userName": "张伟",
-        "createdAt": 1700000000
-      },
-      {
-        "id": "call-uuid",
-        "type": "call",
-        "answerType": "answered",
-        "duration": 90,
-        "userId": "user-uuid",
-        "userName": "张伟",
-        "startedAt": 1699990000
-      }
-    ]
-  },
-  "error": null
+    "success": true,
+    "data": {
+        "lead": {
+            "id": "4b137d88-54d5-4880-8284-384eecf1d7ed",
+            "tenantId": "t1000001-0000-0000-0000-000000000001",
+            "name": "徐华",
+            "phone": "156****0034",
+            "company": "中海集团",
+            "position": null,
+            "gender": "女",
+            "age": 34,
+            "wechat": "w*********4",
+            "address": "广东省广州市天河区凤凰路88号",
+            "source": "电话咨询",
+            "intention": null,
+            "remark": null,
+            "status": "following",
+            "ownerId": "u00000007-0000-0000-0000-000000000007",
+            "categoryId": "c000100c-0000-0000-0000-000000000001",
+            "isBlocked": 0,
+            "projectId": "p0010c-0000-0000-0000-000000000001",
+            "customFields": "{}",
+            "importBatchId": null,
+            "assignedAt": 1784721007,
+            "lastFollowupAt": 1784612332,
+            "nextFollowupAt": 1785065987,
+            "pooledAt": 1784720387,
+            "consentAt": 1784350313,
+            "createdAt": 1784720387,
+            "updatedAt": 1784720387,
+            "deletedAt": null,
+            "erasedAt": null
+        },
+        "category": {
+            "id": "c000100c-0000-0000-0000-000000000001",
+            "tenantId": "t1000001-0000-0000-0000-000000000001",
+            "name": "意向客户",
+            "type": "default",
+            "sort": 2,
+            "isSystem": 1,
+            "createdAt": 1784720387,
+            "deletedAt": null
+        },
+        "followups": [
+            {
+                "id": "054c1083-c3d2-4e38-bf99-cfdba59284f1",
+                "tenantId": "t1000001-0000-0000-0000-000000000001",
+                "leadId": "4b137d88-54d5-4880-8284-384eecf1d7ed",
+                "userId": "u00000007-0000-0000-0000-000000000007",
+                "content": "详细介绍了楼盘信息，客户有兴趣",
+                "categoryId": "c000100a-0000-0000-0000-000000000001",
+                "answerType": "empty_number",
+                "duration": null,
+                "nextFollowupAt": null,
+                "createdAt": 1784612332,
+                "deletedAt": null
+            },
+            {
+                "id": "19fa36bc-4baf-499f-9b50-36292e9ada79",
+                "tenantId": "t1000001-0000-0000-0000-000000000001",
+                "leadId": "4b137d88-54d5-4880-8284-384eecf1d7ed",
+                "userId": "u00000007-0000-0000-0000-000000000007",
+                "content": "客户对价格有异议，已记录预算要求",
+                "categoryId": "c000100a-0000-0000-0000-000000000001",
+                "answerType": "empty_number",
+                "duration": null,
+                "nextFollowupAt": null,
+                "createdAt": 1784374432,
+                "deletedAt": null
+            },
+            {
+                "id": "998009fa-9d08-4cb4-a3e7-b5f6a00c99b9",
+                "tenantId": "t1000001-0000-0000-0000-000000000001",
+                "leadId": "4b137d88-54d5-4880-8284-384eecf1d7ed",
+                "userId": "u00000007-0000-0000-0000-000000000007",
+                "content": "停机，需要更新联系方式",
+                "categoryId": "c000100b-0000-0000-0000-000000000001",
+                "answerType": "empty_number",
+                "duration": null,
+                "nextFollowupAt": null,
+                "createdAt": 1784027258,
+                "deletedAt": null
+            },
+            {
+                "id": "44627ba1-d479-4036-86b2-8a8bfe0f1c77",
+                "tenantId": "t1000001-0000-0000-0000-000000000001",
+                "leadId": "4b137d88-54d5-4880-8284-384eecf1d7ed",
+                "userId": "u00000007-0000-0000-0000-000000000007",
+                "content": "客户表示需要和家里人商量后再决定",
+                "categoryId": "c000100a-0000-0000-0000-000000000001",
+                "answerType": "no_answer",
+                "duration": null,
+                "nextFollowupAt": null,
+                "createdAt": 1783941024,
+                "deletedAt": null
+            }
+        ]
+    },
+    "error": null
 }
 ```
 

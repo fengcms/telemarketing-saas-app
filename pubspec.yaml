@@ -57,6 +57,9 @@ dependencies:
 
   # 网络状态监听（离线检测）
 
+  # 系统拨号盘
+  url_launcher: ^6.3.0
+
 dependency_overrides:
   # 升级 image_picker_android 以修复 Android 构建兼容性
   image_picker_android: 0.8.13+13
