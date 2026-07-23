@@ -1,3 +1,6 @@
+/// 线索相关接口服务
+library;
+
 import 'package:dio/dio.dart';
 import '../services/api_client.dart';
 import '../services/api_constants.dart';

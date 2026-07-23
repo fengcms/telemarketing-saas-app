@@ -1,3 +1,6 @@
+/// 当前选中的底部 Tab 索引
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';

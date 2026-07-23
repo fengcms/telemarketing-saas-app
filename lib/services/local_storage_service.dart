@@ -1,3 +1,12 @@
+/// 本地凭据存储服务
+///
+/// 管理登录页的"保存登录邮箱"和"保存登录密码"功能。
+/// - 邮箱：明文存储于 SharedPreferences（非敏感信息）
+/// - 密码：加密存储于 flutter_secure_storage（Android Keystore）
+///
+/// 设计文档参考：docs/design/page-design/01-登录页.md §3.5
+library;
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 

@@ -1,3 +1,9 @@
+/// Token 安全存储服务
+///
+/// 使用 flutter_secure_storage（底层 Android Keystore）加密存储
+/// accessToken（15 分钟有效期）和 refreshToken（7 天有效期）。
+library;
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Token 安全存储服务

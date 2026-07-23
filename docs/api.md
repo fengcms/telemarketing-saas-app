@@ -512,26 +512,37 @@ curl https://tm-api-test.kao9.com/api/tenant/profile \
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "租户 UUID",
-    "name": "租户名称",
-    "slug": "唯一标识",
-    "status": "active | suspended",
-    "expireAt": 1700000000,
-    "maxUsers": 50,
-    "maxLeads": 10000,
-    "contactName": "联系人姓名",
-    "contactPhone": "联系电话",
-    "contactEmail": "联系邮箱",
-    "industry": "行业",
-    "address": "地址",
-    "intro": "公司简介",
-    "website": "官网",
-    "settings": {},
-    "createdAt": 1700000000,
-    "updatedAt": 1700000000
-  }
+    "success": true,
+    "data": {
+        "id": "t1000001-0000-0000-0000-000000000001",
+        "name": "碧桂园·凤凰城",
+        "slug": "dev-phoenix",
+        "status": "active",
+        "expireAt": null,
+        "maxUsers": 50,
+        "maxLeads": 10000,
+        "contactName": "李明",
+        "contactPhone": "13800001000",
+        "contactEmail": "liming@bgydemo.com",
+        "industry": "房地产",
+        "address": "广东省广州市天河区凤凰路88号",
+        "intro": "广州碧桂园凤凰城项目，高端住宅区",
+        "website": "https://bgydemo.com",
+        "createdBy": null,
+        "createdAt": 1784720387,
+        "updatedAt": 1784720387,
+        "settings": {
+            "customFields": [],
+            "dedup": "phone",
+            "allowSelfClaim": false,
+            "noCallWindow": {
+                "enabled": true,
+                "start": "21:00",
+                "end": "09:00"
+            }
+        }
+    },
+    "error": null
 }
 ```
 

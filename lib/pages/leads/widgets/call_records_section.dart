@@ -1,3 +1,9 @@
+/// 通话记录摘要组件（Section D）
+///
+/// 设计文档 §3.5 - 通话记录摘要
+/// 展示最近 3 条通话记录，TM/TA 可见"补正"按钮。
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';

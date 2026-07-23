@@ -1,3 +1,6 @@
+/// 线索详情状态
+library;
+
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/lead_detail.dart';
@@ -5,6 +8,7 @@ import '../models/follow_up_record.dart';
 import '../models/call_record.dart';
 import '../models/lead_list_context.dart';
 import '../services/lead_service.dart';
+import 'auth_provider.dart';
 import 'lead_list_provider.dart';
 
 // ── 线索详情状态 ──
@@ -223,7 +227,9 @@ class LeadDetailNotifier extends StateNotifier<LeadDetailState> {
   /// 刷新全部数据
   Future<void> refreshAll() async {
     if (_currentLeadId == null) return;
-    final raw = false; // TODO: 从 auth 获取 TA 角色
+    // TA/TM 角色传 true 以获取明文姓名/电话
+    final user = _ref.read(authProvider).user;
+    final raw = user?.role == 'tenant_admin' || user?.role == 'tenant_manager';
     state = LeadDetailState(listContext: state.listContext);
     await Future.wait([
       _fetchDetail(_currentLeadId!, raw),

@@ -1,3 +1,9 @@
+/// 编辑跟进记录弹窗
+///
+/// 设计文档 §2.5 - 编辑跟进记录弹窗（仅内容）
+/// TE 仅可编辑自己创建且≤5 分钟的记录，TM/TA 不限。
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';

@@ -1,3 +1,9 @@
+/// 预约下次跟进弹窗
+///
+/// 设计文档 §2.3 - 预约下次跟进弹窗
+/// 日期默认明天、时间默认 09:00、备注可选
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';

@@ -1,3 +1,6 @@
+/// 认证门禁：根据登录态决定显示登录页还是首页
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +13,8 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
-    debugPrint('=== FLUTTER ERROR ===\n${details.exception}\n${details.stack}');
+    // ignore: avoid_print
+    print('=== FLUTTER ERROR ===\n${details.exception}\n${details.stack}');
   };
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

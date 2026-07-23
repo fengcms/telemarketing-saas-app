@@ -1,3 +1,6 @@
+/// Token 存储实例
+library;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user.dart';
 import '../services/api_client.dart';
@@ -5,6 +8,7 @@ import '../services/api_exception.dart';
 import '../services/auth_service.dart';
 import '../services/token_storage.dart';
 import '../services/local_storage_service.dart';
+import '../services/tenant_service.dart';
 
 // ── Service Providers ──
 
@@ -29,6 +33,11 @@ final authServiceProvider = Provider<AuthService>((ref) {
     apiClient: ref.read(apiClientProvider),
     tokenStorage: ref.read(tokenStorageProvider),
   );
+});
+
+/// 租户信息服务实例
+final tenantServiceProvider = Provider<TenantService>((ref) {
+  return TenantService(apiClient: ref.read(apiClientProvider));
 });
 
 // ── Auth State ──

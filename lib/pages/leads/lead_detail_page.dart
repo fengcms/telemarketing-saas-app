@@ -1,3 +1,12 @@
+/// 线索详情页
+///
+/// 设计文档：05-线索详情.md
+/// 入口：线索列表页/公海线索列表页 → 点击卡片
+/// 路由参数：
+///   [leadId] 必传，当前线索 ID
+///   [listContext] 可选，列表上下文（决定底部导航条显隐）
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';

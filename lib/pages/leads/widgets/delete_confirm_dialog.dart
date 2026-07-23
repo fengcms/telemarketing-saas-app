@@ -1,3 +1,9 @@
+/// 删除跟进记录确认弹窗
+///
+/// 设计文档 §2.7 - 删除确认弹窗
+/// 确定删除 / 取消
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';

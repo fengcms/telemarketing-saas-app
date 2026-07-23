@@ -1,3 +1,13 @@
+/// 拨号辅助工具
+///
+/// 设计文档 §4.2 - 拨号流程
+/// 检查夜间禁呼时段 → 非禁呼直接拨号 → 禁呼弹出确认弹窗
+///
+/// [phone] 电话号码
+/// [context] BuildContext
+/// [noCallWindow] 禁呼时段配置，默认 {enabled: true, start: "21:00", end: "09:00"}
+library;
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 

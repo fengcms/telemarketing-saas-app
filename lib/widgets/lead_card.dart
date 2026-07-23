@@ -1,3 +1,9 @@
+/// 线索卡片组件
+///
+/// 5 行布局，严格按 design doc §3.3 实现。
+/// categoryId/projectId 通过 [OptionsCacheService] 解析为显示名。
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';

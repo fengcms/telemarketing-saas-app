@@ -1,3 +1,12 @@
+/// 强制改密页
+///
+/// 管理员重置用户密码后，系统检测到 [User.mustResetPassword] 为 true 时跳转至此页。
+/// 用户需设置符合强度的新密码，确认后调用 POST /api/auth/change-password。
+/// 成功后清空 Token 并跳转回登录页。
+///
+/// 设计文档参考：docs/design/page-design/02-强制改密页.md
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';

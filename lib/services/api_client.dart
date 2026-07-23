@@ -1,3 +1,12 @@
+/// API 客户端（Dio 单例）
+///
+/// 全局唯一的 HTTP 客户端，配置了：
+/// - 基础地址（测试环境 https://tm-api-test.kao9.com）
+/// - Token 注入拦截器（自动注入 Authorization header）
+/// - Token 自动刷新拦截器（401 时静默换发后重试）
+/// - 全局错误码解析为 [ApiException]
+library;
+
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'api_constants.dart';

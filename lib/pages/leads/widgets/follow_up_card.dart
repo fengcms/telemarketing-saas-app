@@ -1,3 +1,9 @@
+/// 跟进时间线单条记录卡片
+///
+/// 设计文档 §3.4.3 - 单条跟进记录卡片
+/// 包含：时间、跟进人、接听类型+时长、内容、分类变更、编辑/删除按钮
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';

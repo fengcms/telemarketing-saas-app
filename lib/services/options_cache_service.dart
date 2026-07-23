@@ -1,3 +1,10 @@
+/// 下拉选项缓存服务
+///
+/// 缓存分类/项目等下拉选项数据，避免重复请求。
+/// 内存缓存 TTL 在 [ApiConstants.optionsCacheTTL] 中配置（默认 1800 秒/30 分钟）。
+/// 同时持久化到 SharedPreferences，重开 APP 后先加载本地缓存再后台刷新。
+library;
+
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_client.dart';

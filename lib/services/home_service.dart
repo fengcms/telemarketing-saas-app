@@ -1,3 +1,12 @@
+/// 首页看板数据服务
+///
+/// 封装首页所需的 4 个接口调用：
+/// 1. [fetchMyStats] - GET /api/tenant/stats/mine
+/// 2. [fetchPendingSchedules] - GET /api/tenant/schedules?status=pending&page=1&size=5
+/// 3. [fetchMyScheduleStats] - GET /api/tenant/schedules/stats/mine
+/// 4. [fetchDueSoonCount] - GET /api/tenant/schedules?status=pending&scheduledAt__gte=...&page=1&size=1
+library;
+
 import 'package:dio/dio.dart';
 import '../services/api_client.dart';
 import '../services/api_constants.dart';

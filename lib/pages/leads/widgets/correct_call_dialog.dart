@@ -1,3 +1,9 @@
+/// 通话记录补正弹窗
+///
+/// 设计文档 §2.6 - 通话记录补正弹窗
+/// 仅 TM/TA 可见可用，用于修正接听类型/时长/结束时间
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';

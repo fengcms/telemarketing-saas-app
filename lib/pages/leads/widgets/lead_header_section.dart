@@ -1,3 +1,9 @@
+/// 线索详情页头部信息区（Section A）
+///
+/// 设计文档 §3.2 - 头部信息区
+/// 包含：姓名+标签、电话号码、详细信息（公司/职位/归属）
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';

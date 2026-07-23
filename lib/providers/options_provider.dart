@@ -1,3 +1,9 @@
+/// 下拉选项缓存 Provider
+///
+/// 懒初始化：首次调用时才拉取数据，缓存 30 分钟。
+/// 登录/登出时自动重置。
+library;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/options_cache_service.dart';
 import 'auth_provider.dart';

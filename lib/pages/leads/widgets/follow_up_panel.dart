@@ -1,3 +1,9 @@
+/// 跟进面板接入点：显示底部弹出面板
+///
+/// 设计文档 §2.2 - 跟进面板
+/// 内容：跟进内容 + 接听类型(5选1) + 通话时长(已接听时) + 修改分类(可选) + 提交按钮
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

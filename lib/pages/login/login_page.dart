@@ -1,3 +1,12 @@
+/// 登录页
+///
+/// 提供邮箱+密码登录功能，接入真实 POST /api/auth/login 接口。
+/// 自动处理 401、423、429 等错误。
+/// 支持「保存登录邮箱」「保存登录密码」本地持久化。
+///
+/// 设计文档参考：docs/design/page-design/01-登录页.md
+library;
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

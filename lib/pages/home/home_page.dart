@@ -1,3 +1,15 @@
+/// 首页看板
+///
+/// APP 默认首屏页面（底部 Tab 1），聚合展示：
+/// - 今日工作概况（2x2 统计四宫格）
+/// - 待办日程预览（最多 5 条）
+/// - 快捷入口（我的线索、通话记录）
+///
+/// [onSwitchTab] 切换底部 Tab 回调（由 MainShell 传入）。
+///
+/// 设计文档参考：docs/design/page-design/03-首页看板.md
+library;
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

@@ -39,7 +39,7 @@ class LeadConstants {
   /// 获取状态的中文显示名（带兜底）
   static String displayName(String? code) {
     if (code == null || code.isEmpty) return '--';
-    return statusLabels[code] ?? code;
+    return labelOf(code);
   }
 
   /// 获取状态标签的颜色样式 (背景色, 文字色, 显示名)

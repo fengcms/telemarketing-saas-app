@@ -1,3 +1,9 @@
+/// 编辑线索弹窗
+///
+/// 设计文档 §2.4 - 编辑线索弹窗
+/// 分类下拉 + 状态下拉（TE仅前向流转）
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';

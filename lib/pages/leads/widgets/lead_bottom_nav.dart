@@ -1,3 +1,10 @@
+/// 底部线索导航条
+///
+/// 设计文档 §2.9 - 底部线索导航条（上下文相关）
+/// 仅从线索列表页/公海列表页进入详情页时显示。
+/// [← 上一个] [3 / 28] [下一个 →]
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/lead_list_context.dart';

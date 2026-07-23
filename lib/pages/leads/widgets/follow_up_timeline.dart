@@ -1,3 +1,10 @@
+/// 跟进时间线组件（Section C）
+///
+/// 设计文档 §3.4 - 跟进时间线
+/// 展示跟进记录的列表，包含时间线圆点+连线布局。
+/// 数据为全量获取，前端本地切片实现"加载更多"。
+library;
+
 import 'package:flutter/material.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import '../../../models/follow_up_record.dart';

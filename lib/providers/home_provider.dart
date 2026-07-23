@@ -1,3 +1,6 @@
+/// 首页数据服务实例
+library;
+
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/home_stats.dart';

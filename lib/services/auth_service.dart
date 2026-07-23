@@ -1,3 +1,8 @@
+/// 认证服务
+///
+/// 封装登录、登出、Token 刷新、改密等认证相关接口。
+library;
+
 import 'package:dio/dio.dart';
 import 'api_client.dart';
 import 'api_constants.dart';

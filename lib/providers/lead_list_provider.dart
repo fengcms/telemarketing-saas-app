@@ -1,3 +1,6 @@
+/// 用于区分"未传参"和"传 null"的 sentinel 值
+library;
+
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/lead.dart';
