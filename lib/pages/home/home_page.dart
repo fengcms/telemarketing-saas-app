@@ -20,6 +20,7 @@ import '../../providers/home_provider.dart';
 import '../../models/home_stats.dart';
 import '../../models/schedule.dart';
 import '../coming_soon_page.dart';
+import 'home_skeletons.dart';
 
 /// 首页看板
 ///
@@ -291,9 +292,9 @@ class _HomePageState extends ConsumerState<HomePage>
           padding: EdgeInsets.all(16),
           child: Column(
             children: [
-              _SkeletonSection(),
+              SkeletonSection(),
               SizedBox(height: 16),
-              _SkeletonSection(isSchedule: true),
+              SkeletonSection(isSchedule: true),
             ],
           ),
         ),
@@ -383,9 +384,9 @@ class _HomePageState extends ConsumerState<HomePage>
     if (state.isLoadingStats && stats == null) {
       return const Row(
         children: [
-          Expanded(child: _SkeletonStatCard()),
+          Expanded(child: SkeletonStatCard()),
           SizedBox(width: 12),
-          Expanded(child: _SkeletonStatCard()),
+          Expanded(child: SkeletonStatCard()),
         ],
       );
     }
@@ -491,7 +492,7 @@ class _HomePageState extends ConsumerState<HomePage>
           if (state.isLoadingSchedules && state.schedules == null)
             ...List.generate(
               3,
-              (_) => const _SkeletonScheduleCard(),
+              (_) => const SkeletonScheduleCard(),
             )
           else if (state.schedulesError != null && state.schedules == null)
             Padding(
@@ -812,126 +813,3 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ── 骨架屏组件 ──
-
-class _SkeletonSection extends StatelessWidget {
-  final bool isSchedule;
-  const _SkeletonSection({this.isSchedule = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: isSchedule ? 100 : 140,
-              height: 16,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7E7E7),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (isSchedule) ...[
-              const _SkeletonScheduleCard(),
-              const _SkeletonScheduleCard(),
-              const _SkeletonScheduleCard(),
-            ] else ...[
-              const Row(
-                children: [
-                  Expanded(child: _SkeletonStatCard()),
-                  SizedBox(width: 12),
-                  Expanded(child: _SkeletonStatCard()),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Row(
-                children: [
-                  Expanded(child: _SkeletonStatCard()),
-                  SizedBox(width: 12),
-                  Expanded(child: _SkeletonStatCard()),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SkeletonStatCard extends StatelessWidget {
-  const _SkeletonStatCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F3F3),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: const Column(
-        children: [
-          _SkeletonBlock(width: 48, height: 32),
-          SizedBox(height: 8),
-          _SkeletonBlock(width: 64, height: 14),
-        ],
-      ),
-    );
-  }
-}
-
-class _SkeletonScheduleCard extends StatelessWidget {
-  const _SkeletonScheduleCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          const SizedBox(width: 16),
-          const _SkeletonBlock(width: 44, height: 16),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const _SkeletonBlock(width: 160, height: 16),
-                const SizedBox(height: 8),
-                _SkeletonBlock(width: 100, height: 14),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-        ],
-      ),
-    );
-  }
-}
-
-class _SkeletonBlock extends StatelessWidget {
-  final double width;
-  final double height;
-  const _SkeletonBlock({required this.width, required this.height});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: const Color(0xFFE7E7E7),
-        borderRadius: BorderRadius.circular(4),
-      ),
-    );
-  }
-}

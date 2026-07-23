@@ -12,6 +12,8 @@ import '../../models/lead_list_context.dart';
 import '../../models/option_item.dart';
 import '../../widgets/lead_card.dart';
 import 'lead_detail_page.dart';
+import 'widgets/leads_skeletons.dart';
+import 'widgets/leads_filter_widgets.dart';
 
 /// 线索列表页
 class LeadsListPage extends ConsumerStatefulWidget {
@@ -584,7 +586,8 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
     ];
     return statuses.map((s) {
       final selected = _tempStatus == s.$1;
-      return _filterChip(s.$2, selected, () {
+      return SelectChip(
+          label: s.$2, selected: selected, onTap: () {
         setSheetState(() {
           _tempStatus = selected ? null : s.$1;
         });
@@ -600,29 +603,11 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
   }) {
     return options.map((o) {
       final selected = o.id == selectedId;
-      return _filterChip(o.name, selected, () => onSelected(o.id));
+      return SelectChip(
+          label: o.name, selected: selected, onTap: () => onSelected(o.id));
     }).toList();
   }
 
-  Widget _filterChip(String label, bool selected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFF0052D9) : const Color(0xFFF3F3F3),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            color: selected ? Colors.white : const Color(0xFF4E5969),
-          ),
-        ),
-      ),
-    );
-  }
 
   // ── 主体区域 ──
 
@@ -731,13 +716,13 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
         child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _SkBlock(width: 100, height: 16),
+            LeadSkBlock(width: 100, height: 16),
             SizedBox(height: 12),
-            _SkBlock(width: 160, height: 14),
+            LeadSkBlock(width: 160, height: 14),
             SizedBox(height: 12),
-            _SkBlock(width: 80, height: 14),
+            LeadSkBlock(width: 80, height: 14),
             SizedBox(height: 12),
-            _SkBlock(width: 120, height: 14),
+            LeadSkBlock(width: 120, height: 14),
           ],
         ),
       ),
@@ -806,24 +791,6 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SkBlock extends StatelessWidget {
-  final double width;
-  final double height;
-  const _SkBlock({required this.width, required this.height});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: const Color(0xFFE7E7E7),
-        borderRadius: BorderRadius.circular(4),
       ),
     );
   }
