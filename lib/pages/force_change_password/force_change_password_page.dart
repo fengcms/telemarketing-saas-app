@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import '../../providers/auth_provider.dart';
 import 'password_rules_hint.dart';
+import 'password_nav_bar.dart';
 
 /// 强制改密页
 ///
@@ -234,7 +235,7 @@ class _ForceChangePasswordPageState
               SingleChildScrollView(
                 child: Column(
                   children: [
-                    _buildNavBar(),
+                    PasswordNavBar(onBack: _onBack),
                     const SizedBox(height: 16),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -269,45 +270,6 @@ class _ForceChangePasswordPageState
 
   // ── 组件 ──
 
-  Widget _buildNavBar() {
-    return Container(
-      height: 56,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x0D000000),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: _onBack,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-              child: Icon(TDIcons.chevron_left,
-                  size: 24, color: Color(0xFF181818)),
-            ),
-          ),
-          const Expanded(
-            child: Text(
-              '设置新密码',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF181818),
-              ),
-            ),
-          ),
-          const SizedBox(width: 40), // 与左侧返回按钮视觉平衡
-        ],
-      ),
-    );
-  }
 
 
   Widget _buildNewPasswordInput() {

@@ -13,6 +13,7 @@ import '../../../providers/lead_list_provider.dart';
 import '../../../providers/options_provider.dart';
 import '../../../models/option_item.dart';
 import '../../../utils/duration_format.dart';
+import '../../../widgets/sheet_header.dart';
 
 /// 跟进面板接入点：显示底部弹出面板
 ///
@@ -114,7 +115,7 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // 标题 + 拖拽手柄
-              _buildHeader(),
+              const SheetHeader(title: '新增跟进记录'),
               const SizedBox(height: 20),
               // 跟进内容
               _buildContentField(),
@@ -139,36 +140,6 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
     );
   }
 
-  Widget _buildHeader() {
-    return Row(
-      children: [
-        // 拖拽手柄
-        Container(
-          width: 32,
-          height: 4,
-          decoration: BoxDecoration(
-            color: const Color(0xFFDCDCDC),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const Spacer(),
-        const Text(
-          '新增跟进记录',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF181818),
-          ),
-        ),
-        const Spacer(),
-        // 关闭按钮
-        GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: const Icon(Icons.close, size: 20, color: Color(0xFFA6A6A6)),
-        ),
-      ],
-    );
-  }
 
   // ── 跟进内容输入 ──
 

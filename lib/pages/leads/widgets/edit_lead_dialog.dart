@@ -14,6 +14,7 @@ import '../../../providers/lead_detail_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/lead_list_provider.dart';
 import '../../../providers/options_provider.dart';
+import '../../../widgets/sheet_header.dart';
 
 /// 显示编辑线索面板（底部抽屉）
 void showEditLeadDialog(
@@ -112,7 +113,7 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── 标题行 ──
-              _buildHeader(),
+              SheetHeader(title: '编辑 ${widget.detail.name} 线索'),
               const SizedBox(height: 20),
 
               // ── 线索分类 ──
@@ -135,34 +136,6 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
 
   // ── 标题行 ──
 
-  Widget _buildHeader() {
-    return Row(
-      children: [
-        Container(
-          width: 32,
-          height: 4,
-          decoration: BoxDecoration(
-            color: const Color(0xFFDCDCDC),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const Spacer(),
-        Text(
-          '编辑 ${widget.detail.name} 线索',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF181818),
-          ),
-        ),
-        const Spacer(),
-        GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: const Icon(Icons.close, size: 20, color: Color(0xFFA6A6A6)),
-        ),
-      ],
-    );
-  }
 
   // ── 分类选择器（横向平铺 chips） ──
 

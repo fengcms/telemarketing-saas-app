@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import '../../../models/lead_detail.dart';
 import '../../../providers/lead_list_provider.dart';
+import '../../../widgets/sheet_header.dart';
 
 /// 显示预约下次跟进面板（底部抽屉）
 void showScheduleDialog(
@@ -71,7 +72,7 @@ class _SchedulePanelState extends ConsumerState<_SchedulePanel> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── 标题行 ──
-              _buildHeader(),
+              SheetHeader(title: '新建日程（${widget.detail.name}）'),
               const SizedBox(height: 20),
 
               // ── 日期 ──
@@ -110,34 +111,6 @@ class _SchedulePanelState extends ConsumerState<_SchedulePanel> {
 
   // ── 标题行 ──
 
-  Widget _buildHeader() {
-    return Row(
-      children: [
-        Container(
-          width: 32,
-          height: 4,
-          decoration: BoxDecoration(
-            color: const Color(0xFFDCDCDC),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const Spacer(),
-        Text(
-          '新建日程（${widget.detail.name}）',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF181818),
-          ),
-        ),
-        const Spacer(),
-        GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: const Icon(Icons.close, size: 20, color: Color(0xFFA6A6A6)),
-        ),
-      ],
-    );
-  }
 
   // ── 日期选择 ──
 
