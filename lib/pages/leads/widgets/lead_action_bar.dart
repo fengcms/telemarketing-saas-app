@@ -37,7 +37,7 @@ class LeadActionBar extends StatelessWidget {
                 : () => _onDial(context),
           ),
           _actionButton(
-            icon: TDIcons.edit,
+            icon: TDIcons.rollback,
             label: '跟进',
             onTap: detail.isConverted
                 ? null

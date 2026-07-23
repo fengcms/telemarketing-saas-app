@@ -36,7 +36,8 @@
 - [x] `LeadBottomNav` — 上一个/计数/下一个、禁用态样式
 
 ### 弹窗/面板（Node 5）
-- [x] `FollowUpPanel`（底部弹出）：内容输入+5选1接听类型+通话时长+分类+提交
+- [x] `FollowUpPanel`（底部弹出）：内容输入(圆角矩形+内置计数)+5选1接听类型+系统通话记录查询+分类(默认线索自身)+提交(含转圈)
+- [x] 系统通话记录查询：MethodChannel + `READ_CALL_LOG` 权限，查询最近5分钟匹配线索手机号的通话时长，展示"x分x秒"/"x秒"，无记录显示"0秒"
 - [x] `EditFollowUpDialog`：编辑跟进内容
 - [x] `ScheduleDialog`：日期时间选择+备注+校验
 - [x] `EditLeadDialog`：分类+状态下拉（TE 前向流转限制）
@@ -59,7 +60,7 @@
 | 1 | 通话反馈面板未接入 | `lead_header_section.dart` / `lead_action_bar.dart` | 拨号返回后，设计文档要求弹出通话结果反馈面板（07-通话结果反馈面板.md），当前拨号后无任何反应 |
 | 2 | 拨号后自动弹出反馈面板回调 | `lead_detail_page.dart` | 需要监听 AppLifecycle（onResume），拨号返回后自动弹出反馈面板 |
 | 3 | "查看全部"通话记录跳转 | `call_records_section.dart:77` | 点击"查看全部"应跳转至 `/lead/:id/calls` 页面，当前只有 TODO 注释 |
-| 4 | 跟进面板分类选择器未接入 | `follow_up_panel.dart:307` | 分类下拉选择器只有 UI 占位，没有接入 `OptionsCacheService` 加载分类列表 |
+| 4 | ~跟进面板分类选择器未接入~ | ~`follow_up_panel.dart:307`~ | **已解决**：接入 `OptionsCacheService`，改为横向滚动平铺 chips，默认选中线索自身分类 |
 | 5 | 夜间禁呼时段配置读取 | `lead_action_bar.dart:75` | 夜间禁呼时段应从 `GET /api/tenant/profile` 的 `noCallWindow` 读取并传入 `handleDial` |
 
 ### 🟡 P1 — UI/UX 问题
@@ -72,7 +73,7 @@
 | 9 | 操作栏分割线 | `lead_detail_page.dart` | 操作栏上方应有 TDDivider 0.5px 分割线，当前放在 `_buildActionBar` 的 Container border 中 |
 | 10 | "补正"弹窗缺少结束时间 | `correct_call_dialog.dart` | 设计文档要求可选输入结束时间（TDDatePicker），当前未实现 |
 | 11 | 跟进面板缺少"提交失败"错误提示位置 | `follow_up_panel.dart` | 设计文档要求校验不通过时字段下方显示红色错误提示，当前只用了 TDToast |
-| 12 | 跟进面板文本内容 maxLength 限制 | `follow_up_panel.dart` | TDTextarea 未设置最大字节限制，虽然计数器显示 0/2000 |
+| 12 | ~跟进面板文本内容 maxLength 限制~ | ~`follow_up_panel.dart`~ | **已解决**：设置 `maxLength: 100` + `maxLengthEnforcement`，内置 indicator 计数显示在文本框内部右下角 |
 
 ### 🟢 P2 — 优化项
 
@@ -144,3 +145,10 @@ lib/providers/options_provider.dart     新增 categoryNameProvider, userNamePro
 lib/pages/leads/leads_list_page.dart    卡片点击跳转详情页
 pubspec.yaml                            添加 url_launcher 依赖
 ```
+
+### 后续修改（本次提交）
+- `lib/pages/leads/widgets/follow_up_panel.dart` — 跟进面板多项 UI 调整
+- `lib/pages/leads/widgets/lead_action_bar.dart` — 跟进按钮图标改为 rollback
+- `lib/services/api_client.dart` — 清理调试诊断拦截器
+- `android/app/src/main/AndroidManifest.xml` — 添加 `READ_CALL_LOG` 权限
+- `android/app/src/main/kotlin/.../MainActivity.kt` — 添加 MethodChannel 通话记录查询
