@@ -48,124 +48,35 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(leadDetailProvider);
 
-    // 首屏加载全量加载态 → 显示骨架屏
     if (state.isLoadingDetail) {
       return Scaffold(
         backgroundColor: const Color(0xFFF3F3F3),
-        appBar: TDNavBar(
-          title: '线索详情',
-          backgroundColor: Colors.white,
-          useDefaultBack: false,
-          boxShadow: [
-            const BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 2,
-              offset: Offset(0, 1),
-            ),
-          ],
-          leftBarItems: [
-            TDNavBarItem(
-              icon: TDIcons.chevron_left,
-              action: () => Navigator.of(context).pop(),
-            ),
-          ],
-        ),
+        appBar: _buildNavBar(),
         body: _buildSkeleton(),
       );
     }
 
-    // 线索已删除/不存在
     if (state.detail == null) {
       return Scaffold(
         backgroundColor: const Color(0xFFF3F3F3),
-        appBar: TDNavBar(
-          title: '线索详情',
-          backgroundColor: Colors.white,
-          useDefaultBack: false,
-          boxShadow: [
-            const BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 2,
-              offset: Offset(0, 1),
-            ),
-          ],
-          leftBarItems: [
-            TDNavBarItem(
-              icon: TDIcons.chevron_left,
-              action: () => Navigator.of(context).pop(),
-            ),
-          ],
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                TDIcons.info_circle_filled,
-                size: 64,
-                color: const Color(0xFFA6A6A6),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                state.detailError ?? '该线索已删除或不存在',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF181818),
-                ),
-              ),
-              const SizedBox(height: 24),
-              TDButton(
-                text: '返回列表',
-                theme: TDButtonTheme.primary,
-                size: TDButtonSize.medium,
-                shape: TDButtonShape.round,
-                onTap: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-        ),
+        appBar: _buildNavBar(),
+        body: _buildErrorBody(state.detailError),
       );
     }
 
     final detail = state.detail!;
-
-    // 主页面：TDNavBar + 可滚动内容
     return Scaffold(
       backgroundColor: const Color(0xFFF3F3F3),
-      appBar: TDNavBar(
-        title: '线索详情',
-        backgroundColor: Colors.white,
-        useDefaultBack: false,
-        boxShadow: [
-          const BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 2,
-            offset: Offset(0, 1),
-          ),
-        ],
-        leftBarItems: [
-          TDNavBarItem(
-            icon: TDIcons.chevron_left,
-            action: () => Navigator.of(context).pop(),
-          ),
-        ],
-      ),
+      appBar: _buildNavBar(),
       body: CustomScrollView(
         slivers: [
-          // ── 头部信息区（Section A） ──
           SliverToBoxAdapter(
             child: LeadHeaderSection(detail: detail),
           ),
-
-          // ── 操作按钮区（Section B） ──
           SliverToBoxAdapter(child: _buildActionBar(detail)),
-
-          // ── 跟进时间线（Section C） ──
           SliverToBoxAdapter(
             child: _buildFollowUpSection(state),
           ),
-
-          // ── 通话记录摘要（Section D） ──
           SliverToBoxAdapter(
             child: CallRecordsSection(
               records: state.calls,
@@ -174,15 +85,66 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
               errorMessage: state.callsError,
             ),
           ),
-
-          // 底部留白
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
-      // 底部导航条（仅 listContext 存在时显示）
       bottomNavigationBar: state.listContext != null
           ? LeadBottomNav(listContext: state.listContext!)
           : null,
+    );
+  }
+
+  /// 统一的导航栏
+  PreferredSizeWidget _buildNavBar() {
+    return TDNavBar(
+      title: '线索详情',
+      backgroundColor: Colors.white,
+      useDefaultBack: false,
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x0A000000),
+          blurRadius: 2,
+          offset: Offset(0, 1),
+        ),
+      ],
+      leftBarItems: [
+        TDNavBarItem(
+          icon: TDIcons.chevron_left,
+          action: () => Navigator.of(context).pop(),
+        ),
+      ],
+    );
+  }
+
+  /// 错误/已删除态
+  Widget _buildErrorBody(String? errorMessage) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            TDIcons.info_circle_filled,
+            size: 64,
+            color: Color(0xFFA6A6A6),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            errorMessage ?? '该线索已删除或不存在',
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF181818),
+            ),
+          ),
+          const SizedBox(height: 24),
+          TDButton(
+            text: '返回列表',
+            theme: TDButtonTheme.primary,
+            size: TDButtonSize.medium,
+            shape: TDButtonShape.round,
+            onTap: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
     );
   }
 
