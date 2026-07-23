@@ -3,7 +3,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/lead_list_provider.dart';
 import '../../models/lead.dart';
@@ -14,6 +13,7 @@ import 'lead_detail_page.dart';
 import 'widgets/leads_skeletons.dart';
 import 'widgets/leads_filter_widgets.dart';
 import 'widgets/leads_search_bar.dart';
+import 'widgets/leads_top_bar.dart';
 
 /// 线索列表页
 class LeadsListPage extends ConsumerStatefulWidget {
@@ -72,7 +72,11 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildTopBar(state),
+            LeadsTopBar(
+              state: state,
+              onShowSort: () => _showSortSheet(state),
+              onShowFilter: _showFilterSheet,
+            ),
             LeadsSearchBar(
               searchCtrl: _searchCtrl,
               onSearch: _doSearch,
@@ -88,99 +92,6 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
 
   // ── 顶部导航栏 ──
 
-  Widget _buildTopBar(LeadListState state) {
-    return Container(
-      height: 56,
-      decoration: const BoxDecoration(
-        color: Color(0xFF0052D9),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 16),
-            child: Text(
-              '我的线索',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const Spacer(),
-          // 排序按钮
-          GestureDetector(
-            onTap: () => _showSortSheet(state),
-            child: Container(
-              width: 40,
-              height: 40,
-              margin: const EdgeInsets.only(right: 4),
-              alignment: Alignment.center,
-              child: Icon(
-                Icons.sort_rounded,
-                size: 22,
-                color: state.sortBy != '-updatedAt'
-                    ? Colors.white70
-                    : Colors.white,
-              ),
-            ),
-          ),
-          // 筛选按钮
-          GestureDetector(
-            onTap: () => _showFilterSheet(),
-            child: Container(
-              width: 40,
-              height: 40,
-              margin: const EdgeInsets.only(right: 8),
-              alignment: Alignment.center,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(
-                    TDIcons.filter,
-                    size: 22,
-                    color: state.hasActiveFilters
-                        ? Colors.white70
-                        : Colors.white,
-                  ),
-                  if (state.hasActiveFilters)
-                    Positioned(
-                      right: -4,
-                      top: -2,
-                      child: Container(
-                        constraints: const BoxConstraints(
-                            minWidth: 16, minHeight: 16),
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFD54941),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '${state.activeFilterCount}',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.white,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ── 排序弹窗 ──
 
