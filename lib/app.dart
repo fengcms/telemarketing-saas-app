@@ -77,20 +77,49 @@ class AuthGate extends ConsumerWidget {
   }
 }
 
-/// 开发版浮标按钮：点击打开 Alice 网络请求检视面板
-class _DevToolsFloatingButton extends StatelessWidget {
+/// 开发版浮标按钮：可拖拽到任意位置（避开测试控件），点击打开 Alice 网络请求检视面板
+class _DevToolsFloatingButton extends StatefulWidget {
   const _DevToolsFloatingButton();
 
   @override
+  State<_DevToolsFloatingButton> createState() => _DevToolsFloatingButtonState();
+}
+
+class _DevToolsFloatingButtonState extends State<_DevToolsFloatingButton> {
+  /// 拖拽后的位置；null 表示默认右下角
+  Offset? _offset;
+  bool _moved = false;
+  static const double _size = 48;
+
+  @override
   Widget build(BuildContext context) {
+    final screen = MediaQuery.of(context).size;
+    final left = _offset?.dx ?? screen.width - _size - 16;
+    final top = _offset?.dy ?? screen.height - _size - 90;
     return Positioned(
-      right: 16,
-      bottom: 90,
+      left: left.clamp(0, screen.width - _size),
+      top: top.clamp(0, screen.height - _size),
       child: GestureDetector(
-        onTap: () => AliceManager.instance.alice.showInspector(),
+        // 仅用 pan 手势：纯点击（无位移）才打开面板，拖拽时不触发点击
+        onPanStart: (_) => _moved = false,
+        onPanUpdate: (d) {
+          _moved = true;
+          setState(() {
+            _offset = Offset(
+              (d.globalPosition.dx - _size / 2)
+                  .clamp(0, screen.width - _size),
+              (d.globalPosition.dy - _size / 2)
+                  .clamp(0, screen.height - _size),
+            );
+          });
+        },
+        onPanEnd: (_) {
+          if (!_moved) AliceManager.instance.alice.showInspector();
+          _moved = false;
+        },
         child: Container(
-          width: 48,
-          height: 48,
+          width: _size,
+          height: _size,
           decoration: const BoxDecoration(
             color: Color(0xFF0052D9),
             shape: BoxShape.circle,

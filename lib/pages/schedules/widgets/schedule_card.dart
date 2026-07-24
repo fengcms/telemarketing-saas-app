@@ -43,10 +43,6 @@ class ScheduleCard extends ConsumerWidget {
     final Color titleColor =
         isCancelled ? const Color(0xFFA6A6A6) : const Color(0xFF181818);
 
-    final String phoneSuffix = (s.leadPhone != null && s.leadPhone!.isNotEmpty)
-        ? ' · ${s.leadPhone}'
-        : '';
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -103,28 +99,12 @@ class ScheduleCard extends ConsumerWidget {
                               size: 14, color: Color(0xFF6B7A90)),
                           const SizedBox(width: 4),
                           Text(
-                            s.timeDisplay,
+                            s.dateTimeDisplay,
                             style: const TextStyle(
                               fontSize: 13,
                               color: Color(0xFF6B7A90),
                             ),
                           ),
-                          if (s.leadName != null) ...[
-                            const SizedBox(width: 12),
-                            const Icon(Icons.person_outline,
-                                size: 14, color: Color(0xFF6B7A90)),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                '${s.leadName}$phoneSuffix',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF6B7A90),
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                       if (s.content != null && s.content!.isNotEmpty) ...[

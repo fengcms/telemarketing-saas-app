@@ -10,13 +10,23 @@ class ScheduleOverdueHeader extends StatelessWidget {
   /// 逾期数量
   final int count;
 
-  const ScheduleOverdueHeader({super.key, required this.count});
+  /// 点击回调（跳转滚动到对应组别，null 则不可点击）
+  final VoidCallback? onTap;
+
+  const ScheduleOverdueHeader(
+      {super.key, required this.count, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final child = Container(
       height: 40,
-      color: const Color(0xFFF3F3F3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F3F3),
+        // 底部分割线：多个吸顶头堆叠时保持清晰分隔
+        border: const Border(
+          bottom: BorderSide(color: Color(0xFFE0E0E0), width: 0.5),
+        ),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.centerLeft,
       child: Row(
@@ -35,5 +45,8 @@ class ScheduleOverdueHeader extends StatelessWidget {
         ],
       ),
     );
+    return onTap == null
+        ? child
+        : GestureDetector(onTap: onTap, child: child);
   }
 }

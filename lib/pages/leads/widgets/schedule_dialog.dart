@@ -23,10 +23,7 @@ void showScheduleDialog(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => _SchedulePanel(
-      leadId: leadId,
-      detail: detail,
-    ),
+    builder: (_) => _SchedulePanel(leadId: leadId, detail: detail),
   );
 }
 
@@ -34,10 +31,7 @@ class _SchedulePanel extends ConsumerStatefulWidget {
   final String leadId;
   final LeadDetail detail;
 
-  const _SchedulePanel({
-    required this.leadId,
-    required this.detail,
-  });
+  const _SchedulePanel({required this.leadId, required this.detail});
 
   @override
   ConsumerState<_SchedulePanel> createState() => _SchedulePanelState();
@@ -113,7 +107,6 @@ class _SchedulePanelState extends ConsumerState<_SchedulePanel> {
 
   // ── 标题行 ──
 
-
   // ── 日期选择 ──
 
   Widget _buildDateSelector() {
@@ -141,12 +134,22 @@ class _SchedulePanelState extends ConsumerState<_SchedulePanel> {
                 _selectedDate.month,
                 _selectedDate.day,
               ],
-              onConfirm: (date) {
-                final dt = date as DateTime;
+              onConfirm: (selected) {
+                // 注意：TDPicker 的 onConfirm 回调参数为 Map<String,int>
+                // （键：year/month/day/hour/minute/second，未启用列为 -1），
+                // 并非 DateTime；原代码误写成 date as DateTime 会在 release 下抛 CastError 被吞掉。
+                final map = selected;
+                final dt = DateTime(
+                  map['year'] ?? _selectedDate.year,
+                  map['month'] ?? _selectedDate.month,
+                  map['day'] ?? _selectedDate.day,
+                );
                 setState(() {
                   _selectedDate = dt;
                   _dateError = null;
                 });
+                // 确认后需手动关闭选择器（TDPicker 不会自动 pop）
+                Navigator.of(context).pop();
               },
             );
           },
@@ -167,20 +170,14 @@ class _SchedulePanelState extends ConsumerState<_SchedulePanel> {
                   ),
                 ),
                 const Spacer(),
-                const Icon(
-                  Icons.arrow_drop_down,
-                  color: Color(0xFFA6A6A6),
-                ),
+                const Icon(Icons.arrow_drop_down, color: Color(0xFFA6A6A6)),
               ],
             ),
           ),
         ),
         const SizedBox(height: 8),
         // 日期快捷项：小 tag 一行展示
-        TagChipRow(
-          scrollable: true,
-          chips: _buildDateQuickTags(),
-        ),
+        TagChipRow(scrollable: true, chips: _buildDateQuickTags()),
       ],
     );
   }
@@ -189,11 +186,46 @@ class _SchedulePanelState extends ConsumerState<_SchedulePanel> {
   List<TagChipData> _buildDateQuickTags() {
     final now = DateTime.now();
     return [
-      TagChipData(label: '明天', selected: _isSameDay(_selectedDate, now.add(const Duration(days: 1))), onTap: () => setState(() { _selectedDate = now.add(const Duration(days: 1)); _dateError = null; })),
-      TagChipData(label: '后天', selected: _isSameDay(_selectedDate, now.add(const Duration(days: 2))), onTap: () => setState(() { _selectedDate = now.add(const Duration(days: 2)); _dateError = null; })),
-      TagChipData(label: '大后天', selected: _isSameDay(_selectedDate, now.add(const Duration(days: 3))), onTap: () => setState(() { _selectedDate = now.add(const Duration(days: 3)); _dateError = null; })),
-      TagChipData(label: '五天后', selected: _isSameDay(_selectedDate, now.add(const Duration(days: 5))), onTap: () => setState(() { _selectedDate = now.add(const Duration(days: 5)); _dateError = null; })),
-      TagChipData(label: '七天后', selected: _isSameDay(_selectedDate, now.add(const Duration(days: 7))), onTap: () => setState(() { _selectedDate = now.add(const Duration(days: 7)); _dateError = null; })),
+      TagChipData(
+        label: '明天',
+        selected: _isSameDay(_selectedDate, now.add(const Duration(days: 1))),
+        onTap: () => setState(() {
+          _selectedDate = now.add(const Duration(days: 1));
+          _dateError = null;
+        }),
+      ),
+      TagChipData(
+        label: '后天',
+        selected: _isSameDay(_selectedDate, now.add(const Duration(days: 2))),
+        onTap: () => setState(() {
+          _selectedDate = now.add(const Duration(days: 2));
+          _dateError = null;
+        }),
+      ),
+      TagChipData(
+        label: '大后天',
+        selected: _isSameDay(_selectedDate, now.add(const Duration(days: 3))),
+        onTap: () => setState(() {
+          _selectedDate = now.add(const Duration(days: 3));
+          _dateError = null;
+        }),
+      ),
+      TagChipData(
+        label: '五天后',
+        selected: _isSameDay(_selectedDate, now.add(const Duration(days: 5))),
+        onTap: () => setState(() {
+          _selectedDate = now.add(const Duration(days: 5));
+          _dateError = null;
+        }),
+      ),
+      TagChipData(
+        label: '七天后',
+        selected: _isSameDay(_selectedDate, now.add(const Duration(days: 7))),
+        onTap: () => setState(() {
+          _selectedDate = now.add(const Duration(days: 7));
+          _dateError = null;
+        }),
+      ),
     ];
   }
 
@@ -232,11 +264,17 @@ class _SchedulePanelState extends ConsumerState<_SchedulePanel> {
                 _selectedTime.hour,
                 _selectedTime.minute,
               ],
-              onConfirm: (date) {
-                final dt = date as DateTime;
+              onConfirm: (selected) {
+                // TDPicker 回调参数为 Map<String,int>（hour/minute 键，未启用列为 -1）
+                final map = selected;
                 setState(() {
-                  _selectedTime = TimeOfDay(hour: dt.hour, minute: dt.minute);
+                  _selectedTime = TimeOfDay(
+                    hour: map['hour'] ?? _selectedTime.hour,
+                    minute: map['minute'] ?? _selectedTime.minute,
+                  );
                 });
+                // 确认后需手动关闭选择器
+                Navigator.of(context).pop();
               },
             );
           },
@@ -257,10 +295,7 @@ class _SchedulePanelState extends ConsumerState<_SchedulePanel> {
                   ),
                 ),
                 const Spacer(),
-                const Icon(
-                  Icons.arrow_drop_down,
-                  color: Color(0xFFA6A6A6),
-                ),
+                const Icon(Icons.arrow_drop_down, color: Color(0xFFA6A6A6)),
               ],
             ),
           ),
@@ -272,11 +307,41 @@ class _SchedulePanelState extends ConsumerState<_SchedulePanel> {
           child: TagChipRow(
             scrollable: true,
             chips: [
-              TagChipData(label: '上午10点', selected: _selectedTime.hour == 10 && _selectedTime.minute == 0, onTap: () => setState(() => _selectedTime = const TimeOfDay(hour: 10, minute: 0))),
-              TagChipData(label: '下午2点', selected: _selectedTime.hour == 14 && _selectedTime.minute == 0, onTap: () => setState(() => _selectedTime = const TimeOfDay(hour: 14, minute: 0))),
-              TagChipData(label: '下午5点', selected: _selectedTime.hour == 17 && _selectedTime.minute == 0, onTap: () => setState(() => _selectedTime = const TimeOfDay(hour: 17, minute: 0))),
-              TagChipData(label: '晚上7点', selected: _selectedTime.hour == 19 && _selectedTime.minute == 0, onTap: () => setState(() => _selectedTime = const TimeOfDay(hour: 19, minute: 0))),
-              TagChipData(label: '晚上9点', selected: _selectedTime.hour == 21 && _selectedTime.minute == 0, onTap: () => setState(() => _selectedTime = const TimeOfDay(hour: 21, minute: 0))),
+              TagChipData(
+                label: '上午10点',
+                selected: _selectedTime.hour == 10 && _selectedTime.minute == 0,
+                onTap: () => setState(
+                  () => _selectedTime = const TimeOfDay(hour: 10, minute: 0),
+                ),
+              ),
+              TagChipData(
+                label: '下午2点',
+                selected: _selectedTime.hour == 14 && _selectedTime.minute == 0,
+                onTap: () => setState(
+                  () => _selectedTime = const TimeOfDay(hour: 14, minute: 0),
+                ),
+              ),
+              TagChipData(
+                label: '下午5点',
+                selected: _selectedTime.hour == 17 && _selectedTime.minute == 0,
+                onTap: () => setState(
+                  () => _selectedTime = const TimeOfDay(hour: 17, minute: 0),
+                ),
+              ),
+              TagChipData(
+                label: '晚上7点',
+                selected: _selectedTime.hour == 19 && _selectedTime.minute == 0,
+                onTap: () => setState(
+                  () => _selectedTime = const TimeOfDay(hour: 19, minute: 0),
+                ),
+              ),
+              TagChipData(
+                label: '晚上9点',
+                selected: _selectedTime.hour == 21 && _selectedTime.minute == 0,
+                onTap: () => setState(
+                  () => _selectedTime = const TimeOfDay(hour: 21, minute: 0),
+                ),
+              ),
             ],
           ),
         ),
@@ -366,7 +431,7 @@ class _SchedulePanelState extends ConsumerState<_SchedulePanel> {
 
     try {
       final service = ref.read(leadServiceProvider);
-      final title = '跟进${widget.detail.name}，确认购房意向';
+      final title = '🏷️ ${widget.detail.name} - ${widget.detail.phone}';
 
       await service.createSchedule(
         leadId: widget.leadId,

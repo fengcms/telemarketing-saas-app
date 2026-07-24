@@ -3,7 +3,7 @@
 /// 设计文档：docs/design/page-design/10-日程列表.md
 /// - 待办 / 已完成 双 Tab（计数来自共享统计）
 /// - TM/TA 可切换 我的 / 团队
-/// - 列表按日期分组 + 逾期置顶，日期头与逾期头吸顶
+/// - 列表按语义桶分组（已逾期/今天/明天/后天/本周/下周/更晚）+ 逾期置顶，日期头与逾期头吸顶
 /// - 下拉刷新（同时刷新统计角标）/ 上拉加载更多
 /// - 点击卡片跳转详情页（doc 11，下一节点 v0.13 落地，暂留入口）
 library;
@@ -17,6 +17,7 @@ import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'widgets/schedule_card.dart';
 import 'widgets/schedule_date_header.dart';
 import 'widgets/schedule_overdue_header.dart';
+import 'widgets/schedule_skeleton.dart';
 
 /// 日程列表页
 class ScheduleListPage extends ConsumerStatefulWidget {
@@ -28,6 +29,9 @@ class ScheduleListPage extends ConsumerStatefulWidget {
 
 class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
   final ScrollController _scrollCtrl = ScrollController();
+
+  /// 各分组吸顶头的滚动定位锚点（按 group.key 复用，跨 rebuild 稳定）
+  final Map<String, GlobalKey> _groupKeys = {};
 
   @override
   void initState() {
@@ -200,7 +204,10 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
   // ── 主体 ──
 
   Widget _buildBody(ScheduleListState state) {
-    if (state.isInitialLoading) return _buildSkeleton();
+    // 首屏加载 或 下拉刷新中：骨架屏占位，避免旧数据闪现
+    if (state.isInitialLoading || state.isRefreshing) {
+      return _buildSkeleton();
+    }
 
     if (state.errorMessage != null && state.items.isEmpty) {
       return _buildError(state.errorMessage!);
@@ -223,14 +230,21 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
   List<Widget> _buildSlivers(ScheduleListState state, List<_Group> groups) {
     final slivers = <Widget>[];
     for (final g in groups) {
+      final anchorKey = _groupKey(g.key);
       slivers.add(
         SliverPersistentHeader(
           pinned: true,
           delegate: _StickyHeaderDelegate(
             height: 40,
             child: g.isOverdue
-                ? ScheduleOverdueHeader(count: g.items.length)
-                : ScheduleDateHeader(title: g.title),
+                ? ScheduleOverdueHeader(
+                    count: g.items.length,
+                    onTap: () => _scrollToGroup(g.key),
+                  )
+                : ScheduleDateHeader(
+                    title: g.title,
+                    onTap: () => _scrollToGroup(g.key),
+                  ),
           ),
         ),
       );
@@ -238,6 +252,7 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
         SliverList(
           delegate: SliverChildBuilderDelegate(
             (ctx, i) => ScheduleCard(
+              key: i == 0 ? anchorKey : null,
               schedule: g.items[i],
               serverTime: state.serverTime,
               onTap: _onTapSchedule,
@@ -292,21 +307,23 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
     );
   }
 
-  // ── 骨架屏 ──
+  // ── 骨架屏（待办 / 已完成 共用） ──
 
-  Widget _buildSkeleton() {
-    return ListView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      itemCount: 4,
-      itemBuilder: (_, _) => Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        height: 96,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
+  Widget _buildSkeleton() => const ScheduleSkeleton();
+
+  /// 取分组的滚动锚点 GlobalKey（按 group.key 复用，跨 rebuild 稳定）
+  GlobalKey _groupKey(String gKey) =>
+      _groupKeys.putIfAbsent(gKey, GlobalKey.new);
+
+  /// 点击吸顶头 → 平滑滚动到该分组（标题吸顶、卡片紧随其后）
+  void _scrollToGroup(String gKey) {
+    final ctx = _groupKeys[gKey]?.currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      alignment: 0.08, // 距顶约 40px，正落在吸顶头下方
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
     );
   }
 
@@ -388,74 +405,127 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
 
   // ── 分组算法 ──
 
-  /// 纯前端分组：[逾期] 置顶（仅待办 Tab）→ 按日期分桶（今天/明天/后天/本周/更早）
+  /// 纯前端分组：语义桶模型（每个类别仅一个分组头，标签不会重复）。
+  ///
+  /// 待办 Tab（逾期置顶）：已逾期 → 今天 → 明天 → 后天 → 本周 → 下周 → 更晚
+  /// 已完成 Tab（过去侧镜像）：今天 → 昨天 → 本周 → 上周 → 更早
+  ///
+  /// 周起点取周一（国内习惯）；下周之后统一归入「更晚」。
+  /// 卡片本身已显示完整日期（YYYY-MM-DD HH:mm），按天分头无额外信息，
+  /// 改语义桶可消除「两个本周/下周」这类同名头。
   ///
   /// 注意：日期标签基于设备本地时间计算，跨天不会自动重算，
   /// 需下拉刷新或重建才会更新（跨天重算机制见开发文档，标记为待开发）。
   List<_Group> _group(List<Schedule> items, int serverTime, String tab) {
-    if (tab == 'pending') {
-      final overdue = items
-          .where((s) => s.isOverdue(serverTime))
-          .toList()
-        ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-      final normal =
-          items.where((s) => !s.isOverdue(serverTime)).toList();
-      final groups = <_Group>[];
-      if (overdue.isNotEmpty) {
-        groups.add(_Group(
-          key: 'overdue',
-          title: '已逾期 (${overdue.length})',
-          isOverdue: true,
-          items: overdue,
-        ));
-      }
-      groups.addAll(_dateGroups(normal));
-      return groups;
-    }
-    return _dateGroups(items);
-  }
-
-  List<_Group> _dateGroups(List<Schedule> items) {
+    final order = <String, int>{};
     final buckets = <String, List<Schedule>>{};
     for (final s in items) {
-      final key = _dateKey(s.scheduledAt);
+      final key = _bucketKey(s, serverTime, tab);
+      order[key] = _bucketOrder(key, tab);
       buckets.putIfAbsent(key, () => []).add(s);
     }
-    final keys = buckets.keys.toList()
-      ..sort((a, b) => _keyTime(a).compareTo(_keyTime(b)));
-    return keys.map((k) {
+    final sortedKeys = buckets.keys.toList()
+      ..sort((a, b) => order[a]!.compareTo(order[b]!));
+    return sortedKeys.map((k) {
       final list = buckets[k]!
         ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
       return _Group(
         key: k,
-        title: _dateTitle(k),
-        isOverdue: false,
+        title: _bucketTitle(k),
+        isOverdue: k == 'overdue',
         items: list,
       );
     }).toList();
   }
 
-  String _dateKey(int scheduledAt) {
-    final dt = DateTime.fromMillisecondsSinceEpoch(scheduledAt * 1000);
-    return '${dt.year}-${dt.month}-${dt.day}';
-  }
-
-  int _keyTime(String k) {
-    final p = k.split('-').map(int.parse).toList();
-    return DateTime(p[0], p[1], p[2]).millisecondsSinceEpoch ~/ 1000;
-  }
-
-  String _dateTitle(String key) {
-    final dt = DateTime.parse(key);
+  /// 计算一条日程归属的语义桶 key
+  String _bucketKey(Schedule s, int serverTime, String tab) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final diff = dt.difference(today).inDays;
-    if (diff == 0) return '今天';
-    if (diff == 1) return '明天';
-    if (diff == 2) return '后天';
-    if (diff > 2 && diff < 8) return '本周';
-    if (diff == -1) return '昨天';
-    return '更早';
+    final dt = DateTime.fromMillisecondsSinceEpoch(s.scheduledAt * 1000);
+    final day = DateTime(dt.year, dt.month, dt.day);
+    final diff = day.difference(today).inDays;
+
+    if (tab == 'pending') {
+      if (s.isOverdue(serverTime)) return 'overdue';
+      if (diff == 0) return 'today';
+      if (diff == 1) return 'tomorrow';
+      if (diff == 2) return 'day_after';
+    } else {
+      if (diff == 0) return 'today';
+      if (diff == -1) return 'yesterday';
+    }
+
+    // 周边界（周一为一周起点）
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+    final thisSunday = monday.add(const Duration(days: 6));
+    final nextMonday = monday.add(const Duration(days: 7));
+    final nextSunday = nextMonday.add(const Duration(days: 6));
+    final lastMonday = monday.subtract(const Duration(days: 7));
+
+    if (tab == 'pending') {
+      if (!day.isBefore(monday) && !day.isAfter(thisSunday)) return 'this_week';
+      if (!day.isBefore(nextMonday) && !day.isAfter(nextSunday)) {
+        return 'next_week';
+      }
+      return 'later';
+    } else {
+      // 已完成：本周更早的天 / 上周 / 更早
+      if (!day.isBefore(monday) && day.isBefore(today)) return 'this_week';
+      if (!day.isBefore(lastMonday) && day.isBefore(monday)) {
+        return 'last_week';
+      }
+      return 'earlier';
+    }
+  }
+
+  /// 桶的排序权重（数值越小越靠上）
+  int _bucketOrder(String key, String tab) {
+    const pendingOrder = <String, int>{
+      'overdue': 0,
+      'today': 1,
+      'tomorrow': 2,
+      'day_after': 3,
+      'this_week': 4,
+      'next_week': 5,
+      'later': 6,
+    };
+    const doneOrder = <String, int>{
+      'today': 0,
+      'yesterday': 1,
+      'this_week': 2,
+      'last_week': 3,
+      'earlier': 4,
+    };
+    return (tab == 'pending' ? pendingOrder : doneOrder)[key] ?? 99;
+  }
+
+  /// 桶标题
+  String _bucketTitle(String key) {
+    switch (key) {
+      case 'overdue':
+        return '已逾期';
+      case 'today':
+        return '今天';
+      case 'tomorrow':
+        return '明天';
+      case 'day_after':
+        return '后天';
+      case 'this_week':
+        return '本周';
+      case 'next_week':
+        return '下周';
+      case 'later':
+        return '更晚';
+      case 'yesterday':
+        return '昨天';
+      case 'last_week':
+        return '上周';
+      case 'earlier':
+        return '更早';
+      default:
+        return key;
+    }
   }
 }
 

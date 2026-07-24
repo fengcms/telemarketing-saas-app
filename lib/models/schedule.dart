@@ -49,11 +49,24 @@ class Schedule {
   bool isOverdue(int serverTime) =>
       status == 'pending' && scheduledAt < serverTime;
 
-  /// 格式化时间显示（HH:mm）
+  /// 格式化时间显示（HH:mm），用于首页紧凑预览
   String get timeDisplay {
     final dt =
         DateTime.fromMillisecondsSinceEpoch(scheduledAt * 1000);
     return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// 完整日期时间显示（yyyy-MM-dd HH:mm），用于日程卡片
+  ///
+  /// 月/日/时/分统一补零，与列表分组 key 风格一致。
+  String get dateTimeDisplay {
+    final dt =
+        DateTime.fromMillisecondsSinceEpoch(scheduledAt * 1000);
+    final mo = dt.month.toString().padLeft(2, '0');
+    final d = dt.day.toString().padLeft(2, '0');
+    final h = dt.hour.toString().padLeft(2, '0');
+    final mi = dt.minute.toString().padLeft(2, '0');
+    return '${dt.year}-$mo-$d $h:$mi';
   }
 
   static int _toInt(dynamic v) {

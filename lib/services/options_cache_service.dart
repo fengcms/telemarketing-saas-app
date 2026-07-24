@@ -24,8 +24,9 @@ class OptionsCacheService {
   List<OptionItem> _users = [];
   List<OptionItem> _quickNotes = [];
   DateTime? _lastFetchTime;
-  bool _isLoading = false;
   bool _localLoaded = false;
+  /// 进行中的刷新 Future（并发调用共享同一实例，避免重复请求）
+  Future<void>? _loadingFuture;
 
   static const _keyCategories = 'cache_options_categories';
   static const _keyProjects = 'cache_options_projects';
@@ -41,6 +42,11 @@ class OptionsCacheService {
           ApiConstants.optionsCacheTTL;
 
   /// 确保缓存有效
+  ///
+  /// 必须等待刷新完成：此前用 fire-and-forget 方式调用 [_refreshFromApi]，
+  /// 导致后续 [getUserName] 等查找在 [_users] 仍为空时执行，
+  /// 回退成原始 id 并被 FutureProvider 永久缓存（表现即「归属」显示 id）。
+  /// 改为 await 同一刷新 Future（并发调用共享，仅发起一次请求）。
   Future<void> _ensureLoaded() async {
     // 先尝试从本地加载
     if (!_localLoaded) {
@@ -48,9 +54,12 @@ class OptionsCacheService {
       _localLoaded = true;
     }
 
-    // 如果内存缓存过期，后台刷新
-    if (!_isValid && !_isLoading) {
-      _refreshFromApi();
+    // 内存缓存过期：等待刷新完成，避免首查落空
+    if (!_isValid) {
+      _loadingFuture ??= _refreshFromApi().whenComplete(() {
+        _loadingFuture = null;
+      });
+      await _loadingFuture;
     }
   }
 
@@ -93,7 +102,6 @@ class OptionsCacheService {
 
   /// 从 API 刷新缓存
   Future<void> _refreshFromApi() async {
-    _isLoading = true;
     try {
       final results = await Future.wait([
         _fetchCategories(),
@@ -110,7 +118,6 @@ class OptionsCacheService {
     } catch (_) {
       // 静默失败，保留旧缓存
     } finally {
-      _isLoading = false;
     }
   }
 
@@ -188,7 +195,6 @@ class OptionsCacheService {
 
   Future<void> refresh() async {
     _lastFetchTime = null;
-    _isLoading = false;
     await _refreshFromApi();
   }
 }
