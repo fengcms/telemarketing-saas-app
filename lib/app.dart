@@ -32,7 +32,7 @@ class TelemarketingApp extends ConsumerWidget {
     return MaterialApp(
       title: '电销工作台',
       // 开发版挂 Alice 浮窗导航键；正式构建 enableDevTools 为 false，不挂
-      navigatorKey: enableDevTools ? alice.getNavigatorKey() : null,
+      navigatorKey: enableDevTools ? AliceManager.instance.alice.getNavigatorKey() : null,
       debugShowCheckedModeBanner: false,
       // 开发版浮标：在每页右上叠加一个按钮，点击打开 Alice 网络面板
       builder: (context, child) {
@@ -87,7 +87,7 @@ class _DevToolsFloatingButton extends StatelessWidget {
       right: 16,
       bottom: 90,
       child: GestureDetector(
-        onTap: () => alice.showInspector(),
+        onTap: () => AliceManager.instance.alice.showInspector(),
         child: Container(
           width: 48,
           height: 48,

@@ -82,8 +82,9 @@ class ApiClient {
 
     // 开发版：注入 Alice 的 Dio 适配器（捕获全部请求/响应）
     if (enableDevTools) {
-      alice.addAdapter(aliceDioAdapter);
-      _dio.interceptors.add(aliceDioAdapter);
+      final am = AliceManager.instance;
+      am.alice.addAdapter(am.dioAdapter);
+      _dio.interceptors.add(am.dioAdapter);
     }
   }
 

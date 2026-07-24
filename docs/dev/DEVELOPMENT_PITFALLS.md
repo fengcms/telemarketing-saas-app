@@ -14,7 +14,9 @@
 5. [UI 交互坑点](#5-ui-交互坑点)
 6. [数据与缓存坑点](#6-数据与缓存坑点)
 7. [搜索交互坑点](#7-搜索交互坑点)
-8. [已知待解决问题](#8-已知待解决问题)
+8. [异步状态竞态坑点](#8-异步状态竞态坑点)
+9. [网络与权限坑点](#9-网络与权限坑点)
+10. [已知待解决问题](#10-已知待解决问题)
 
 ---
 
@@ -582,6 +584,8 @@ adb -s <deviceId> install -r build/app/outputs/flutter-apk/app-debug.apk
 
 ### 8.7 真机"无法登录"排查教训（release 模式 Dart 异常不可见）
 
+> ⚠️ **本节结论已被 [§9 网络与权限坑点](#9-网络与权限坑点) 推翻。** 那次"无法登录"的真正根因是 `main` 清单缺 `INTERNET` 权限（release 不合并 debug 清单自带的那行），**不是** "网络环境波动 + release 吞异常"。本节记录的"排查方法论"（先用 `adb shell curl` 验证手机侧真实可达性、用 debug 版看 Dart 真实异常）仍然有效，但末尾"未在代码层复现硬伤"的判断是**错误**的，请勿据此放松对清单权限的审查。
+
 **严重级别**：🟠 **排查方法论**
 
 **现象**：用户报 app 无法登录，Alice 里能看到请求已发出、但无响应；`adb logcat` 却**无任何** DioException / 超时 / 证书报错，看似"零报错"。
@@ -603,7 +607,42 @@ adb -s <deviceId> install -r build/app/outputs/flutter-apk/app-debug.apk
 
 ---
 
-## 9. 已知待解决问题
+## 9. 网络与权限坑点
+
+### 9.1 release 全版本无法联网 = `main` 清单缺 `INTERNET` 权限（真因）
+
+**严重级别**：🔴 **阻断性（P0）**
+
+**现象**：`flutter build apk`（release）装真机后，登录 / 所有接口均报"网络连接失败"；而 `flutter run` / `flutter build apk --debug` / `--profile` 一切正常。用日常 release 命令构建**最早的历史版本（a1fef91，早于任何近期改动）** 直连测试，同样失败 → 排除"代码回归"。
+
+**根因**：Flutter 模板在不同 build 类型下放了**不同的 AndroidManifest**：
+
+| 清单位置 | 是否含 `INTERNET` 权限 |
+|---|---|
+| `android/app/src/debug/AndroidManifest.xml` | ✅ 自带 `<uses-permission android:name="android.permission.INTERNET"/>` |
+| `android/app/src/profile/AndroidManifest.xml` | ✅ 同上 |
+| `android/app/src/main/AndroidManifest.xml` | ❌ **默认不带** |
+
+release 构建**只合并 `main` 清单**，不会带入 debug/profile 里那行 `INTERNET`。于是所有 release 包都没有联网权限，Dio 请求被 Android 系统直接拒绝，表现即"网络连接失败"。debug 一直能联网，纯粹是借了 debug 清单里的 `INTERNET` 权限——这也正是前面几轮死活查不出代码问题的原因：根因压根不在 Dart 代码，而在清单合并。
+
+**验证过程（弯路，记此警醒）**：曾误判为"Alice 顶层 `final` 在 AOT 下抢跑污染网络栈""release 吞 Dart 异常""软路由隧道 DNS 劫持"等，逐一排除后，最终由用户定位到权限缺失。教训见下方。
+
+**修复**：在 `android/app/src/main/AndroidManifest.xml` 的 `<manifest>` 下、`READ_CALL_LOG` 那行**并列**补一行：
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+```
+
+补完后重新 `flutter clean && flutter build apk` 装真机，登录 / 接口 / 日程列表立即全部正常。
+
+**教训（铁律）**：
+- Flutter 项目若要用网络，**必须显式在 `main/AndroidManifest.xml` 声明 `INTERNET` 权限**，绝不能依赖 debug 清单"借"来的那行——它只在 debug/profile 构建里生效，release 一打包就没了。
+- 遇到"**debug 能联网、release 不能**"的表象，第一反应应是**对比 debug/main 两份清单的权限差异**，而不是去怀疑业务代码、DNS、TLS、或第三方库初始化时机。这一条能省掉数小时的无效排查。
+- 新增任何需要网络的功能后，务必用**日常 release 命令**（`flutter build apk`）真机验一次，别只跑 debug。
+
+---
+
+## 10. 已知待解决问题
 
 | # | 问题 | 优先级 | 状态 | 说明 |
 |---|------|--------|------|------|
@@ -615,5 +654,5 @@ adb -s <deviceId> install -r build/app/outputs/flutter-apk/app-debug.apk
 
 ---
 
-> 最后更新：2026-07-23  
+> 最后更新：2026-07-24  
 > 维护人：Mobile App Builder
