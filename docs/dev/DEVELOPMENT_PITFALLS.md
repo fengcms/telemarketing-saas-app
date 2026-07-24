@@ -839,6 +839,27 @@ class ShimmerBlock extends StatelessWidget {
 
 ---
 
+### 11.7 `VerticalDivider` 放进 `Row` + `Expanded` 内不显示（个人中心业绩卡）
+
+**严重级别**：🟡 **P2（视觉缺陷，纯客户端）**
+
+**现象**：个人中心「我的业绩」4 列之间要用淡灰细线分隔（上下留间隙、不顶天立地）。用 `VerticalDivider(indent:14, endIndent:14)` 置于 `Row` 的 `Expanded` 列之间，真机实测**细线未出现**。
+
+**原因**：`VerticalDivider` 内部以 `SizedBox(height: double.infinity)` 实现。当它与 `Expanded` 兄弟混排在 `Row` 内时，Row 交叉轴（竖向）高度约束不确定，`double.infinity` 解析成 **0 高**，导致细线塌缩不可见（或高度塌成一条缝）。
+
+**修复**：不用 `VerticalDivider`，改为手写固定高细线，高度由父级 `SizedBox` 锁死，必定显示：
+```dart
+Widget _divider() => SizedBox(
+      height: 28,
+      child: Container(width: 1, color: const Color(0xFFE7E7E7)),
+    );
+```
+（列内容约 36~44px 高，细线锁 28px 居中即自然上下留隙。）
+
+**教训（可复用）**：Flutter 中 `VerticalDivider` **不要**直接放进「`Row` 且兄弟为 `Expanded`」的布局——极易不显示。行内竖向分隔线统一用「固定高 `SizedBox` + 1px `Container`」，或先用 `IntrinsicHeight` 包住 `Row` 再放 `VerticalDivider`。
+
+---
+
 ## 10. 已知待解决问题
 
 | # | 问题 | 优先级 | 状态 | 说明 |

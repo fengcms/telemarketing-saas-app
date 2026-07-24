@@ -507,6 +507,46 @@ ApiClient 拦截器链：
 
 ---
 
+## 节点 v0.16 — 个人中心页（doc 13）（2026-07-24）
+
+> 计划：`docs/dev/PLAN_13_PROFILE.md`；进度：`docs/review/history/profile-dev-2026-07-24.md`
+> 取代 `main_shell._ProfileTab` 占位页，实现完整个人中心页。
+
+### 完成内容
+
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 个人中心主页 `ProfilePage` | ✅ | 用户信息卡 + 我的业绩 4 列白卡 + 功能菜单 + 团队入口(TM/TA) + 下拉刷新 + 首屏骨架屏 + 退出确认弹窗 |
+| 子组件 `profile_user_card` | ✅ | 头像(姓名首字) + 姓名 + 角色标签 + 邮箱 + 租户名 |
+| 子组件 `profile_stats_card` | ✅ | 我的业绩 4 列白卡，列间淡灰细线(上下留隙) |
+| 子组件 `profile_menu_row` | ✅ | `ProfileMenuGroup` + `ProfileMenuRow`（支持自定义颜色，退出项用红） |
+| `tenant_service.fetchTenantName()` | ✅ | 新增，取 `GET /api/tenant/profile` 的 `data.name`，不动原 `fetchProfile()` |
+| `main_shell` 接入 | ✅ | 删 `_ProfileTab` 占位，4 号位换 `ProfilePage()` |
+
+### 关键决策
+
+| 决策 | 选择 | 原因 |
+|------|------|------|
+| 业绩口径 | 真实接口字段（myLeadsTotal/followupCount/answeredCount + dueToday） | doc 13 的 myFollowed/myAnswered/myConverted 接口未返回 |
+| 租户名来源 | `profile.data.name`（新接口） | `User` 模型无 `tenantName` 字段 |
+| 子页 | 本轮跳 `ComingSoonPage` 占位 | 通话记录/客户列表/设置/团队统计/个人统计 留待后续节点 |
+| 控件 | 避开 TDCell/TDAvatar/TDRefreshHeader/TDSkeleton 等零先例组件 | 改用项目已验证模式（CircleAvatar/Container/RefreshIndicator/ShimmerBlock/自定义 Tag） |
+
+### 真机实测后 5 处 UI 调整（纯 UI）
+
+1. 用户卡删「所属租户」前缀；2. 「我的业绩」标题缩小+灰；3. 4 指标收白卡 + 细线分隔；4. 删「功能」标题；5. 退出登录整合进菜单（红色项）。
+
+### 踩坑
+
+- **§11.7**：`VerticalDivider` 放进 `Row` + `Expanded` 内不显示（交叉轴高度塌缩）→ 改手写固定高 `SizedBox`+1px `Container` 细线。
+
+### 待开发（本批次未做）
+
+- 子页（通话记录/客户列表/设置/团队统计/个人统计）均为占位。
+- `login_page.dart` 仍 612 行（第三轮审查 P3 观察项）。
+
+---
+
 ## 下一步节点规划
 
 > ⚠️ 下方 P0 核心流程**实际已完成**，见 v0.1~v0.11。剩余工作均为 P1 及以后。
@@ -531,7 +571,7 @@ ApiClient 拦截器链：
 | 日程详情页（doc 11）+ 操作（完成/取消/新建） | 11/12 | P1 | ✅ v0.13 / v0.14 打磨 |
 | 公海线索池 | 06 | P1 | 未开发 |
 | 客户列表 / 客户详情 | 17/18 | P1 | 未开发 |
-| 个人中心 / 个人统计 | 13/14 | P1 | 「我的」Tab 仅含用户信息 + 退出 |
+| 个人中心 / 个人统计 | 13/14 | P1 | ✅ v0.16（个人中心页；个人统计子页仍占位） |
 | 修改密码页 | 15 | P1 | 未开发（与强制改密不同） |
 | 设置页 | 19 | P1 | 未开发 |
 | 团队模块（入口/统计/日程/线索池） | 20/21/22/23 | P1 | 均未开发 |
@@ -540,4 +580,4 @@ ApiClient 拦截器链：
 
 > 本文档与 `docs/dev/HANDOVER.md`（交接文档）配套使用。
 > ⚠️ 旧 `HANDOVER_05_LEAD_DETAIL.md` 中"3 个并行请求""拨号后弹面板未做"等描述已过时，以本表与代码现状为准。
-> 节点版本：v0.15d | 更新日期：2026-07-24
+> 节点版本：v0.16 | 更新日期：2026-07-24
