@@ -3,15 +3,17 @@
 > 审查人：Mobile App Builder（移动端小组组长）
 > 机制：**一次提交，一次审核**；阶段/批次结果汇总为 `PHASE-REVIEW-*` / `SPRINT-REVIEW-*`
 
-## 当前进行中：第四轮 Sprint（2026-07-24，日程模块 + 拨号 + 重构 + 权限修复）
+## 已完成：第四轮 Sprint 复审（2026-07-24，日程模块整改闭环）
 | 文档 | 说明 |
 |------|------|
-| [SPRINT-REVIEW-3-2026-07-24.md](SPRINT-REVIEW-3-2026-07-24.md) | 第四轮审阅（提交 `2388faa`→`024f8f4`，18 个：INTERNET 根因修复 / 日程列表·详情·表单 / 拨号 / 线索详情重构） |
+| [SPRINT-REVIEW-3-REAUDIT.md](SPRINT-REVIEW-3-REAUDIT.md) | **第四轮复审**：团队整改逐项核验（代码实测，非看声明），评级 A-→**A** |
+| [SPRINT-REVIEW-3-REMEDIATION.md](SPRINT-REVIEW-3-REMEDIATION.md) | 开发团队整改跟踪（3 轮：日期校验/详情拆/表单拆/列表收/拨号反馈；已就地更正 1 处事实夸大） |
+| [SPRINT-REVIEW-3-2026-07-24.md](SPRINT-REVIEW-3-2026-07-24.md) | 第四轮原审阅（提交 `2388faa`→`024f8f4`，18 个：INTERNET 根因修复 / 日程列表·详情·表单 / 拨号 / 线索详情重构） |
 | [SPRINT-REVIEW-2-2026-07-23.md](SPRINT-REVIEW-2-2026-07-23.md) | 第三轮审阅（提交 `be70e78`→`2388faa`，TagChip 统一 + 巨型文件收敛） |
 | [RESPONSE-SPRINT-2026-07-23.md](RESPONSE-SPRINT-2026-07-23.md) | 开发团队整改回复（日程/编辑抽屉） |
 | [RESPONSE-TAGCHIP-UNIFY.md](RESPONSE-TAGCHIP-UNIFY.md) | 开发团队整改回复（TagChipRow 统一 + 筛选布局修复） |
 
-**第四轮评级：A-** — INTERNET 根因修复（release 联网）+ 线索详情重构（教科书级）亮眼；但 560 行红线被冲破 3 处（1024/776/570）、表单日期下限校验回归（可定过去时间）、提交卫生（厨房水槽 + message 夸大）回摆。放行条件：修表单过去时间校验 + 拆分 schedule_detail_page 1024 行。
+**第四轮复审评级：A（趋势 A+）** — 两个放行条件（P1 表单过去时间校验、P1 详情页 1024→543 拆分）实测全通过；P2 两超大文件拆分（表单 361/列表 433）+ handler 去重 + P3 拨号 `TDToast` 反馈全部真实落地；`flutter analyze` 五轮 0 issue；日程模块 560 红线纪律恢复。遗留：`login_page.dart` 612 行（已知观察项、601→612 又涨，非日程模块）、`SelectChip` 合并未做（均 P3 非阻塞）。整改提交 `08e876d` message 如实，新硬化规则 §8.2 首次被实测遵守。
 
 ## 已完成：第三轮 Sprint 2（2026-07-23 晚）
 | 文档 | 说明 |

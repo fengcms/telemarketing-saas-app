@@ -100,7 +100,7 @@ _（轮次结束后填写）_
 ### 验证
 - `flutter analyze` 全工程 **0 issue**（含 P3-6 修改后的 context 守卫）。
 - 行为变更：拨号失败（如系统无拨号盘/被禁用）时用户收到明确 Toast，而非「点了没反应」误以为已拨出。
-- `flutter build apk --debug --dart-define=DEV_TOOLS=true` 后台构建中（验证打包），真机安装待 Redmi K60 连接后执行（本轮执行时设备未挂载，已提示用户）。
+- `flutter build apk --debug --dart-define=DEV_TOOLS=true` 构建成功（`build/app/outputs/flutter-apk/app-debug.apk`）；真机安装待 Redmi K60 连接后执行（本轮执行时设备未挂载）。
 
 ### 提交
 - 全部整改（Round 1–3 含文档）一次性 `git commit & push`，message 如实描述拆分与修复。
@@ -120,4 +120,5 @@ _（轮次结束后填写）_
 | P3 | 拨号失败反馈 | ✅ |
 | P3 | 560 红线 + 独占提交 + message 如实 | ✅ 已固化 STYLE_GUIDE |
 
-所有源码文件行数均 ≤ 560 红线，`flutter analyze` 全工程 0 issue。
+日程模块相关源码文件行数均 ≤ 560 红线；`flutter analyze` 全工程 0 issue。
+> ⚠️ 校正：`login_page.dart` 当前 **612 行**仍超 560 红线（第三轮 `SPRINT-REVIEW-3` 表 P3「观察」项，本轮未动且较 601 行又涨 11 行）。该文件非日程模块引入，不抵消本轮日程整改结论，但"所有源码文件 ≤ 560"的表述不准确，特此更正。
