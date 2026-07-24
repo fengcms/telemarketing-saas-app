@@ -1350,10 +1350,14 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/erase \
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| `dateFrom` | string | 筛选 `scheduledAt ≥ 00:00` |
-| `dateTo` | string | 筛选 `scheduledAt ≤ 23:59` |
-| `status` | string | `pending`/`completed`/`cancelled` |
+| `dateFrom` | integer | 筛选 `scheduledAt ≥ 值`（unix 秒，原样透传为 `scheduledAt__gte`） |
+| `dateTo` | integer | 筛选 `scheduledAt ≤ 值`（unix 秒，原样透传为 `scheduledAt__lte`） |
+| `status` | string | `pending`/`completed`/`cancelled`；不传且 `status__in` 不传时默认 `pending` |
 | `status__in` | string | 多值如 `pending,completed` |
+| `q` | string | 模糊搜索，跨 `title` + `content` + `leads.name`（线索姓名） |
+| `page` / `size` / `sort` / `order` | — | 通用查询 DSL（§9.4）；`sort` 默认 `scheduledAt`，`order` 默认 `asc` |
+
+> 另有通用字段筛选（如 `userId`、`leadId`、`callRecordId`、`title`、`completedAt`、`createdAt`，及 `__gte/__lte/__in` 后缀）由 `SCHEDULE_ALLOWED` 暴露，详见 §9.4。
 
 **响应：**
 
@@ -1364,12 +1368,18 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/erase \
     "items": [
       {
         "id": "<uuid>",
+        "tenantId": "<tenant_id>",
         "userId": "<user_id>",
         "leadId": "<lead_id>",
+        "callRecordId": null,
         "title": "回访确认意向",
         "content": "客户说周三下午方便接电话",
         "scheduledAt": 1700000000,
         "status": "pending",
+        "completedAt": null,
+        "createdAt": 1699990000,
+        "updatedAt": 1699990000,
+        "deletedAt": null,
         "lead": { "name": "张三", "phone": "13800138000" }
       }
     ],
@@ -1378,25 +1388,31 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/erase \
 }
 ```
 
+> `lead` 为线索快照（`name` + `phone`，不脱敏；线索不存在/已删时为 `null`，`phone` 为 `null` 时归一化为 `""`）。
+
 **curl：**
 
 ```bash
-# 查看今日待办
+# 查看今日待办（默认 status=pending）
 curl 'https://tm-api-test.kao9.com/api/tenant/schedules' \
   -H 'Authorization: Bearer <te_token>'
 
-# TM/TA 按日期查看
-curl 'https://tm-api-test.kao9.com/api/tenant/schedules?dateFrom=2026-07-19&dateTo=2026-07-19' \
+# TM/TA 按日期范围查看（dateFrom/dateTo 为 unix 秒，原样透传 scheduledAt__gte/__lte）
+curl 'https://tm-api-test.kao9.com/api/tenant/schedules?dateFrom=1700000000&dateTo=1700086399' \
   -H 'Authorization: Bearer <tm_token>'
 
-# 查看已完成
+# 查看待办+已完成
 curl 'https://tm-api-test.kao9.com/api/tenant/schedules?status__in=pending,completed' \
   -H 'Authorization: Bearer <ta_token>'
+
+# 关键词搜索（title/content/线索姓名）
+curl 'https://tm-api-test.kao9.com/api/tenant/schedules?q=%E5%9B%9E%E8%AE%BF' \
+  -H 'Authorization: Bearer <te_token>'
 ```
 
 ### GET /api/tenant/schedules/:id
 
-日程详情（含 `lead` 快照 + `call` 通话摘要）。
+日程详情（含 `lead` 快照 + `call` 通话摘要）。TE 仅见自己归属的日程，TM/TA 看全团队。
 
 **curl：**
 
@@ -1405,7 +1421,7 @@ curl https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id> \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
-**响应：**
+**响应（无关联通话）：**
 
 ```json
 {
@@ -1434,28 +1450,48 @@ curl https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id> \
 }
 ```
 
-> `status` 枚举 `pending` / `completed` / `cancelled`。`lead` 为线索快照（含姓名+手机号）。`call` 为关联通话摘要（含 `answerType` / `duration`），无关联则为 `null`。
-
-### POST /api/tenant/schedules
-
-创建日程。
-
-**请求：**
+**响应（`callRecordId` 关联通话时，`call` 含 `id` / `answerType` / `duration` / `startedAt`）：**
 
 ```json
 {
-  "leadId": "<lead_id>",
-  "scheduledAt": 1700000000,
-  "title": "回访确认意向",
-  "content": "客户说周三下午方便接电话",
-  "callRecordId": "<可选:关联的通话>",
-  "userId": "<可选:TM/TA替员工创建的归属人>"
+  "success": true,
+  "data": {
+    "id": "schedule-uuid",
+    "callRecordId": "call-uuid",
+    "status": "completed",
+    "lead": { "name": "张三", "phone": "13800138000" },
+    "call": {
+      "id": "call-uuid",
+      "answerType": "answered",
+      "duration": 126,
+      "startedAt": 1700000000
+    }
+  },
+  "error": null
 }
 ```
+
+> `status` 枚举 `pending` / `completed` / `cancelled`。`lead` 为线索快照（含姓名+手机号，不脱敏；`phone` 为 `null` 时归一化为 `""`）。`call` 为关联通话摘要（`id` / `answerType` / `duration` / `startedAt`），无关联则为 `null`。
+
+### POST /api/tenant/schedules
+
+创建日程。返回 `201 Created`。
+
+**请求体（JSON）：**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `leadId` | string | 是 | 关联线索 ID（须属本租户且未删；TE 只能选自己归属的线索） |
+| `scheduledAt` | integer | 是 | 计划联系时间（unix 秒） |
+| `title` | string | 是 | 标题，最长 200 字符 |
+| `content` | string | 否 | 沟通内容备注，最长 2000 字符 |
+| `callRecordId` | string | 否 | 关联通话记录 ID（须属本租户且与 `leadId` 一致） |
+| `userId` | string | 否 | TM/TA 替其他员工创建时指定归属人；不传默认=自己 |
 
 **约束：**
 - TE 仅可为自己归属的线索创建（`owner_id === 自己`）
 - TM/TA 可传 `userId` 替其他员工创建
+- 新日程 `status` 固定为 `pending`，并联动刷新 `leads.nextFollowupAt`
 
 **curl：**
 
@@ -1466,9 +1502,27 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/schedules \
   -d '{"leadId":"<lead_id>","scheduledAt":1700000000,"title":"回访确认意向"}'
 ```
 
+**响应（HTTP 201）：**
+
+```json
+{
+  "success": true,
+  "data": { "id": "schedule-uuid", "leadId": "<lead_id>" },
+  "error": null
+}
+```
+
 ### PATCH /api/tenant/schedules/:id
 
-编辑日程（仅可改 `scheduledAt` / `title` / `content`）。改期后联动更新 `leads.nextFollowupAt`。
+编辑日程（仅可改 `scheduledAt` / `title` / `content`）。改期后联动更新 `leads.nextFollowupAt`。TE 仅能改自己归属的日程。
+
+**请求体（JSON，字段均可选，至少传一个）：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `scheduledAt` | integer | 新的计划联系时间（unix 秒） |
+| `title` | string | 标题，最长 200 字符 |
+| `content` | string | 沟通内容备注，最长 2000 字符 |
 
 **curl：**
 
@@ -1479,9 +1533,21 @@ curl -X PATCH https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id> \
   -d '{"scheduledAt":1700003600,"title":"改期至周三下午"}'
 ```
 
+**响应（有改动）：**
+
+```json
+{ "success": true, "data": { "id": "<schedule_id>", "changed": ["scheduledAt", "title"] }, "error": null }
+```
+
+**响应（无改动字段）：**
+
+```json
+{ "success": true, "data": { "id": "<schedule_id>", "changed": false }, "error": null }
+```
+
 ### POST /api/tenant/schedules/:id/complete
 
-标记完成（仅 `pending` 状态可执行）。
+标记完成（仅 `pending` 状态可执行；否则返回 `VALIDATION`）。
 
 **curl：**
 
@@ -1490,9 +1556,15 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id>/com
   -H 'Authorization: Bearer <te_token>'
 ```
 
+**响应：**
+
+```json
+{ "success": true, "data": { "id": "<schedule_id>", "status": "completed" }, "error": null }
+```
+
 ### POST /api/tenant/schedules/:id/cancel
 
-取消（仅 `pending` 状态可执行）。
+取消（仅 `pending` 状态可执行；否则返回 `VALIDATION`）。
 
 **curl：**
 
@@ -1501,9 +1573,15 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id>/can
   -H 'Authorization: Bearer <te_token>'
 ```
 
+**响应：**
+
+```json
+{ "success": true, "data": { "id": "<schedule_id>", "status": "cancelled" }, "error": null }
+```
+
 ### POST /api/tenant/schedules/:id/reopen
 
-重新打开（`completed`/`cancelled` → `pending`）。
+重新打开（`completed`/`cancelled` → `pending`；已是 `pending` 时返回 `VALIDATION`）。
 
 **curl：**
 
@@ -1512,15 +1590,27 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id>/reo
   -H 'Authorization: Bearer <ta_token>'
 ```
 
+**响应：**
+
+```json
+{ "success": true, "data": { "id": "<schedule_id>", "status": "pending" }, "error": null }
+```
+
 ### DELETE /api/tenant/schedules/:id
 
-软删（本人或 TA）。
+软删（本人或 TA；非本人且非 TA 返回 `AUTH_FORBIDDEN`）。若被删日程为 `pending`，联动刷新 `leads.nextFollowupAt`。
 
 **curl：**
 
 ```bash
 curl -X DELETE https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id> \
   -H 'Authorization: Bearer <ta_token>'
+```
+
+**响应：**
+
+```json
+{ "success": true, "data": { "id": "<schedule_id>", "deleted": true }, "error": null }
 ```
 
 ### GET /api/tenant/schedules/stats
@@ -1565,13 +1655,6 @@ curl https://tm-api-test.kao9.com/api/tenant/schedules/stats/mine \
     "byStatus": { "pending": 5, "completed": 3, "cancelled": 1, "overdue": 2, "dueToday": 7 }
   }
 }
-```
-
-**curl：**
-
-```bash
-curl https://tm-api-test.kao9.com/api/tenant/schedules/stats/mine \
-  -H 'Authorization: Bearer <te_token>'
 ```
 
 ---
