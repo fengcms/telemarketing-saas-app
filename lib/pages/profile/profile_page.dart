@@ -20,6 +20,7 @@ import 'package:telemarketing_app/models/home_stats.dart';
 import 'package:telemarketing_app/pages/coming_soon_page.dart';
 import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 import 'package:telemarketing_app/pages/customers/customer_list_page.dart';
+import 'package:telemarketing_app/pages/theme_preview_page.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_menu_row.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_stats_card.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_user_card.dart';
@@ -27,6 +28,7 @@ import 'package:telemarketing_app/pages/schedules/widgets/schedule_skeleton.dart
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/home_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
+import 'package:telemarketing_app/core/dev_tools.dart';
 
 // ── 颜色常量（对齐 TDesign 设计规范）──
 const Color _brandColor = Color(0xFF0052D9);
@@ -212,6 +214,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                     onTap: () =>
                         _push(const ComingSoonPage(featureName: '设置')),
                   ),
+                  // 开发版：主题预览入口
+                  if (enableDevTools)
+                    ProfileMenuRow(
+                      icon: Icons.palette,
+                      title: '主题预览',
+                      onTap: () => _push(const ThemePreviewPage()),
+                    ),
                   ProfileMenuRow(
                     icon: Icons.logout,
                     title: '退出登录',

@@ -3,11 +3,13 @@ library;
 
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'pages/login/login_page.dart';
 import 'pages/main_shell.dart';
 import 'pages/force_change_password/force_change_password_page.dart';
+import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'core/alice_manager.dart';
 import 'core/dev_tools.dart';
@@ -42,12 +44,17 @@ class TelemarketingApp extends ConsumerWidget {
           ],
         );
       },
-      theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFFF3F3F3),
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFF0052D9),
-        ),
-      ),
+      theme: buildBrandTheme(),
+      locale: const Locale('zh', 'CN'),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('zh', 'CN'),
+        Locale('en', 'US'),
+      ],
       home: const AuthGate(),
     );
   }
