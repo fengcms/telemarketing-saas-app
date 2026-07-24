@@ -165,8 +165,8 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
     return _detail!.userId == user.id || user.role == 'TA';
   }
 
-  /// ⋮ 菜单是否显示（编辑/删除皆无权限则隐藏）
-  bool get _showMenu => _canEdit || _canDelete;
+  /// ⋮ 菜单是否显示（无删除权限则隐藏）
+  bool get _showMenu => _canDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -235,11 +235,6 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
               tooltip: '更多',
               onSelected: _onMenuSelected,
               itemBuilder: (ctx) => [
-                if (_canEdit)
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Text('编辑', style: TextStyle(fontSize: 14)),
-                  ),
                 if (_canDelete)
                   const PopupMenuItem(
                     value: 'delete',
@@ -699,17 +694,7 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
           _actionBtn(
             icon: TDIcons.edit,
             label: '编辑',
-            onTap: () async {
-              final changed = await showScheduleFormSheet(
-                context,
-                scheduleId: d.id,
-                initial: d,
-              );
-              if (changed == true && mounted) {
-                ref.read(scheduleDetailCacheProvider).invalidate(d.id);
-                await _fetchFromServer();
-              }
-            },
+            onTap: _canEdit ? () => _onEdit() : null,
           ),
         ],
       ),
@@ -720,8 +705,9 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
   Widget _actionBtn({
     required IconData icon,
     required String label,
-    required VoidCallback onTap,
+    VoidCallback? onTap,
   }) {
+    final isDisabled = onTap == null;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -729,7 +715,10 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: const Color(0xFF0052D9)),
+            Icon(icon, size: 18,
+                color: isDisabled
+                    ? const Color(0xFFDCDCDC)
+                    : const Color(0xFF0052D9)),
             const SizedBox(width: 6),
             Text(
               label,
@@ -875,11 +864,7 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
 
   /// ⋮ 菜单选择分发
   void _onMenuSelected(String value) {
-    if (value == 'edit') {
-      _onEdit();
-    } else if (value == 'delete') {
-      _onDelete();
-    }
+    if (value == 'delete') _onDelete();
   }
 
   /// 编辑（弹底部抽屉表单，回填当前数据；保存后失效缓存并刷新）
