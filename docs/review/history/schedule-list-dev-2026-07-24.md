@@ -89,3 +89,44 @@
 | `lib/pages/schedules/widgets/schedule_date_header.dart` | 新增 |
 | `lib/pages/schedules/widgets/schedule_overdue_header.dart` | 新增 |
 | `lib/pages/main_shell.dart` | 改（接列表页 + 角标） |
+
+## 七、修复追加记录（v0.12 实测后）
+
+> 以下为 2026-07-24 真机实测后陆续修复的问题，均已在 release + dev 构建下验证。
+
+### 7.1 下拉刷新整页变灰（release 灰屏）
+- 根因：`_dateKey` 生成分组 key 时月份/日期未补零（如 `2026-7-24`），`_dateTitle` 又用 `DateTime.parse(key)` 回解析 → release 下抛 `FormatException`，整页 build 失败被灰屏 ErrorWidget 取代。
+- 修复：key 统一补零为 `YYYY-MM-DD`；并明确"分组 key 不要字符串 round-trip 再 parse，尽量直接持 DateTime"。
+- 教训：**release 灰屏 = build 期未捕获异常**（debug 是红屏）。凡在 build 内对服务端数据做解析/格式化，必须防御非法输入。
+
+### 7.2 切 Tab / 范围不重加载（数据缓存）
+- `schedule_list_provider` 新增 `_TabCache`（`key=$scope:$tab`）。`switchTab`/`switchScope` 命中缓存直接复用；`_reload({force})` 留给下拉刷新；`loadMore`/`_loadInitial` 也回写缓存。
+
+### 7.3 归属显示 id 而非姓名
+- 根因：`options_cache_service` 的 `_ensureLoaded()` 用 fire-and-forget 调刷新，首查时 `_users` 仍空 → `getUserName` 回退 id，且 `userNameProvider`(FutureProvider) 把 id 永久缓存。
+- 修复：改为 `await` 同一刷新 Future（`_loadingFuture` 共享，仅发一次请求）。
+
+### 7.4 卡片时间仅 hh:mm → 加年月日
+- `schedule.dart` 新增 `dateTimeDisplay`（yyyy-MM-dd HH:mm，月日时分补零）；`schedule_card` 改用；保留 `timeDisplay`(hh:mm) 供首页紧凑预览。
+
+### 7.5 Alice 浮标挡控件 → 可拖拽
+- `app.dart` 的 `_DevToolsFloatingButton` 改 StatefulWidget + `GestureDetector` 拖拽（clamp 屏内）；纯点击才 `showInspector()`。
+
+### 7.6 自然周分组边界
+- `_dateTitle` 改为自然周（周一为起点）：本周=`_isSameWeek(dt,today)`、下周=`_isSameWeek(dt,today+7d)`，避免滚动窗口误判出两个「本周」。
+
+### 7.7 线索详情「新建日程」日期/时间「确定」无反应
+- 根因：`TDPicker.showDatePicker` 的 `onConfirm` 类型是 `Map<String,int>`（不是 `DateTime`），原 `as DateTime` 在 release 下抛 `CastError` 被吞；且确认后需手动 `pop`。
+- 修复：回调读 `Map` 重建 `DateTime`/`TimeOfDay`，并补 `Navigator.pop()`。
+
+### 7.8 分组重构为语义桶（消除重复头）
+- 原按天分桶 → 同一自然周多天各带日程时出多个同名头。重写为**语义桶**（每类仅一个头）：待办=已逾期/今天/明天/后天/本周/下周/更晚；已完成镜像（今天/昨天/本周/上周/更早）。空桶不显示。
+
+### 7.9 下拉刷新闪现 + 骨架屏优化 + 吸顶头
+- `isRefreshing` 状态：刷新时显骨架屏，不再闪现旧数据。
+- 抽离公共 `schedule_skeleton.dart`（`ScheduleSkeleton` + shimmer 扫光，待办/已完成两 Tab 共用）。
+- 吸顶头加底部分割线（`0xFFE0E0E0` 0.5px），点击平滑滚动到对应组别（`Scrollable.ensureVisible`）。
+- 踩坑：本项目 Flutter 版 `LinearGradient` 不支持 `transform`，shimmer 改用随动画进度平移 `stops` 实现。
+
+### 7.10 移除卡片「线索姓名+手机号」展示
+- 用户调整策略：新建日程时把线索姓名+手机号写进标题，卡片不再单独展示该行。删除 `schedule_card` 中 `leadName`+`leadPhone`（`phoneSuffix`）整块，保留归属行（userId→用户名）。

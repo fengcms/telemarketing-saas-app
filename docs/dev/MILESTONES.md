@@ -385,6 +385,23 @@ ApiClient 拦截器链：
 
 ---
 
+### 修复追加（2026-07-24 后续实测修复）
+
+| 模块 | 说明 |
+|------|------|
+| 灰屏修复 | `_dateKey` 补零，避免 `DateTime.parse` 抛 `FormatException` 致 release 整页灰屏 |
+| Tab/范围缓存 | `schedule_list_provider` 加 `_TabCache`，切 Tab/范围命中缓存不重加载 |
+| 归属映射 | `options_cache_service` 改 `await` 共享 Future，首查不再落空被 FutureProvider 缓存 |
+| 卡片时间 | `schedule.dart` 新增 `dateTimeDisplay`（年月日时分），卡片改用 |
+| Alice 浮标 | `app.dart` 浮标改可拖拽，避免挡测试控件 |
+| 自然周分组 | `_dateTitle` 改用自然周（周一起点），消除两个「本周」 |
+| 新建日程确定 | `schedule_dialog` 修正 `TDPicker.onConfirm` 为 `Map<String,int>` + 手动 pop |
+| 语义桶分组 | 重写 `_group` 为语义桶，消除同周多天重复头 |
+| 骨架屏/吸顶 | `isRefreshing` + 公共 `ScheduleSkeleton` + 吸顶头分割线/点击滚动 |
+| 卡片精简 | 移除「线索姓名+手机号」行（改写入标题） |
+
+踩坑详见 `docs/dev/DEVELOPMENT_PITFALLS.md` §2.4 / §5.7 / §5.8 / §8.12。
+
 ## 下一步节点规划
 
 > ⚠️ 下方 P0 核心流程**实际已完成**，见 v0.1~v0.11。剩余工作均为 P1 及以后。

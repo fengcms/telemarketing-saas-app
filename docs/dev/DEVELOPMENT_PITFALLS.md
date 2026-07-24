@@ -162,6 +162,34 @@ Future versions of Flutter will fail to build if your app uses plugins that appl
 
 ---
 
+### 2.4 TDesign `TDPicker.showDatePicker` 的 `onConfirm` 是 `Map` 不是 `DateTime`
+**严重级别**：🔴 **阻断性（P0，release 下静默无反应）**
+
+**现象**：线索详情→新建日程抽屉里，日期/时间选择器的「确定」按钮点了毫无反应（「取消」正常），date/time 两个控件都如此；debug 下则会直接红屏。
+
+**原因**：翻 `tdesign_flutter 0.2.7` 源码 `TDPicker` 坐实——`onConfirm` 的类型是：
+```dart
+typedef DatePickerCallback = void Function(Map<String, int> selected);
+```
+回调拿到的是 **Map**（键为 `year`/`month`/`day`/`hour`/`minute`/`second`，未启用列值为 `-1`），**不是 `DateTime`**。项目里原写法 `final dt = date as DateTime;`：
+① release 下该 `as` 抛 `CastError` 被吞 → 确定「无反应」；
+② `TDDatePicker._buildHeader` 的「确定」只调 `widget.onConfirm!(selected)`、**不会自动 `pop`**；故即便类型正确，也必须在回调里自己 `Navigator.of(context).pop()` 关掉选择器。
+
+**解决方案**：
+```dart
+// ✅ 从 Map 取字段重建，并手动 pop
+void _onConfirmDate(Map selected) {
+  final dt = DateTime(
+    selected['year']!, selected['month']!, selected['day']!,
+  );
+  // ...回填到表单...
+  Navigator.of(context).pop();
+}
+```
+对照 `tdesign_flutter` 官方示例 `td_date_picker_page.dart`（同样是读 Map + 手动 pop）。
+
+**教训**：用 tdesign_flutter 的 `TDPicker`，`onConfirm`/`onChange` 参数是 `Map<String,int>` 而非 `DateTime`；且**确认后必须手动 pop 选择器**。本项目 STYLE 约定"不确定就翻三方源码/官方示例核实，不靠猜"，又一次避免了误判。
+
 ## 3. Android 构建坑点
 
 ### 3.1 `package_info_plus` 在 Android 上的 KGP 兼容性
@@ -366,6 +394,39 @@ Future<void> clearAll() async {
 **解决方案**：在 `_showFilterSheet` 方法内直接使用 `ref.read(leadListProvider)` 读取最新状态。
 
 ---
+
+### 5.7 分组 key 字符串 round-trip 解析致 release 整页灰屏
+**严重级别**：🔴 **阻断性（P0）**
+
+**现象**：日程列表下拉刷新后整页变灰、顶栏消失；杀进程重开仍灰。debug 下是红屏（`FormatException`）。
+
+**原因**：分组 key 用 `'${y}-${m}-${d}'`（月/日未补零，如 `2026-7-24`），随后又在 `build()` 内用 `DateTime.parse(key)` 回解析该串 → 单数字月/日必抛 `FormatException`。因 key 在 `build()` 内被使用，异常冒泡导致整页 build 失败。
+
+**解决方案**：
+- key 生成时对月/日 `padLeft(2,'0')` 统一为 `YYYY-MM-DD`；
+- **分组 key 不要字符串 round-trip 再 parse**，尽量直接持 `DateTime` 对象做比较。
+
+**教训**：**release 灰屏 = build 期未捕获异常**（debug 是红屏 StackTrace，release 被 `ErrorWidget` 取代且日志不明显）。任何在 `build()` 内对**服务端数据**做解析/格式化的代码，都必须防御非法/异常输入，否则一个脏数据字段就能让整页白/灰屏。
+
+### 5.8 Flutter `LinearGradient` 无 `transform` 参数（shimmer 实现）
+**严重级别**：🟡 **警告（非阻断）**
+
+**现象**：想用 `LinearGradient(transform: GradientTransform(...))` 实现骨架屏扫光，编译报 `undefined_named_parameter: transform`。
+
+**原因**：本项目 Flutter 3.44.7 内置的 `LinearGradient` 尚未提供 `transform`/`GradientTransform`（该能力在更新的 Flutter 版本才有）。
+
+**解决方案**：shimmer 改用随 `AnimationController` 进度**平移 `stops`** 实现（repeat(reverse:true) 平滑扫动）：
+```dart
+final t = controller.value;
+final stops = [t - 0.4, t - 0.2, t]; // 随进度平移
+return LinearGradient(
+  begin: Alignment.centerLeft, end: Alignment.centerRight,
+  colors: [base, highlight, base],
+  stops: stops.map((s) => s.clamp(0.0, 1.0)).toList(),
+);
+```
+
+**教训**：升级 Flutter 前别假设新版 API 已存在；实现动画渐变扫光优先用 `stops` 平移法，兼容性最好。
 
 ## 6. 数据与缓存坑点
 
@@ -606,6 +667,21 @@ adb -s <deviceId> install -r build/app/outputs/flutter-apk/app-debug.apk
 **本次结论**：最终在 **debug 版**下验证登录 / 日程列表 / Alice 浮窗**均正常**；之前"无法登录"更可能是临时网络环境波动 + release 模式异常不可见共同造成的排查盲区，**未在代码层复现硬伤**。提交后建议再用日常 release 构建命令实机验一次，确认 release 路径也正常。
 
 ---
+
+### 8.12 下拉/用户缓存 fire-and-forget 预热致首查落空并被 FutureProvider 缓存
+**严重级别**：🟠 **功能性（P1）**
+
+**现象**：日程卡片「归属」首屏显示的是用户 id 而非姓名；重新下拉刷新或切 Tab 后才变正确。
+
+**原因**：`OptionsCacheService._ensureLoaded()` 用 fire-and-forget 调 `_refreshFromApi()`（不 await），首查时刻 `_users` 仍为空 → `getUserName(id)` 立即回退成 id；而上层用的是 `userNameProvider`（Riverpod `FutureProvider.family`），它把这次"返回 id"的结果**按 id 永久缓存**，后续即便缓存预热完成也不再重查。
+
+**解决方案**：把预热改为 **`await` 同一个共享 Future**——`_ensureLoaded()` 返回 `_loadingFuture`（首次创建、仅发一次请求；并发调用复用同一 Future），所有读取方 `await` 它完成后再取 `getUserName`，确保首查即为正确姓名。
+```dart
+Future<void> _ensureLoaded() => _loadingFuture ??= _refreshFromApi();
+// 调用方：await optionsCache._ensureLoaded(); final name = optionsCache.getUserName(id);
+```
+
+**教训**：任何"先 fire-and-forget 预热、再同步读缓存"的模式，在 `FutureProvider`/`AsyncNotifier` 等会自动缓存首次结果的框架里都会翻车——首查的 fallback 值会被框架永久记住。**预热必须是可被 await 的共享 Future，读取前 await 它完成。**
 
 ## 9. 网络与权限坑点
 
