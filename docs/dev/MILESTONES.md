@@ -471,6 +471,10 @@ ApiClient 拦截器链：
 | 删除 loading 居中 | c | 从零高度 ActionBar 移至 `Scaffold` 外层 `Stack`，`Center` 以全屏为参考系 |
 | 骨架屏统一 shimmer | c | 详情 `_buildSkeleton` 从静态灰块改白卡片+`ShimmerBlock` 扫光；`_ShimmerBlock`→公开 `ShimmerBlock` |
 | UI 风格文档 | — | 新建 `docs/dev/UI_STYLE_GUIDE.md`，固化已完成视觉模式 |
+| 底部操作栏（跟进/日程/编辑） | d | 日程详情页信息卡片下方追加三按钮；取消拨号反馈面板 |
+| 日程详情下拉刷新 | d | `RefreshIndicator` 套 `CustomScrollView`，下拉调 `_load(force:true)` |
+| 团队统计视图 | d | TA/TM 优先尝试 `/schedules/stats`，不可用降级为 mine |
+| ⋮ 菜单去编辑 | d | 右上角菜单由编辑+删除精简为仅删除，编辑改由底部操作栏提供 |
 
 ### 踩坑记录
 
@@ -481,9 +485,25 @@ ApiClient 拦截器链：
 
 ### 待开发（本批次未做）
 
-- **拨号返回反馈面板**：详情页拨号后弹快捷备注/接通结果面板（v0.13 决议留待后续）。
-- **详情页下拉刷新**：当前依赖缓存 + 操作后 invalidate；未接入下拉手动刷新手势。
-- **团队视图统计**：`/schedules/stats`（团队）未接入，角标仍取「我的」`dueToday`。
+- **跨天自动重算**：日程列表分组标签按本地时间计算，跨天后不自动刷新。
+- **详情页拨号返回反馈面板**：已被底部三按钮替代，已取消。
+- **团队视图统计**：✅ v0.15d 已实现（TA/TM 优先团队，降级 mine）。
+
+---
+
+## 节点 v0.15d — 三项遗留功能补齐 + 优化（2026-07-24）
+
+> 代码提交：d4f2e82（三项功能）、448c702（移正位置）、871f864（去菜单编辑）
+
+### 完成内容
+
+| 模块 | 说明 |
+|------|------|
+| 底部操作栏 | 日程详情 `_buildInfoCard` 下方追加跟进/日程/编辑三按钮（白卡片，无权限时灰色不可点）；取消原拨号反馈面板需求 |
+| 下拉刷新 | 日程详情页 `CustomScrollView` 外套 `RefreshIndicator`，下拉失效缓存并重拉 |
+| 团队统计 | `ScheduleStatsNotifier.load()` 中 TA/TM 角色优先尝试 `fetchTeamScheduleStats`（`/schedules/stats`），接口不可用时静默降级为 `fetchMyScheduleStats`（`/stats/mine`） |
+| 菜单精简 | 右上角 ⋮ 菜单移除「编辑」（由底部操作栏替代），仅保留「删除」 |
+| 接口确认 | `/api/tenant/schedules/stats` 端点存在但文档未公开，故加 try/catch 降级，不影响现有流程 |
 
 ---
 
@@ -520,4 +540,4 @@ ApiClient 拦截器链：
 
 > 本文档与 `docs/dev/HANDOVER.md`（交接文档）配套使用。
 > ⚠️ 旧 `HANDOVER_05_LEAD_DETAIL.md` 中"3 个并行请求""拨号后弹面板未做"等描述已过时，以本表与代码现状为准。
-> 节点版本：v0.15 | 更新日期：2026-07-24
+> 节点版本：v0.15d | 更新日期：2026-07-24

@@ -117,3 +117,24 @@
 
 ### 7.5 `showModalBottomSheet` 满屏抽屉
 - 表单抽屉用 `showModalBottomSheet(isScrollControlled: true, …)` + 容器 `maxHeight: MediaQuery.sizeOf(context).height * 0.92`，键盘弹起时底部「取消/保存」按钮不被遮挡（配合 `Scaffold.resizeToAvoidBottomInset`）。
+
+---
+
+## 八、遗留项补齐记录（v0.15d，2026-07-24）
+
+### 8.1 拨号反馈面板 → 改为底部操作栏
+- 原计划「拨号返回弹快捷备注面板」已取消。
+- 改为在**日程详情页**的信息卡片（创建时间/更新时间/归属人）下方，新增排操作按钮：跟进 / 日程 / 编辑（白卡片，对齐 `LeadActionBar` 风格）。
+- 跟进 → `showFollowUpPanel`；日程 → `showScheduleFormSheet`（创建）；编辑 → `_onEdit()`（含权限检查）。
+- 右上角 ⋮ 菜单中「编辑」同步移除（`448c702` / `871f864`）。
+
+### 8.2 详情页下拉刷新
+- `_buildBody()` 中 `CustomScrollView` 外套 `RefreshIndicator`，`onRefresh` → `_load(force: true)`（失效缓存 + 从服务器重拉）。
+- 要点：骨架屏期间不显示 RefreshIndicator（直接返回骨架屏，不套 RefreshIndicator）。
+
+### 8.3 团队统计视图
+- `ScheduleStatsNotifier.load()` 中检查用户角色：TA/TM 优先尝试 `fetchTeamScheduleStats`（`GET /api/tenant/schedules/stats`）。
+- 接口不可用时（catch）静默降级为 `fetchMyScheduleStats`（`GET /schedules/stats/mine`）。
+- 其他角色始终取 mine。`api.md` 中无 `/schedules/stats` 文档，故加降级保底。
+- 代码提交：`d4f2e82`（三项功能合集）、`448c702`（移正底部按钮位置）、`871f864`（去菜单编辑）。
+- `flutter analyze`：全仓 0 issues；release+DEV_TOOLS 构建成功（56.8MB），卸载重装 Redmi K60 启动无崩溃。
