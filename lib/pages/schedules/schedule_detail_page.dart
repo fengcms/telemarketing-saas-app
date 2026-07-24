@@ -17,6 +17,7 @@ import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/models/schedule_detail.dart';
 import 'package:telemarketing_app/pages/leads/lead_detail_page.dart';
 import 'package:telemarketing_app/pages/leads/widgets/dial_helper.dart';
+import 'package:telemarketing_app/pages/leads/widgets/follow_up_panel.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/providers/schedule_list_provider.dart';
@@ -271,6 +272,7 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
           SliverToBoxAdapter(child: _buildLeadCard()),
           SliverToBoxAdapter(child: _buildContentCard()),
           SliverToBoxAdapter(child: _buildInfoCard()),
+          SliverToBoxAdapter(child: _buildBottomActions()),
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
         ],
       ),
@@ -652,6 +654,92 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 底部操作栏（跟进 / 日程 / 编辑），追加在信息卡片下方
+  Widget _buildBottomActions() {
+    final d = _detail;
+    if (d == null || d.lead == null) return const SizedBox.shrink();
+    final lead = d.lead!;
+    return Container(
+      height: 44,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _actionBtn(
+            icon: TDIcons.rollback,
+            label: '跟进',
+            onTap: () => showFollowUpPanel(context, leadId: d.leadId),
+          ),
+          _actionBtn(
+            icon: TDIcons.calendar,
+            label: '日程',
+            onTap: () async {
+              final changed = await showScheduleFormSheet(
+                context,
+                leadId: d.leadId,
+                leadName: lead.name,
+                leadPhone: lead.phone,
+              );
+              if (changed == true && mounted) {
+                ref.read(scheduleListProvider.notifier).refresh();
+                ref.read(scheduleDetailCacheProvider).invalidate(d.id);
+                await _fetchFromServer();
+              }
+            },
+          ),
+          _actionBtn(
+            icon: TDIcons.edit,
+            label: '编辑',
+            onTap: () async {
+              final changed = await showScheduleFormSheet(
+                context,
+                scheduleId: d.id,
+                initial: d,
+              );
+              if (changed == true && mounted) {
+                ref.read(scheduleDetailCacheProvider).invalidate(d.id);
+                await _fetchFromServer();
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 底部操作栏内单个按钮
+  Widget _actionBtn({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: const Color(0xFF0052D9)),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF181818),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
