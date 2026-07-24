@@ -85,25 +85,25 @@ class _SkeletonCard extends StatelessWidget {
                   Row(
                     children: [
                       // 标题占位
-                      _ShimmerBlock(ctrl: ctrl, width: 160, height: 16),
+                      ShimmerBlock(ctrl: ctrl, width: 160, height: 16),
                       const Spacer(),
                       // 状态标签占位
-                      _ShimmerBlock(ctrl: ctrl, width: 40, height: 18),
+                      ShimmerBlock(ctrl: ctrl, width: 40, height: 18),
                     ],
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
                       // 时间占位
-                      _ShimmerBlock(ctrl: ctrl, width: 90, height: 14),
+                      ShimmerBlock(ctrl: ctrl, width: 90, height: 14),
                       const SizedBox(width: 12),
                       // 归属占位
-                      _ShimmerBlock(ctrl: ctrl, width: 80, height: 14),
+                      ShimmerBlock(ctrl: ctrl, width: 80, height: 14),
                     ],
                   ),
                   const SizedBox(height: 10),
                   // 内容/归属人占位
-                  _ShimmerBlock(ctrl: ctrl, width: 120, height: 13),
+                  ShimmerBlock(ctrl: ctrl, width: 120, height: 13),
                 ],
               ),
             ),
@@ -117,12 +117,14 @@ class _SkeletonCard extends StatelessWidget {
 /// 带 shimmer 扫光的灰块
 ///
 /// 随 [ctrl] 进度平移渐变高亮区，形成由左向右的微光扫动。
-class _ShimmerBlock extends StatelessWidget {
+/// 公开类，可供日程详情页等其他骨架屏复用。
+class ShimmerBlock extends StatelessWidget {
   final AnimationController ctrl;
   final double width;
   final double height;
 
-  const _ShimmerBlock({
+  const ShimmerBlock({
+    super.key,
     required this.ctrl,
     this.width = double.infinity,
     this.height = 14,

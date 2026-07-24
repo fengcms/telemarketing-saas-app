@@ -3,8 +3,8 @@
 /// 设计文档：docs/design/page-design/12-新建日程.md
 /// - 作为公共组件，被两处共用：
 ///   1) 线索详情「日程」按钮 → 创建模式（leadId + 姓名/手机号预填标题）
-///   2) 日程详情页「编辑」菜单 → 编辑模式（回填标题/内容/计划时间）
-/// - [ScheduleFormContent] 承载全部表单逻辑（含抽屉头部与底部操作行）
+///   2) 日程详情页「编辑」菜单 → 编辑模式（回填内容/计划时间）
+/// - [ScheduleFormContent] 承载全部表单逻辑（含顶部标题行与提交按钮）
 /// - [showScheduleFormSheet] 用 showModalBottomSheet 包裹，返回 bool?
 ///   （true=有变更并保存，false/null=未变更或放弃）
 library;
@@ -20,6 +20,7 @@ import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/providers/schedule_list_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'package:telemarketing_app/services/api_exception.dart';
+import 'package:telemarketing_app/widgets/tag_chip.dart';
 
 /// 弹出日程表单抽屉
 ///
@@ -37,31 +38,24 @@ Future<bool?> showScheduleFormSheet(
   String? scheduleId,
   ScheduleDetail? initial,
 }) async {
-  final screenH = MediaQuery.of(context).size.height;
   return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
-    builder: (_) => Container(
-      constraints: BoxConstraints(maxHeight: screenH * 0.92),
-      child: ScheduleFormContent(
-        leadId: leadId,
-        leadName: leadName,
-        leadPhone: leadPhone,
-        prefillContent: prefillContent,
-        scheduleId: scheduleId,
-        initial: initial,
-      ),
+    backgroundColor: Colors.transparent,
+    builder: (_) => ScheduleFormContent(
+      leadId: leadId,
+      leadName: leadName,
+      leadPhone: leadPhone,
+      prefillContent: prefillContent,
+      scheduleId: scheduleId,
+      initial: initial,
     ),
   );
 }
 
 /// 新建 / 编辑日程表单内容（抽屉内承载）
 ///
-/// 自带：顶部拖动把手 + 标题 + 关闭×；中部滚动表单；底部取消/保存操作行。
+/// 自带：顶部 SheetHeader（标题+关闭×）；中部滚动表单；底部全宽提交按钮。
 /// 保存成功 → pop(true)；放弃/关闭 → 确认后 pop(false)。
 class ScheduleFormContent extends ConsumerStatefulWidget {
   /// 创建模式：关联线索 ID
@@ -98,7 +92,6 @@ class ScheduleFormContent extends ConsumerStatefulWidget {
 }
 
 class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
-  final _titleCtrl = TextEditingController();
   final _contentCtrl = TextEditingController();
 
   /// 选中的日期（年月日）
@@ -106,6 +99,9 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
 
   /// 选中的时间（时分）
   late TimeOfDay _selectedTime;
+
+  /// 创建模式：自动生成的标题（用户不可见）
+  String _autoTitle = '';
 
   /// 归属人（仅 TM/TA）
   OptionItem? _owner;
@@ -119,7 +115,7 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
   /// 是否有未保存修改（用于返回放弃确认）
   bool _dirty = false;
 
-  /// 计划时间校验错误（非空时在时间卡片下方展示）
+  /// 计划时间校验错误
   String? _dateError;
 
   @override
@@ -131,7 +127,6 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
 
   @override
   void dispose() {
-    _titleCtrl.dispose();
     _contentCtrl.dispose();
     super.dispose();
   }
@@ -140,11 +135,10 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
   void _initFields() {
     final initial = widget.initial;
     if (initial != null) {
-      // 编辑：从详情回填
+      // 编辑：从详情回填（标题保持原值，用户不可改）
       final dt = DateTime.fromMillisecondsSinceEpoch(initial.scheduledAt * 1000);
       _selectedDate = DateTime(dt.year, dt.month, dt.day);
       _selectedTime = TimeOfDay(hour: dt.hour, minute: dt.minute);
-      _titleCtrl.text = initial.title;
       _contentCtrl.text = initial.content ?? '';
     } else {
       // 创建：计划时间默认 now+1h（取整 5 分钟）
@@ -156,7 +150,7 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
       );
       final name = widget.leadName ?? '';
       final phone = widget.leadPhone ?? '';
-      _titleCtrl.text = '🏷️ $name - $phone';
+      _autoTitle = '🏷️ $name - $phone';
       _contentCtrl.text = widget.prefillContent ?? '';
     }
   }
@@ -196,79 +190,74 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildSheetHeader(),
-        Expanded(child: _buildBody()),
-        _buildActionBar(),
-      ],
-    );
-  }
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
 
-  // ── 抽屉头部 ──
+    return Container(
+      padding: EdgeInsets.only(bottom: bottom),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── 标题行（居中标题 + 右上角小关闭按钮，关闭接 _onBack 脏检查） ──
+              Row(
+                children: [
+                  const Spacer(),
+                  Text(
+                    _isEdit ? '编辑日程' : '新建日程',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF181818),
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: _onBack,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      child: const Icon(Icons.close, size: 18,
+                          color: Color(0xFFA6A6A6)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
 
-  Widget _buildSheetHeader() {
-    return Column(
-      children: [
-        const SizedBox(height: 8),
-        Center(
-          child: Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE0E0E0),
-              borderRadius: BorderRadius.circular(2),
-            ),
+              // ── 表单区块 ──
+              _buildLeadSection(),
+              _buildDateSection(),
+              _buildTimeSection(),
+              _buildNoteSection(),
+              if (_owners.isNotEmpty) _buildOwnerSection(),
+
+              const SizedBox(height: 24),
+
+              // ── 全宽提交按钮 ──
+              _buildSubmitButton(),
+            ],
           ),
         ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                _isEdit ? '编辑日程' : '新建日程',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF181818),
-                ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.close, color: Color(0xFF181818), size: 22),
-              tooltip: '关闭',
-              onPressed: _onBack,
-            ),
-            const SizedBox(width: 4),
-          ],
-        ),
-        const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
-      ],
-    );
-  }
-
-  // ── 主体 ──
-
-  Widget _buildBody() {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return SingleChildScrollView(
-      padding: EdgeInsets.only(bottom: 16 + bottomInset),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildLeadSection(),
-          _buildDateSection(),
-          _buildTimeSection(),
-          _buildTitleSection(),
-          _buildContentSection(),
-          if (_owners.isNotEmpty) _buildOwnerSection(),
-        ],
       ),
     );
   }
 
-  /// 关联线索（只读）
+  /// 区块标题（灰色小字）
+  Widget _sectionTitle(String text) {
+    return Text(
+      text,
+      style: const TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
+    );
+  }
+
+  // ── 关联线索（只读） ──
+
   Widget _buildLeadSection() {
     final name = _isEdit
         ? widget.initial?.lead?.name ?? ''
@@ -276,66 +265,56 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
     final phone = _isEdit
         ? widget.initial?.lead?.phone ?? ''
         : widget.leadPhone ?? '';
-    return _card(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '👤 关联线索',
-            style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-          ),
+          _sectionTitle('关联线索'),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  name.isEmpty ? '—' : name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF181818),
-                  ),
-                ),
-              ),
-              if (!_isEdit)
-                const Text('（只读）',
-                    style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6))),
-            ],
-          ),
-          if (phone.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              '📞 $phone',
-              style: const TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
+          Text(
+            name.isEmpty && phone.isEmpty ? '—' : '$name - $phone',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF181818),
             ),
-          ],
+          ),
         ],
       ),
     );
   }
 
-  /// 计划时间（必填）
+  // ── 计划时间（日期） ──
+
   Widget _buildDateSection() {
     final dateStr =
         '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    return _card(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '📅 计划时间 *',
-            style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
+          Row(
+            children: [
+              _sectionTitle('日期'),
+              const Text(
+                ' *',
+                style: TextStyle(fontSize: 12, color: Color(0xFFD54941)),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
+          // 日期输入框（白底 + 灰边框 + 圆角）
           GestureDetector(
             onTap: _pickDate,
             child: Container(
-              height: 56,
+              height: 44,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F3F3),
+                color: Colors.white,
                 border: Border.all(color: const Color(0xFFE7E7E7), width: 1),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -351,22 +330,71 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
                     ),
                   ),
                   const Icon(Icons.calendar_today,
-                      size: 20, color: Color(0xFFA6A6A6)),
+                      size: 18, color: Color(0xFFA6A6A6)),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 8),
-          // 快捷日期 chip
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _dateChip('明天', today.add(const Duration(days: 1))),
-              _dateChip('后天', today.add(const Duration(days: 2))),
-              _dateChip('大后天', today.add(const Duration(days: 3))),
-              _dateChip('五天后', today.add(const Duration(days: 5))),
-              _dateChip('七天后', today.add(const Duration(days: 7))),
+          // 快捷日期（TagChipRow，scrollable 横向滚动更紧凑）
+          TagChipRow(
+            scrollable: true,
+            chips: [
+              TagChipData(
+                label: '明天',
+                selected: _isSameDay(_selectedDate, today.add(const Duration(days: 1))),
+                onTap: () {
+                  setState(() {
+                    _selectedDate = today.add(const Duration(days: 1));
+                    _dateError = null;
+                    _dirty = true;
+                  });
+                },
+              ),
+              TagChipData(
+                label: '后天',
+                selected: _isSameDay(_selectedDate, today.add(const Duration(days: 2))),
+                onTap: () {
+                  setState(() {
+                    _selectedDate = today.add(const Duration(days: 2));
+                    _dateError = null;
+                    _dirty = true;
+                  });
+                },
+              ),
+              TagChipData(
+                label: '大后天',
+                selected: _isSameDay(_selectedDate, today.add(const Duration(days: 3))),
+                onTap: () {
+                  setState(() {
+                    _selectedDate = today.add(const Duration(days: 3));
+                    _dateError = null;
+                    _dirty = true;
+                  });
+                },
+              ),
+              TagChipData(
+                label: '五天后',
+                selected: _isSameDay(_selectedDate, today.add(const Duration(days: 5))),
+                onTap: () {
+                  setState(() {
+                    _selectedDate = today.add(const Duration(days: 5));
+                    _dateError = null;
+                    _dirty = true;
+                  });
+                },
+              ),
+              TagChipData(
+                label: '七天后',
+                selected: _isSameDay(_selectedDate, today.add(const Duration(days: 7))),
+                onTap: () {
+                  setState(() {
+                    _selectedDate = today.add(const Duration(days: 7));
+                    _dateError = null;
+                    _dirty = true;
+                  });
+                },
+              ),
             ],
           ),
         ],
@@ -374,43 +402,23 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
     );
   }
 
-  /// 日期快捷项
-  Widget _dateChip(String label, DateTime target) {
-    final selected = _isSameDay(_selectedDate, target);
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) {
-        setState(() {
-          _selectedDate = target;
-          _dateError = null;
-          _dirty = true;
-        });
-      },
-      selectedColor: const Color(0xFFF2F3FF),
-      labelStyle: TextStyle(
-        fontSize: 14,
-        color: selected ? const Color(0xFF0052D9) : const Color(0xFF181818),
-      ),
-    );
-  }
+  // ── 计划时间（时分） ──
 
-  /// 时间选择
   Widget _buildTimeSection() {
     final timeStr =
         '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
-    return _card(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 8),
           GestureDetector(
             onTap: _pickTime,
             child: Container(
-              height: 56,
+              height: 44,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F3F3),
+                color: Colors.white,
                 border: Border.all(color: const Color(0xFFE7E7E7), width: 1),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -426,21 +434,66 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
                     ),
                   ),
                   const Icon(Icons.access_time,
-                      size: 20, color: Color(0xFFA6A6A6)),
+                      size: 18, color: Color(0xFFA6A6A6)),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _timeChip('上午10点', 10, 0),
-              _timeChip('下午2点', 14, 0),
-              _timeChip('下午5点', 17, 0),
-              _timeChip('晚上7点', 19, 0),
-              _timeChip('晚上9点', 21, 0),
+          // 快捷时间（TagChipRow，scrollable 横向滚动）
+          TagChipRow(
+            scrollable: true,
+            chips: [
+              TagChipData(
+                label: '上午10点',
+                selected: _selectedTime.hour == 10 && _selectedTime.minute == 0,
+                onTap: () {
+                  setState(() {
+                    _selectedTime = const TimeOfDay(hour: 10, minute: 0);
+                    _dirty = true;
+                  });
+                },
+              ),
+              TagChipData(
+                label: '下午2点',
+                selected: _selectedTime.hour == 14 && _selectedTime.minute == 0,
+                onTap: () {
+                  setState(() {
+                    _selectedTime = const TimeOfDay(hour: 14, minute: 0);
+                    _dirty = true;
+                  });
+                },
+              ),
+              TagChipData(
+                label: '下午5点',
+                selected: _selectedTime.hour == 17 && _selectedTime.minute == 0,
+                onTap: () {
+                  setState(() {
+                    _selectedTime = const TimeOfDay(hour: 17, minute: 0);
+                    _dirty = true;
+                  });
+                },
+              ),
+              TagChipData(
+                label: '晚上7点',
+                selected: _selectedTime.hour == 19 && _selectedTime.minute == 0,
+                onTap: () {
+                  setState(() {
+                    _selectedTime = const TimeOfDay(hour: 19, minute: 0);
+                    _dirty = true;
+                  });
+                },
+              ),
+              TagChipData(
+                label: '晚上9点',
+                selected: _selectedTime.hour == 21 && _selectedTime.minute == 0,
+                onTap: () {
+                  setState(() {
+                    _selectedTime = const TimeOfDay(hour: 21, minute: 0);
+                    _dirty = true;
+                  });
+                },
+              ),
             ],
           ),
           if (_dateError != null)
@@ -459,85 +512,32 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
     );
   }
 
-  /// 时间快捷项
-  Widget _timeChip(String label, int hour, int minute) {
-    final selected =
-        _selectedTime.hour == hour && _selectedTime.minute == minute;
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) {
-        setState(() {
-          _selectedTime = TimeOfDay(hour: hour, minute: minute);
-          _dirty = true;
-        });
-      },
-      selectedColor: const Color(0xFFF2F3FF),
-      labelStyle: TextStyle(
-        fontSize: 14,
-        color: selected ? const Color(0xFF0052D9) : const Color(0xFF181818),
-      ),
-    );
-  }
+  // ── 备注 ──
 
-  /// 标题（可选，≤200）
-  Widget _buildTitleSection() {
-    return _card(
+  Widget _buildNoteSection() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '标题',
-            style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-          ),
+          _sectionTitle('备注'),
           const SizedBox(height: 8),
-          TextField(
-            controller: _titleCtrl,
-            maxLength: 200,
-            decoration: const InputDecoration(
-              hintText: '如：跟进通话结果',
-              hintStyle: TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
-              border: OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFE7E7E7)),
-                borderRadius: BorderRadius.all(Radius.circular(12)),
-              ),
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              counterText: '',
-            ),
-            onChanged: (_) => setState(() => _dirty = true),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 内容（可选，≤2000）
-  Widget _buildContentSection() {
-    return _card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '内容',
-            style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-          ),
-          const SizedBox(height: 8),
-          TextField(
+          TDTextarea(
             controller: _contentCtrl,
-            maxLength: 2000,
-            maxLines: 4,
+            hintText: '补充说明...',
             minLines: 2,
-            decoration: const InputDecoration(
-              hintText: '补充说明...',
-              hintStyle: TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
-              border: OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFE7E7E7)),
-                borderRadius: BorderRadius.all(Radius.circular(12)),
-              ),
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              counterText: '',
+            maxLength: 200,
+            showBottomDivider: false,
+            indicator: true,
+            margin: EdgeInsets.zero,
+            padding: EdgeInsets.zero,
+            inputDecoration: const InputDecoration(
+              contentPadding: EdgeInsets.fromLTRB(12, 10, 12, 10),
+              border: InputBorder.none,
+            ),
+            textareaDecoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFFE7E7E7), width: 1),
+              borderRadius: BorderRadius.circular(8),
             ),
             onChanged: (_) => setState(() => _dirty = true),
           ),
@@ -546,16 +546,15 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
     );
   }
 
-  /// 归属人（仅 TM/TA，编辑模式隐藏）
+  // ── 归属人（仅 TM/TA，编辑模式隐藏） ──
+
   Widget _buildOwnerSection() {
-    return _card(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '👤 归属人',
-            style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-          ),
+          _sectionTitle('归属人'),
           const SizedBox(height: 8),
           DropdownButton<OptionItem>(
             isExpanded: true,
@@ -580,6 +579,32 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
     );
   }
 
+  // ── 全宽提交按钮 ──
+
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: TDButton(
+        text: _isSubmitting ? '' : (_isEdit ? '保存' : '创建日程'),
+        theme: TDButtonTheme.primary,
+        shape: TDButtonShape.round,
+        iconWidget: _isSubmitting
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : null,
+        disabled: _isSubmitting,
+        onTap: _isSubmitting ? null : _submit,
+      ),
+    );
+  }
+
   // ── 选择器（复用已验证的 TDPicker 调用） ──
 
   /// 日期选择（TDPicker.showDatePicker，onConfirm 回调参数为 `Map<String, int>`）
@@ -597,7 +622,6 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
         _selectedDate.day,
       ],
       onConfirm: (selected) {
-        // TDPicker 回调参数为 Map<String,int>（year/month/day/hour/minute/second）
         final map = selected;
         setState(() {
           _selectedDate = DateTime(
@@ -607,7 +631,6 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
           );
           _dirty = true;
         });
-        // 确认后需手动关闭选择器（TDPicker 不会自动 pop）
         Navigator.of(context).pop();
       },
     );
@@ -644,54 +667,6 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
     );
   }
 
-  // ── 底部操作栏 ──
-
-  Widget _buildActionBar() {
-    final isEdit = _isEdit;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return Container(
-      padding:
-          EdgeInsets.fromLTRB(16, 12, 16, 12 + bottomInset),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1)),
-      ),
-      child: Row(
-        children: [
-          TextButton(
-            onPressed: _isSubmitting ? null : _onBack,
-            child: const Text(
-              '取消',
-              style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
-            ),
-          ),
-          const Spacer(),
-          SizedBox(
-            height: 40,
-            child: TDButton(
-              text: _isSubmitting ? '' : (isEdit ? '保存' : '创建日程'),
-              theme: TDButtonTheme.primary,
-              shape: TDButtonShape.round,
-              iconWidget: _isSubmitting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : null,
-              disabled: _isSubmitting,
-              onTap: _isSubmitting ? null : _submit,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ── 操作处理 ──
 
   /// 关闭 / 取消（有未保存修改则确认放弃）
@@ -725,7 +700,6 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
 
   /// 提交（创建 / 编辑）
   Future<void> _submit() async {
-    // 校验计划时间不能为空（理论上 date/time 总有值，兜底）
     final selected = DateTime(
       _selectedDate.year,
       _selectedDate.month,
@@ -738,11 +712,9 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
       return;
     }
 
-    final title = _titleCtrl.text.trim();
     final content = _contentCtrl.text.trim();
 
     if (_isEdit) {
-      // 编辑：未变更则不发请求
       final init = widget.initial!;
       final dt = DateTime.fromMillisecondsSinceEpoch(init.scheduledAt * 1000);
       final sameTime = dt.year == _selectedDate.year &&
@@ -750,9 +722,8 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
           dt.day == _selectedDate.day &&
           dt.hour == _selectedTime.hour &&
           dt.minute == _selectedTime.minute;
-      final sameTitle = init.title == title;
       final sameContent = (init.content ?? '') == content;
-      if (sameTime && sameTitle && sameContent) {
+      if (sameTime && sameContent) {
         TDToast.showText('内容未变更', context: context);
         return;
       }
@@ -768,7 +739,6 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
         await svc.patchSchedule(
           widget.scheduleId!,
           scheduledAt: _scheduledAt,
-          title: title,
           content: content.isNotEmpty ? content : null,
         );
         if (!mounted) return;
@@ -777,14 +747,13 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
         await svc.createSchedule(
           leadId: widget.leadId!,
           scheduledAt: _scheduledAt,
-          title: title,
+          title: _autoTitle,
           content: content.isNotEmpty ? content : null,
           userId: _owner?.id,
         );
         if (!mounted) return;
         TDToast.showText('日程已创建', context: context);
       }
-      // 刷新列表（更新对应 tab 聚合）
       try {
         ref.read(scheduleListProvider.notifier).refresh();
       } catch (_) {}
@@ -799,21 +768,6 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
       setState(() => _isSubmitting = false);
       TDToast.showText('保存失败，请重试', context: context);
     }
-  }
-
-  // ── 工具 ──
-
-  /// 通用卡片容器
-  Widget _card({required Widget child}) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F3F3),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: child,
-    );
   }
 
   /// 判断两个日期是否同一天

@@ -23,6 +23,7 @@ import 'package:telemarketing_app/providers/schedule_list_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'package:telemarketing_app/services/api_exception.dart';
 import 'widgets/schedule_form_sheet.dart';
+import 'widgets/schedule_skeleton.dart';
 
 /// 日程详情页
 class ScheduleDetailPage extends ConsumerStatefulWidget {
@@ -35,7 +36,8 @@ class ScheduleDetailPage extends ConsumerStatefulWidget {
   ConsumerState<ScheduleDetailPage> createState() => _ScheduleDetailPageState();
 }
 
-class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage> {
+class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
+    with SingleTickerProviderStateMixin {
   /// 详情数据（加载完成且非错误态时为非 null）
   ScheduleDetail? _detail;
 
@@ -57,14 +59,22 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage> {
   /// 删除进行中（全屏半透明 loading）
   bool _isDeleting = false;
 
+  /// 骨架屏 shimmer 动画控制器
+  late final AnimationController _skeletonCtrl;
+
   @override
   void initState() {
     super.initState();
+    _skeletonCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
     _load();
   }
 
   @override
   void dispose() {
+    _skeletonCtrl.dispose();
     _actionLoading = false;
     super.dispose();
   }
@@ -164,14 +174,23 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage> {
     final showContent = !_isLoading && _errorCode == null && _detail != null;
     return Scaffold(
       backgroundColor: const Color(0xFFF3F3F3),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildTopBar(),
-            Expanded(child: _buildBody()),
-            if (showContent) _buildActionBar(),
-          ],
-        ),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                _buildTopBar(),
+                Expanded(child: _buildBody()),
+                if (showContent) _buildActionBar(),
+              ],
+            ),
+          ),
+          // 删除 loading：全屏半透明遮罩 + 居中转圈
+          if (_isDeleting)
+            const ModalBarrier(dismissible: false, color: Color(0x66000000)),
+          if (_isDeleting)
+            const Center(child: CircularProgressIndicator()),
+        ],
       ),
     );
   }
@@ -255,29 +274,96 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage> {
     );
   }
 
-  /// 首屏骨架屏（四个区块占位）
+  /// 首屏骨架屏（白卡片 + shimmer 扫光，对齐列表页风格）
   Widget _buildSkeleton() {
-    const placeholder = DecoratedBox(
-      decoration: BoxDecoration(
-        color: Color(0xFFE0E0E0),
-        borderRadius: BorderRadius.all(Radius.circular(8)),
-      ),
-    );
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       children: [
-        placeholder, // 标题
+        _skeletonCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  ShimmerBlock(ctrl: _skeletonCtrl, width: 180, height: 22),
+                  const Spacer(),
+                  ShimmerBlock(ctrl: _skeletonCtrl, width: 44, height: 20),
+                ],
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 8),
-        SizedBox(height: 24, width: 120, child: placeholder),
-        const SizedBox(height: 16),
-        SizedBox(height: 88, child: placeholder), // 计划时间
+        _skeletonCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ShimmerBlock(ctrl: _skeletonCtrl, width: 72, height: 13),
+              const SizedBox(height: 8),
+              ShimmerBlock(ctrl: _skeletonCtrl, width: 200, height: 18),
+            ],
+          ),
+        ),
         const SizedBox(height: 8),
-        SizedBox(height: 80, child: placeholder), // 关联线索
+        _skeletonCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ShimmerBlock(ctrl: _skeletonCtrl, width: 72, height: 13),
+              const SizedBox(height: 8),
+              ShimmerBlock(ctrl: _skeletonCtrl, width: 140, height: 18),
+            ],
+          ),
+        ),
         const SizedBox(height: 8),
-        SizedBox(height: 72, child: placeholder), // 内容
+        _skeletonCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ShimmerBlock(ctrl: _skeletonCtrl, width: 48, height: 13),
+              const SizedBox(height: 8),
+              ShimmerBlock(ctrl: _skeletonCtrl, width: 280, height: 14),
+              const SizedBox(height: 6),
+              ShimmerBlock(ctrl: _skeletonCtrl, width: 240, height: 14),
+            ],
+          ),
+        ),
         const SizedBox(height: 8),
-        SizedBox(height: 120, child: placeholder), // 其他信息
+        _skeletonCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ShimmerBlock(ctrl: _skeletonCtrl, width: 64, height: 13),
+              const SizedBox(height: 8),
+              ShimmerBlock(ctrl: _skeletonCtrl, width: 120, height: 16),
+              const SizedBox(height: 6),
+              ShimmerBlock(ctrl: _skeletonCtrl, width: 100, height: 16),
+              const SizedBox(height: 6),
+              ShimmerBlock(ctrl: _skeletonCtrl, width: 160, height: 16),
+            ],
+          ),
+        ),
       ],
+    );
+  }
+
+  /// 骨架屏白卡片容器（对齐列表页卡片圆角与阴影）
+  Widget _skeletonCard({required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 
@@ -588,21 +674,6 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage> {
     final d = _detail!;
     final hasLead = d.lead != null;
     final isPending = d.status == 'pending';
-
-    // 删除全屏 loading 覆盖
-    if (_isDeleting) {
-      return Stack(
-        children: [
-          _actionBarInner(
-            isPending: isPending,
-            hasLead: hasLead,
-            showActions: false,
-          ),
-          const ModalBarrier(dismissible: false, color: Color(0x66000000)),
-          const Center(child: CircularProgressIndicator()),
-        ],
-      );
-    }
 
     return _actionBarInner(
       isPending: isPending,
