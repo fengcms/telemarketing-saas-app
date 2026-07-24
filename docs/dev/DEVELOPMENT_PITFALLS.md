@@ -17,6 +17,7 @@
 8. [异步状态竞态坑点](#8-异步状态竞态坑点)
 9. [网络与权限坑点](#9-网络与权限坑点)
 10. [已知待解决问题](#10-已知待解决问题)
+11. [日程模块开发坑点](#11-日程模块开发坑点)
 
 ---
 
@@ -715,6 +716,79 @@ release 构建**只合并 `main` 清单**，不会带入 debug/profile 里那行
 - Flutter 项目若要用网络，**必须显式在 `main/AndroidManifest.xml` 声明 `INTERNET` 权限**，绝不能依赖 debug 清单"借"来的那行——它只在 debug/profile 构建里生效，release 一打包就没了。
 - 遇到"**debug 能联网、release 不能**"的表象，第一反应应是**对比 debug/main 两份清单的权限差异**，而不是去怀疑业务代码、DNS、TLS、或第三方库初始化时机。这一条能省掉数小时的无效排查。
 - 新增任何需要网络的功能后，务必用**日常 release 命令**（`flutter build apk`）真机验一次，别只跑 debug。
+
+---
+
+## 11. 日程模块开发坑点
+
+### 11.1 tdesign_flutter 0.2.7 的 `TDButtonTheme` 枚举值有限
+**严重级别**：🟡 **编译期（P2）**
+
+**现象**：用 `TDButtonTheme.secondary` / `TDButtonTheme.text` 编译直接报 `undefined_getter`（枚举不存在）。
+
+**原因**：tdesign_flutter 0.2.7 的 `TDButtonTheme` 枚举**只有四个值**：`defaultTheme` / `primary` / `danger` / `light`。没有 `secondary`、`text` 等命名。需查源码 `enum TDButtonTheme` 确认实际值，不要凭其他组件库的经验猜测。
+
+**解决方案**：浅色次要按钮用 `TDButtonTheme.light`；纯图标按钮直接用原生 `IconButton` 或 `TDButton` 配 `light` + `iconWidget`。项目内按钮风格统一前务必先 grep 一次实际枚举。
+
+---
+
+### 11.2 DEV_TOOLS 浮标首帧 `clamp` 负上界致启动崩溃
+**严重级别**：🔴 **阻断性（P0，仅 dev 构建暴露）**
+
+**现象**：用计划命令 `flutter build apk --dart-define=DEV_TOOLS=true --release` 构建后，真机启动即红屏崩溃，logcat 报 `Invalid argument(s): 0.0`（来自 `double.clamp`）；但普通 `flutter build apk`（无 DEV_TOOLS）正常。
+
+**原因**：`app.dart` 的 DEV_TOOLS 浮标按钮在首帧用 `MediaQuery.of(context).size` 计算位置，`clamp(0, screen.width - _size)`。首帧 `MediaQuery` 尚未就绪时 `size` 为 `0`，上界 `0 - _size` 变**负数** → `clamp` 抛 `ArgumentError`。普通构建因 `enableDevTools=false`、浮标不渲染，故不触发；这也解释了为什么之前 debug 包（不开该 flag）从没暴露过。
+
+**解决方案**：所有 `clamp` 上界用 `max(0, …)` 兜底（需 `import 'dart:math'`）：
+```dart
+left: left.clamp(0, max(0, screen.width - _size)),
+top: top.clamp(0, max(0, screen.height - _size)),
+```
+**教训**：任何在首帧依赖 `MediaQuery.size` 做 `clamp`/`/ 2` 等运算的浮层，都要假设首帧 size 可能为 0，对上界做 `max(0, …)` 保护。带 dev 开关的功能也要走一遍带 flag 的 release 构建验证启动。
+
+---
+
+### 11.3 详情数据「缓存优先 + 操作后失效」模式（复用 `LeadDetailCache`）
+**严重级别**：🟢 **模式参考（P3）**
+
+**现象/需求**：详情页每次进入都重新请求接口，列表→详情→返回→再进反复拉取，体验差且浪费流量。
+
+**方案**：新增 `ScheduleDetailCache`，**严格照已有 `LeadDetailCache` 的 API 范式**：`get(id)` / `put(id, detail)` / `invalidate(id)` / `invalidateAll()` + 10 分钟 TTL（纯内存，不落盘）。详情页加载逻辑改为：
+1. 命中缓存 → 先秒开旧数据（不转圈），再后台静默 `fetchScheduleDetail` 刷新；
+2. 后台刷新失败**且已有旧数据** → 不覆盖、不弹错误；
+3. 任何写操作（完成/取消/重开/删除/编辑保存）成功后 `invalidate(id)`，下次进入重新拉取。
+
+**好处**：与线索详情缓存行为完全一致，维护心智统一；TTL 防止长期脏数据。注意：纯内存缓存在杀进程后失效，属预期。
+
+---
+
+### 11.4 `showModalBottomSheet` 满屏表单抽屉写法
+**严重级别**：🟢 **模式参考（P3）**
+
+**需求**：新建/编辑日程从全屏页改为底部抽屉，且键盘弹起时底部「取消/保存」按钮不被遮挡。
+
+**关键参数**：
+```dart
+showModalBottomSheet<bool?>(
+  context: context,
+  isScrollControlled: true,          // 必须，否则最多半屏且不可撑高
+  backgroundColor: Colors.white,
+  shape: const RoundedRectangleBorder(
+    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+  ),
+  builder: (ctx) => DraggableScrollableSheet(
+    initialChildSize: 0.9, expand: false,
+    builder: (_, sc) => Column(children: [
+      _handleBar(), _titleBar(),
+      Expanded(child: ListView(controller: sc, ...)),  // 表单区可滚动
+      _bottomBar(),                                 // 取消/保存，不被键盘遮
+    ]),
+  ),
+);
+```
+容器最大高度用 `MediaQuery.sizeOf(context).height * 0.92` 约束。配合 `Scaffold.resizeToAvoidBottomInset`（默认 true）或底部 `Padding(bottom: MediaQuery.viewInsetsOf(ctx).bottom)`，键盘弹起时底部按钮始终可见。
+
+**复用**：表单逻辑抽进 `ScheduleFormContent`，`showScheduleFormSheet(...)` 静态方法包上面这段，线索详情「预约」与日程详情「编辑」两处共用同一抽屉组件。
 
 ---
 
