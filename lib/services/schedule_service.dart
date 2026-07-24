@@ -108,6 +108,25 @@ class ScheduleService {
     }
   }
 
+  /// 获取团队日程统计（仅 TA/TM）
+  ///
+  /// TA/TM 角色可查看团队整体的日程统计，包含团队级 dueToday。
+  /// 若接口不可用（404/未实现），调用方应降级为 [fetchMyScheduleStats]。
+  Future<ScheduleStats> fetchTeamScheduleStats() async {
+    try {
+      final response =
+          await _apiClient.dio.get(ApiConstants.schedulesStats);
+      final data = response.data;
+      if (data is Map && data['success'] == true) {
+        return ScheduleStats.fromJson(data as Map<String, dynamic>);
+      }
+      return const ScheduleStats();
+    } on DioException catch (_) {
+      // 接口不可用时降级，由调用方处理
+      rethrow;
+    }
+  }
+
   /// 获取日程详情（含 lead 快照 + call 摘要）
   Future<ScheduleDetail> fetchScheduleDetail(String id) async {
     try {

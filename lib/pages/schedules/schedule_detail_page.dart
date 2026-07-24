@@ -262,15 +262,18 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
     if (_isLoading) return _buildSkeleton();
     if (_errorCode != null) return _buildErrorState();
     if (_detail == null) return _buildSkeleton();
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(child: _buildTitleSection()),
-        SliverToBoxAdapter(child: _buildTimeCard()),
-        SliverToBoxAdapter(child: _buildLeadCard()),
-        SliverToBoxAdapter(child: _buildContentCard()),
-        SliverToBoxAdapter(child: _buildInfoCard()),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-      ],
+    return RefreshIndicator(
+      onRefresh: () => _load(force: true),
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: _buildTitleSection()),
+          SliverToBoxAdapter(child: _buildTimeCard()),
+          SliverToBoxAdapter(child: _buildLeadCard()),
+          SliverToBoxAdapter(child: _buildContentCard()),
+          SliverToBoxAdapter(child: _buildInfoCard()),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+        ],
+      ),
     );
   }
 

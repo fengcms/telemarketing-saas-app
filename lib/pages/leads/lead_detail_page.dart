@@ -134,6 +134,8 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
               errorMessage: null,
             ),
           ),
+          // 底部操作栏：跟进 / 日程 / 编辑（拨打后快速操作）
+          SliverToBoxAdapter(child: _buildBottomActionBar(detail)),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
@@ -206,6 +208,18 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
           top: BorderSide(color: Color(0xFFEEEEEE), width: 0.5),
         ),
       ),
+      child: LeadActionBar(
+        detail: detail,
+        leadId: detail.id,
+      ),
+    );
+  }
+
+  /// 底部操作栏（跟进 / 日程 / 编辑），追加在通话记录下方
+  Widget _buildBottomActionBar(LeadDetail detail) {
+    return Container(
+      height: 44,
+      color: Colors.white,
       child: LeadActionBar(
         detail: detail,
         leadId: detail.id,

@@ -80,11 +80,28 @@ class ScheduleStatsNotifier extends StateNotifier<ScheduleStatsState> {
   }
 
   /// 加载统计
+  ///
+  /// TA/TM 角色优先尝试团队统计接口（stats），
+  /// 不可用时（如接口未实现）静默降级为个人统计（mine）。
   Future<void> load() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final service = _ref.read(scheduleServiceProvider);
-      final stats = await service.fetchMyScheduleStats();
+      final user = _ref.read(authProvider).user;
+      final isManager = user?.role == 'TA' || user?.role == 'TM';
+
+      ScheduleStats stats;
+      if (isManager) {
+        try {
+          stats = await service.fetchTeamScheduleStats();
+        } catch (_) {
+          // 团队统计接口不可用，降级为个人
+          stats = await service.fetchMyScheduleStats();
+        }
+      } else {
+        stats = await service.fetchMyScheduleStats();
+      }
+
       if (mounted) {
         state = state.copyWith(isLoading: false, stats: stats);
       }
