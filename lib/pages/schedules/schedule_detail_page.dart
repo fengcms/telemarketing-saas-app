@@ -24,7 +24,8 @@ import 'package:telemarketing_app/providers/schedule_list_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'package:telemarketing_app/services/api_exception.dart';
 import 'widgets/schedule_form_sheet.dart';
-import 'widgets/schedule_skeleton.dart';
+import 'widgets/schedule_detail_cards.dart';
+import 'widgets/schedule_detail_actions.dart';
 
 /// 日程详情页
 class ScheduleDetailPage extends ConsumerStatefulWidget {
@@ -182,7 +183,16 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
               children: [
                 _buildTopBar(),
                 Expanded(child: _buildBody()),
-                if (showContent) _buildActionBar(),
+                if (showContent && _detail != null)
+                  actionBar(
+                    isPending: _detail!.status == 'pending',
+                    hasLead: _detail!.lead != null,
+                    actionLoading: _actionLoading,
+                    onCancel: _onCancel,
+                    onDial: _onDial,
+                    onComplete: _onComplete,
+                    onReopen: _onReopen,
+                  ),
               ],
             ),
           ),
@@ -255,115 +265,34 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
   // ── 主体（状态分发） ──
 
   Widget _buildBody() {
-    if (_isLoading) return _buildSkeleton();
+    if (_isLoading) return scheduleDetailSkeleton(_skeletonCtrl);
     if (_errorCode != null) return _buildErrorState();
-    if (_detail == null) return _buildSkeleton();
+    if (_detail == null) return scheduleDetailSkeleton(_skeletonCtrl);
+    final d = _detail!;
     return RefreshIndicator(
       onRefresh: () => _load(force: true),
       child: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: _buildTitleSection()),
-          SliverToBoxAdapter(child: _buildTimeCard()),
-          SliverToBoxAdapter(child: _buildLeadCard()),
-          SliverToBoxAdapter(child: _buildContentCard()),
-          SliverToBoxAdapter(child: _buildInfoCard()),
+          SliverToBoxAdapter(child: titleSection(d)),
+          SliverToBoxAdapter(child: timeCard(d)),
+          SliverToBoxAdapter(
+            child: leadCard(
+              d,
+              d.lead == null
+                  ? null
+                  : () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => LeadDetailPage(leadId: d.leadId),
+                        ),
+                      ),
+            ),
+          ),
+          SliverToBoxAdapter(child: contentCard(d)),
+          SliverToBoxAdapter(child: infoCard(d, _ownerName)),
           SliverToBoxAdapter(child: _buildBottomActions()),
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
         ],
       ),
-    );
-  }
-
-  /// 首屏骨架屏（白卡片 + shimmer 扫光，对齐列表页风格）
-  Widget _buildSkeleton() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      children: [
-        _skeletonCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  ShimmerBlock(ctrl: _skeletonCtrl, width: 180, height: 22),
-                  const Spacer(),
-                  ShimmerBlock(ctrl: _skeletonCtrl, width: 44, height: 20),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        _skeletonCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ShimmerBlock(ctrl: _skeletonCtrl, width: 72, height: 13),
-              const SizedBox(height: 8),
-              ShimmerBlock(ctrl: _skeletonCtrl, width: 200, height: 18),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        _skeletonCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ShimmerBlock(ctrl: _skeletonCtrl, width: 72, height: 13),
-              const SizedBox(height: 8),
-              ShimmerBlock(ctrl: _skeletonCtrl, width: 140, height: 18),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        _skeletonCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ShimmerBlock(ctrl: _skeletonCtrl, width: 48, height: 13),
-              const SizedBox(height: 8),
-              ShimmerBlock(ctrl: _skeletonCtrl, width: 280, height: 14),
-              const SizedBox(height: 6),
-              ShimmerBlock(ctrl: _skeletonCtrl, width: 240, height: 14),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        _skeletonCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ShimmerBlock(ctrl: _skeletonCtrl, width: 64, height: 13),
-              const SizedBox(height: 8),
-              ShimmerBlock(ctrl: _skeletonCtrl, width: 120, height: 16),
-              const SizedBox(height: 6),
-              ShimmerBlock(ctrl: _skeletonCtrl, width: 100, height: 16),
-              const SizedBox(height: 6),
-              ShimmerBlock(ctrl: _skeletonCtrl, width: 160, height: 16),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 骨架屏白卡片容器（对齐列表页卡片圆角与阴影）
-  Widget _skeletonCard({required Widget child}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0D000000),
-            blurRadius: 6,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: child,
     );
   }
 
@@ -415,244 +344,6 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
     );
   }
 
-  // ── 内容区块 ──
-
-  /// 标题 + 状态标签
-  Widget _buildTitleSection() {
-    final d = _detail!;
-    return _card(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Text(
-              d.title.isEmpty ? '未命名日程' : d.title,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: d.status == 'completed' || d.status == 'cancelled'
-                    ? const Color(0xFFA6A6A6)
-                    : const Color(0xFF181818),
-              ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 12),
-          _statusTag(),
-        ],
-      ),
-    );
-  }
-
-  /// 状态标签（待办/已完成/已取消）
-  Widget _statusTag() {
-    final d = _detail!;
-    late final Color bg;
-    late final Color fg;
-    late final String label;
-    if (d.status == 'completed') {
-      bg = const Color(0xFFE3F3EA);
-      fg = const Color(0xFF2BA471);
-      label = '已完成';
-    } else if (d.status == 'cancelled') {
-      bg = const Color(0xFFF3F3F3);
-      fg = const Color(0xFFA6A6A6);
-      label = '已取消';
-    } else {
-      bg = const Color(0xFFF2F3FF);
-      fg = const Color(0xFF0052D9);
-      label = '待办';
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(fontSize: 12, color: fg),
-      ),
-    );
-  }
-
-  /// 计划时间卡（逾期显红字 + 已逾期标签）
-  Widget _buildTimeCard() {
-    final d = _detail!;
-    final overdue = d.isOverdue(DateTime.now().millisecondsSinceEpoch ~/ 1000);
-    return _card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '📅 计划时间',
-            style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  d.scheduledDisplay,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: overdue
-                        ? const Color(0xFFD54941)
-                        : const Color(0xFF181818),
-                  ),
-                ),
-              ),
-              if (overdue)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD54941),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Text(
-                    '已逾期',
-                    style: TextStyle(fontSize: 10, color: Colors.white),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 关联线索卡（tap→线索详情；擦除显「已删除」不可点）
-  Widget _buildLeadCard() {
-    final d = _detail!;
-    if (d.lead == null) {
-      return _card(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              '👤 关联线索',
-              style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-            ),
-            SizedBox(height: 8),
-            Text(
-              '该线索已被删除',
-              style: TextStyle(fontSize: 16, color: Color(0xFFA6A6A6)),
-            ),
-          ],
-        ),
-      );
-    }
-    final lead = d.lead!;
-    return _card(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => LeadDetailPage(leadId: d.leadId),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: const [
-              Text(
-                '👤 关联线索',
-                style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-              ),
-              Spacer(),
-              Icon(Icons.chevron_right, size: 20, color: Color(0xFFA6A6A6)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            lead.name,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF181818),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '📞 ${lead.phone}',
-            style: const TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 日程内容卡（空显「暂无内容」）
-  Widget _buildContentCard() {
-    final d = _detail!;
-    final empty = d.content == null || d.content!.isEmpty;
-    return _card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '📝 日程内容',
-            style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            empty ? '暂无内容' : d.content!,
-            style: TextStyle(
-              fontSize: 14,
-              fontStyle: empty ? FontStyle.italic : FontStyle.normal,
-              color: empty
-                  ? const Color(0xFFA6A6A6)
-                  : const Color(0xFF181818),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 其他信息卡（创建时间 / 归属人 / 更新时间）
-  Widget _buildInfoCard() {
-    final d = _detail!;
-    final owner = _ownerName ?? d.userId;
-    return _card(
-      child: Column(
-        children: [
-          _infoRow('创建时间', ScheduleDetail.formatTs(d.createdAt)),
-          const SizedBox(height: 12),
-          _infoRow('归属人', owner.isEmpty ? '未知' : owner),
-          const SizedBox(height: 12),
-          _infoRow('更新时间', ScheduleDetail.formatTs(d.updatedAt)),
-        ],
-      ),
-    );
-  }
-
-  /// 其他信息卡内的两列行（标签 + 值）
-  Widget _infoRow(String label, String value) {
-    return SizedBox(
-      height: 28,
-      child: Row(
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 14, color: Color(0xFF181818)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// 底部操作栏（跟进 / 日程 / 编辑），追加在信息卡片下方
   Widget _buildBottomActions() {
     final d = _detail;
@@ -669,12 +360,12 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _actionBtn(
+          actionButton(
             icon: TDIcons.rollback,
             label: '跟进',
             onTap: () => showFollowUpPanel(context, leadId: d.leadId),
           ),
-          _actionBtn(
+          actionButton(
             icon: TDIcons.calendar,
             label: '日程',
             onTap: () async {
@@ -691,172 +382,13 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
               }
             },
           ),
-          _actionBtn(
+          actionButton(
             icon: TDIcons.edit,
             label: '编辑',
             onTap: _canEdit ? () => _onEdit() : null,
           ),
         ],
       ),
-    );
-  }
-
-  /// 底部操作栏内单个按钮
-  Widget _actionBtn({
-    required IconData icon,
-    required String label,
-    VoidCallback? onTap,
-  }) {
-    final isDisabled = onTap == null;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18,
-                color: isDisabled
-                    ? const Color(0xFFDCDCDC)
-                    : const Color(0xFF0052D9)),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF181818),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 通用卡片容器（左右 16、上 8、圆角 12、白底；灰底背景透出即板块间隔）
-  Widget _card({required Widget child, VoidCallback? onTap}) {
-    final inner = Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: child,
-    );
-    if (onTap == null) return inner;
-    return GestureDetector(onTap: onTap, child: inner);
-  }
-
-  // ── 底部操作栏 ──
-
-  Widget _buildActionBar() {
-    final d = _detail!;
-    final hasLead = d.lead != null;
-    final isPending = d.status == 'pending';
-
-    return _actionBarInner(
-      isPending: isPending,
-      hasLead: hasLead,
-      showActions: true,
-    );
-  }
-
-  Widget _actionBarInner({
-    required bool isPending,
-    required bool hasLead,
-    required bool showActions,
-  }) {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1)),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x14000000),
-            offset: Offset(0, -1),
-            blurRadius: 4,
-          ),
-        ],
-      ),
-      child: showActions
-          ? (isPending ? _pendingActions(hasLead) : _doneActions())
-          : const SizedBox.shrink(),
-    );
-  }
-
-  /// pending（含逾期）：[取消日程] [📞] [✅ 标记完成]
-  /// 三者等宽、形状统一（round）；取消/拨号为浅色、完成为主色（保留主次层级）
-  Widget _pendingActions(bool hasLead) {
-    return Row(
-      children: [
-        Expanded(
-          child: TDButton(
-            text: '取消日程',
-            theme: TDButtonTheme.light,
-            shape: TDButtonShape.round,
-            onTap: _actionLoading ? null : _onCancel,
-          ),
-        ),
-        if (hasLead) const SizedBox(width: 12),
-        if (hasLead)
-          Expanded(
-            child: TDButton(
-              text: '拨号',
-              theme: TDButtonTheme.light,
-              shape: TDButtonShape.round,
-              iconWidget:
-                  const Icon(Icons.call, size: 18, color: Color(0xFF0052D9)),
-              onTap: _actionLoading ? null : _onDial,
-            ),
-          ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: TDButton(
-            text: _actionLoading ? '' : '标记完成',
-            theme: TDButtonTheme.primary,
-            shape: TDButtonShape.round,
-            iconWidget: _actionLoading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : null,
-            onTap: _actionLoading ? null : _onComplete,
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// completed / cancelled：[🔄 重新打开]
-  Widget _doneActions() {
-    return Row(
-      children: [
-        const Spacer(),
-        TDButton(
-          text: _actionLoading ? '' : '🔄 重新打开',
-          theme: TDButtonTheme.primary,
-          shape: TDButtonShape.round,
-          iconWidget: _actionLoading
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : null,
-          onTap: _actionLoading ? null : _onReopen,
-        ),
-      ],
     );
   }
 
@@ -883,13 +415,20 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
   }
 
   /// 标记完成
-  Future<void> _onComplete() async {
+  /// 执行状态类操作（完成/取消/重开）的通用样板
+  ///
+  /// [toastMsg] 成功后提示；[apiCall] 实际接口调用。统一处理 _actionLoading 守卫 +
+  /// 接口 + 失效缓存 + 刷新详情 + 刷新列表 + 异常 toast + finally 复位。
+  Future<void> _runStatusAction({
+    required String toastMsg,
+    required Future<void> Function() apiCall,
+  }) async {
     if (_actionLoading || _detail == null) return;
     setState(() => _actionLoading = true);
     try {
-      await ref.read(scheduleServiceProvider).completeSchedule(_detail!.id);
+      await apiCall();
       if (!mounted) return;
-      TDToast.showText('日程已完成', context: context);
+      TDToast.showText(toastMsg, context: context);
       ref.read(scheduleDetailCacheProvider).invalidate(_detail!.id);
       await _fetchFromServer();
       _refreshList();
@@ -903,6 +442,13 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
       if (mounted) setState(() => _actionLoading = false);
     }
   }
+
+  /// 标记完成
+  Future<void> _onComplete() => _runStatusAction(
+        toastMsg: '日程已完成',
+        apiCall: () =>
+            ref.read(scheduleServiceProvider).completeSchedule(_detail!.id),
+      );
 
   /// 取消（确认弹窗 → 接口 → 刷新）
   Future<void> _onCancel() async {
@@ -925,46 +471,19 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
       ),
     );
     if (confirm != true) return;
-    setState(() => _actionLoading = true);
-    try {
-      await ref.read(scheduleServiceProvider).cancelSchedule(_detail!.id);
-      if (!mounted) return;
-      TDToast.showText('日程已取消', context: context);
-      ref.read(scheduleDetailCacheProvider).invalidate(_detail!.id);
-      await _fetchFromServer();
-      _refreshList();
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      TDToast.showText(e.message, context: context);
-    } catch (_) {
-      if (!mounted) return;
-      TDToast.showText('操作失败，请重试', context: context);
-    } finally {
-      if (mounted) setState(() => _actionLoading = false);
-    }
+    await _runStatusAction(
+      toastMsg: '日程已取消',
+      apiCall: () =>
+          ref.read(scheduleServiceProvider).cancelSchedule(_detail!.id),
+    );
   }
 
   /// 重新打开
-  Future<void> _onReopen() async {
-    if (_actionLoading || _detail == null) return;
-    setState(() => _actionLoading = true);
-    try {
-      await ref.read(scheduleServiceProvider).reopenSchedule(_detail!.id);
-      if (!mounted) return;
-      TDToast.showText('日程已重新打开', context: context);
-      ref.read(scheduleDetailCacheProvider).invalidate(_detail!.id);
-      await _fetchFromServer();
-      _refreshList();
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      TDToast.showText(e.message, context: context);
-    } catch (_) {
-      if (!mounted) return;
-      TDToast.showText('操作失败，请重试', context: context);
-    } finally {
-      if (mounted) setState(() => _actionLoading = false);
-    }
-  }
+  Future<void> _onReopen() => _runStatusAction(
+        toastMsg: '日程已重新打开',
+        apiCall: () =>
+            ref.read(scheduleServiceProvider).reopenSchedule(_detail!.id),
+      );
 
   /// 删除（确认弹窗 → 全屏 loading → 返回列表并刷新）
   Future<void> _onDelete() async {

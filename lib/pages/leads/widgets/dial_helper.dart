@@ -9,6 +9,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 Future<void> handleDial({
@@ -28,8 +29,11 @@ Future<void> handleDial({
     }
   }
 
-  // 调用系统拨号盘
-  await _launchDialer(phone);
+  // 调用系统拨号盘；失败则明确反馈（不在 async gap 内使用 context）
+  final launched = await _launchDialer(phone);
+  if (!launched && context.mounted) {
+    TDToast.showText('无法启动拨号盘，请检查系统拨号功能', context: context);
+  }
 }
 
 /// 检查当前时间是否在禁呼时段内
@@ -98,11 +102,13 @@ Future<bool> _showNightCallDialog(
 }
 
 /// 调用系统拨号盘
-Future<void> _launchDialer(String phone) async {
+///
+/// 返回 true 表示已成功调起拨号盘；false 表示系统不支持（由调用方负责反馈）。
+Future<bool> _launchDialer(String phone) async {
   final uri = Uri.parse('tel:${phone.replaceAll(RegExp(r'\s+'), '')}');
   if (await canLaunchUrl(uri)) {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
-  } else {
-    // 无法启动拨号盘，静默失败
+    return true;
   }
+  return false;
 }
