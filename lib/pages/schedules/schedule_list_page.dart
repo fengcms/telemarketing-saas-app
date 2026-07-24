@@ -11,13 +11,13 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/schedule.dart';
-import 'package:telemarketing_app/pages/coming_soon_page.dart';
 import 'package:telemarketing_app/providers/schedule_list_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'widgets/schedule_card.dart';
 import 'widgets/schedule_date_header.dart';
 import 'widgets/schedule_overdue_header.dart';
 import 'widgets/schedule_skeleton.dart';
+import 'schedule_detail_page.dart';
 
 /// 日程列表页
 class ScheduleListPage extends ConsumerStatefulWidget {
@@ -255,7 +255,7 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
               key: i == 0 ? anchorKey : null,
               schedule: g.items[i],
               serverTime: state.serverTime,
-              onTap: _onTapSchedule,
+              onTap: () => _onTapSchedule(g.items[i]),
             ),
             childCount: g.items.length,
           ),
@@ -298,11 +298,11 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
     return slivers;
   }
 
-  void _onTapSchedule() {
-    // 详情页（doc 11）拆为下一节点 v0.13，暂留入口
+  void _onTapSchedule(Schedule s) {
+    // 跳日程详情页（doc 11）
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => const ComingSoonPage(featureName: '日程详情'),
+        builder: (_) => ScheduleDetailPage(scheduleId: s.id),
       ),
     );
   }

@@ -9,8 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/models/lead_detail.dart';
+import 'package:telemarketing_app/providers/schedule_list_provider.dart';
+import 'package:telemarketing_app/providers/lead_detail_provider.dart';
 import 'follow_up_panel.dart';
-import 'schedule_dialog.dart';
+import 'package:telemarketing_app/pages/schedules/widgets/schedule_form_sheet.dart';
 import 'edit_lead_dialog.dart';
 
 /// 线索详情页操作按钮区（Section B）
@@ -49,11 +51,23 @@ class LeadActionBar extends ConsumerWidget {
             label: '日程',
             onTap: detail.isConverted
                 ? null
-                : () => showScheduleDialog(
+                : () async {
+                    final changed = await showScheduleFormSheet(
                       context,
                       leadId: leadId,
-                      detail: detail,
-                    ),
+                      leadName: detail.name,
+                      leadPhone: detail.phone,
+                    );
+                    if (changed == true) {
+                      // 刷新日程列表聚合 + 本线索下的日程区
+                      try {
+                        ref.read(scheduleListProvider.notifier).refresh();
+                      } catch (_) {}
+                      try {
+                        ref.read(leadDetailProvider.notifier).refreshBundle();
+                      } catch (_) {}
+                    }
+                  },
           ),
           _actionButton(
             icon: TDIcons.edit,

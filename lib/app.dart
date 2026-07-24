@@ -1,6 +1,7 @@
 /// 认证门禁：根据登录态决定显示登录页还是首页
 library;
 
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -97,8 +98,8 @@ class _DevToolsFloatingButtonState extends State<_DevToolsFloatingButton> {
     final left = _offset?.dx ?? screen.width - _size - 16;
     final top = _offset?.dy ?? screen.height - _size - 90;
     return Positioned(
-      left: left.clamp(0, screen.width - _size),
-      top: top.clamp(0, screen.height - _size),
+      left: left.clamp(0, max(0, screen.width - _size)),
+      top: top.clamp(0, max(0, screen.height - _size)),
       child: GestureDetector(
         // 仅用 pan 手势：纯点击（无位移）才打开面板，拖拽时不触发点击
         onPanStart: (_) => _moved = false,
@@ -107,9 +108,9 @@ class _DevToolsFloatingButtonState extends State<_DevToolsFloatingButton> {
           setState(() {
             _offset = Offset(
               (d.globalPosition.dx - _size / 2)
-                  .clamp(0, screen.width - _size),
+                  .clamp(0, max(0, screen.width - _size)),
               (d.globalPosition.dy - _size / 2)
-                  .clamp(0, screen.height - _size),
+                  .clamp(0, max(0, screen.height - _size)),
             );
           });
         },

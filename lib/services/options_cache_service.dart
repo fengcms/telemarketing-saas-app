@@ -193,6 +193,12 @@ class OptionsCacheService {
     return List.unmodifiable(_quickNotes);
   }
 
+  /// 获取用户下拉列表（归属人选择器用，TM/TA 可见）
+  Future<List<OptionItem>> getUsers() async {
+    await _ensureLoaded();
+    return List.unmodifiable(_users);
+  }
+
   Future<void> refresh() async {
     _lastFetchTime = null;
     await _refreshFromApi();

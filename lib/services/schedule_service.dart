@@ -11,6 +11,7 @@ import 'package:telemarketing_app/services/api_constants.dart';
 import 'package:telemarketing_app/services/api_exception.dart';
 import 'package:telemarketing_app/services/home_service.dart';
 import 'package:telemarketing_app/models/schedule.dart';
+import 'package:telemarketing_app/models/schedule_detail.dart';
 import 'package:telemarketing_app/models/schedule_stats.dart';
 
 /// 日程列表查询结果
@@ -102,6 +103,117 @@ class ScheduleService {
         return ScheduleStats.fromJson(data as Map<String, dynamic>);
       }
       return const ScheduleStats();
+    } on DioException catch (e) {
+      throw ApiClient.parseError(e);
+    }
+  }
+
+  /// 获取日程详情（含 lead 快照 + call 摘要）
+  Future<ScheduleDetail> fetchScheduleDetail(String id) async {
+    try {
+      final response = await _apiClient.dio.get(
+        '${ApiConstants.schedules}/$id',
+      );
+      final data = response.data;
+      if (data is Map && data['success'] == true) {
+        final body = data['data'] as Map<String, dynamic>? ?? {};
+        return ScheduleDetail.fromJson(body);
+      }
+      throw const ApiException(
+        statusCode: 200,
+        code: 'UNKNOWN',
+        message: '获取日程详情失败',
+      );
+    } on DioException catch (e) {
+      throw ApiClient.parseError(e);
+    }
+  }
+
+  /// 标记完成（POST /:id/complete）
+  Future<void> completeSchedule(String id) => _postAction(id, 'complete');
+
+  /// 取消日程（POST /:id/cancel）
+  Future<void> cancelSchedule(String id) => _postAction(id, 'cancel');
+
+  /// 重新打开（POST /:id/reopen）
+  Future<void> reopenSchedule(String id) => _postAction(id, 'reopen');
+
+  /// 状态类动作统一封装（complete/cancel/reopen 均无需 body）
+  Future<void> _postAction(String id, String action) async {
+    try {
+      await _apiClient.dio
+          .post('${ApiConstants.schedules}/$id/$action');
+    } on DioException catch (e) {
+      throw ApiClient.parseError(e);
+    }
+  }
+
+  /// 删除日程（软删，DELETE /:id）
+  Future<void> deleteSchedule(String id) async {
+    try {
+      await _apiClient.dio.delete('${ApiConstants.schedules}/$id');
+    } on DioException catch (e) {
+      throw ApiClient.parseError(e);
+    }
+  }
+
+  /// 编辑日程（改期/标题/内容，PATCH /:id）
+  ///
+  /// [scheduledAt] 新的计划时间（Unix 秒）；[title]/[content] 至少传一个。
+  Future<void> patchSchedule(
+    String id, {
+    int? scheduledAt,
+    String? title,
+    String? content,
+  }) async {
+    try {
+      final body = <String, dynamic>{};
+      if (scheduledAt != null) body['scheduledAt'] = scheduledAt;
+      if (title != null) body['title'] = title;
+      if (content != null) body['content'] = content;
+      await _apiClient.dio.patch(
+        '${ApiConstants.schedules}/$id',
+        data: body,
+      );
+    } on DioException catch (e) {
+      throw ApiClient.parseError(e);
+    }
+  }
+
+  /// 新建日程（POST /api/tenant/schedules）
+  ///
+  /// [leadId] 关联线索 ID；[scheduledAt] 计划时间（Unix 秒）；
+  /// [title] 必填（≤200 字）；[content] 可选（≤2000 字）；
+  /// [userId] 仅 TM/TA 替他人建时传；[callRecordId] 关联通话记录。
+  /// 返回新建日程 ID（失败返回 null）。
+  Future<String?> createSchedule({
+    required String leadId,
+    required int scheduledAt,
+    required String title,
+    String? content,
+    String? userId,
+    String? callRecordId,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'leadId': leadId,
+        'scheduledAt': scheduledAt,
+        'title': title,
+      };
+      if (content != null && content.isNotEmpty) body['content'] = content;
+      if (userId != null && userId.isNotEmpty) body['userId'] = userId;
+      if (callRecordId != null && callRecordId.isNotEmpty) {
+        body['callRecordId'] = callRecordId;
+      }
+      final response = await _apiClient.dio.post(
+        ApiConstants.schedules,
+        data: body,
+      );
+      final data = response.data;
+      if (data is Map && data['success'] == true) {
+        return data['data']?['id']?.toString();
+      }
+      return null;
     } on DioException catch (e) {
       throw ApiClient.parseError(e);
     }

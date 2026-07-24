@@ -8,12 +8,21 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/services/schedule_service.dart';
+import 'package:telemarketing_app/services/schedule_detail_cache.dart';
 import 'package:telemarketing_app/models/schedule_stats.dart';
 import 'auth_provider.dart';
 
 /// 日程数据服务实例
 final scheduleServiceProvider = Provider<ScheduleService>((ref) {
   return ScheduleService(apiClient: ref.read(apiClientProvider));
+});
+
+/// 日程详情缓存（内存，10 分钟 TTL）
+///
+/// 详情页「缓存优先」读取：命中即秒开、后台静默刷新；
+/// 任一处写操作后 [ScheduleDetailCache.invalidate] 失效，下次进入重新拉取。
+final scheduleDetailCacheProvider = Provider<ScheduleDetailCache>((ref) {
+  return ScheduleDetailCache();
 });
 
 /// 用于区分"未传参"和"传 null"的 sentinel 值

@@ -252,42 +252,6 @@ class LeadService {
     }
   }
 
-  // ── 新建日程（预约跟进） ──
-
-  /// 创建预约跟进日程
-  ///
-  /// [scheduledAt] Unix 秒级时间戳
-  /// [title] 必填，≤200 字
-  /// [content] 可选，≤2000 字
-  Future<String?> createSchedule({
-    required String leadId,
-    required int scheduledAt,
-    required String title,
-    String? content,
-  }) async {
-    try {
-      final body = <String, dynamic>{
-        'leadId': leadId,
-        'scheduledAt': scheduledAt,
-        'title': title,
-      };
-      if (content != null && content.isNotEmpty) {
-        body['content'] = content;
-      }
-      final response = await _apiClient.dio.post(
-        ApiConstants.schedules,
-        data: body,
-      );
-      final data = response.data;
-      if (data is Map && data['success'] == true) {
-        return data['data']?['id']?.toString();
-      }
-      return null;
-    } on DioException catch (e) {
-      throw ApiClient.parseError(e);
-    }
-  }
-
   // ── 补正通话记录（TM/TA） ──
 
   /// 补正通话记录
