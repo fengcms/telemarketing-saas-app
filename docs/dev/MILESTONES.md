@@ -547,6 +547,41 @@ ApiClient 拦截器链：
 
 ---
 
+## 节点 v0.17 — 通话记录列表页（doc 16）（2026-07-24）
+
+> 计划：`docs/dev/PLAN_16_CALL_RECORDS.md`；进度：本节点实测通过。
+> 取代个人中心「通话记录」菜单项的 `ComingSoonPage` 占位，实现完整列表页。
+> **关键决策变更（实测后拍板）**：① 不开发通话详情页，行点击直接跳对应线索详情；② 移除 TDesign 日历控件（弹层 `Null is not a subtype of type 'String'` 崩溃，静态分析 tdesign 0.2.7 日历链路无 null→String 路径，推断为 patch 后 pub cache 运行时代码/混淆所致），改用手机号搜索（`GET /api/tenant/calls` 的 `q` 模糊搜索）。
+
+### 完成内容
+
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 列表页 `CallRecordsPage` | ✅ | 手机号搜索栏 + 接听类型筛选 + 下拉刷新 + 无限滚动 + 骨架/空态/错误态 |
+| 搜索栏 `CallSearchBar` | ✅ | 圆角灰底 + 搜索图标 + 手机号键盘 + 清空 + 蓝色「搜索」按钮；回车/点按钮才触发（参考线索列表搜索） |
+| 接听类型 `CallFilterBar` | ✅ | 全部/已接听/无人接听/拒接/空号/停机 横滚 Chip |
+| 单行 `CallRecordRow` | ✅ | 彩色圆图标(按接听类型) + 姓名(半粗) + **手机号(黑/不加粗)紧跟其后** + 时间 + 右侧时长/违规 |
+| 接口 `CallService.fetchMyCalls` | ✅ | `GET /api/tenant/calls`，支持 `q`(非空才传) + `answerType` + `page`/`size=20` |
+| 模型 `CallRecord` 补字段 | ✅ | 补 `violation`(0/1) + `leadName`(后端已补)；`displayName` 优先 leadName→phone→未知号码 |
+| 行点击跳线索详情 | ✅ | `LeadDetailPage(leadId:)`；仅 `leadId` 非空才跳，空号/停机无关联线索不跳 |
+| 个人中心接入 | ✅ | 「通话记录」菜单项由 `ComingSoonPage` 改为 push `CallRecordsPage` |
+
+### 关键决策
+
+| 决策 | 选择 | 原因 |
+|------|------|------|
+| 详情页 | **不开发**，行点击跳线索详情 | 列表已呈现关键信息（姓名/号码/时间/时长/违规），详情页价值低 |
+| 时间筛选 | 移除 TDesign 日历，改用手机号搜索 | 日历弹层崩溃（见 `DEVELOPMENT_PITFALLS.md §2.5`），且接口 `q` 支持号码模糊搜 |
+| 搜索触发 | 回车/点按钮，非逐字 | 对齐线索列表搜索交互，避免每字符打接口（`§7.1`） |
+| 跳转参数 | 仅传 `leadId`，不传 `listContext` | 通话记录无「上/下一个」语义，线索详情底部导航条自动隐藏 |
+
+### 踩坑
+
+- **§2.5**：TDesign `TDCalendarPopup` 弹层崩溃 `Null is not a subtype of type 'String'`，静态分析 tdesign 0.2.7 日历链路无该路径，推断 patch 后 pub cache 运行时代码/混淆所致；决策移除日历改用搜索。
+- **§12.1**：首屏 `_isLoading=true` 同时作骨架标志与请求守卫，致 `_loadInitial` 被自身短路、永不发请求；拆为 `_isLoading`(仅骨架) + `_isFetching`(重入锁)。
+
+---
+
 ## 下一步节点规划
 
 > ⚠️ 下方 P0 核心流程**实际已完成**，见 v0.1~v0.11。剩余工作均为 P1 及以后。

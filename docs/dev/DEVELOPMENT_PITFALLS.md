@@ -18,6 +18,7 @@
 9. [网络与权限坑点](#9-网络与权限坑点)
 10. [已知待解决问题](#10-已知待解决问题)
 11. [日程模块开发坑点](#11-日程模块开发坑点)
+12. [通话记录模块开发坑点](#12-通话记录模块开发坑点)
 
 ---
 
@@ -190,6 +191,24 @@ void _onConfirmDate(Map selected) {
 对照 `tdesign_flutter` 官方示例 `td_date_picker_page.dart`（同样是读 Map + 手动 pop）。
 
 **教训**：用 tdesign_flutter 的 `TDPicker`，`onConfirm`/`onChange` 参数是 `Map<String,int>` 而非 `DateTime`；且**确认后必须手动 pop 选择器**。本项目 STYLE 约定"不确定就翻三方源码/官方示例核实，不靠猜"，又一次避免了误判。
+
+---
+
+### 2.5 TDesign `TDCalendarPopup` 弹层崩溃 `Null is not a subtype of type 'String'`
+
+**严重级别**：🔴 **阻断性（P0，release 下红屏无堆栈）**
+
+**现象**：通话记录列表页点「日期筛选器」→ 弹出日历层瞬间红屏（release，黄字 `type 'Null' is not a subtype of type 'String'`；debug 同理）。点返回能正常回列表，说明**仅日历弹层渲染时崩溃**，非整页。
+
+**排查**：把 `tdesign_flutter 0.2.7`（即 `pubspec.lock` 锁定的版本）日历整条渲染链路源码读了一遍——`TDCalendarPopup` → `TDSlidePopupRoute` → `TDCalendar` → `TDCalendarHeader`/`TDCalendarBody` → `TDCalendarCell`/`TDCalendarStyle`，以及 `context.resource`（默认中文 delegate，所有 `String` getter 均为字面量）/ `TDTheme.of`（有兜底返回 `defaultData()`）。**源码层面不存在 `null`→`String` 的赋值路径**，`TDText.data` 是 `dynamic` 字段、`TDTheme.of()` 有兜底。
+
+**推断**：静态分析走不到头，根因极可能是**项目 patch 过的 pub cache 运行时代码与读到的源码不一致**，或 release 混淆掩盖了真实栈帧。本项目 `tdesign_flutter 0.2.7` 本地 patch 过 `td_icons.dart`（§2.1），运行环境并非"干净官方包"，日历组件在此 patch 环境下稳定性存疑。
+
+**决策（用户拍板）**：不再纠缠日历崩溃，**移除 TDesign 日历控件**，改用「手机号搜索」——`GET /api/tenant/calls` 的 `q` 参数支持按手机号片段模糊搜索（如 `?q=444` 搜出号码含 444 的通话），且接口约定**空 `q` 会返回 400**，故仅在搜索词非空时才传该参数。
+
+**教训**：
+- 对**已本地 patch 的第三方包**，其运行时代码可能与读到的源码不一致，静态分析"找不到路径"不代表运行时安全。优先用真机 release 堆栈（`app.dart` 的 `FlutterError.onError` 会把完整栈 `print` 到 logcat，但 release 红屏不显示，需 `adb logcat` 抓）定位，而不是纯靠读源码。
+- tdesign_flutter 0.2.7 的**日历/日期类组件在本项目 patch 环境下不稳定**，后续涉及日期选择优先用系统 `showDatePicker` 或自绘，避开 TDesign 日历。
 
 ## 3. Android 构建坑点
 
@@ -857,6 +876,54 @@ Widget _divider() => SizedBox(
 （列内容约 36~44px 高，细线锁 28px 居中即自然上下留隙。）
 
 **教训（可复用）**：Flutter 中 `VerticalDivider` **不要**直接放进「`Row` 且兄弟为 `Expanded`」的布局——极易不显示。行内竖向分隔线统一用「固定高 `SizedBox` + 1px `Container`」，或先用 `IntrinsicHeight` 包住 `Row` 再放 `VerticalDivider`。
+
+---
+
+## 12. 通话记录模块开发坑点
+
+### 12.1 首屏 `_isLoading=true` 同时作骨架标志与请求守卫致首屏不拉取
+
+**严重级别**：🔴 **阻断性（P0，表现=骨架屏转圈但无请求/无数据）**
+
+**现象**：进入通话记录列表页，骨架屏一直转、无数据；Alice 浮标里看不到任何 `GET /api/tenant/calls` 请求。
+
+**原因**：`_loadInitial()` 用 `_isLoading` 做重入守卫 `if (_isLoading || ...) return;`，而 `_isLoading` 初始值就是 `true`（用于 `build()` 首屏渲染骨架分支）。`initState` 里首次调 `_loadInitial()` 时，守卫立即命中 `return`，**请求永远不会发出**。
+
+```dart
+// ❌ 错误：_isLoading 初始 true，自己把自己短路
+bool _isLoading = true; // 既管骨架，又管守卫
+Future<void> _loadInitial() async {
+  if (_isLoading) return; // ← initState 首次调用即命中，return
+  ...
+}
+```
+
+**解决方案**：拆成两个布尔——`_isLoading` 只服务于 `build()` 的骨架分支；新增独立重入锁 `_isFetching` 管请求守卫：
+
+```dart
+bool _isLoading = true;   // 仅 build() 骨架分支用
+bool _isFetching = false; // 独立重入锁（首屏/刷新/筛选共用）
+
+Future<void> _loadInitial() async {
+  if (_isFetching) return;     // ← 用独立锁守卫
+  _isFetching = true;
+  setState(() => _isLoading = true);
+  try {
+    final res = await ref.read(callServiceProvider).fetchMyCalls(...);
+    if (!mounted) return;
+    setState(() {
+      _items..clear()..addAll(res.items);
+      _isLoading = false;
+    });
+  } catch (e) {
+    setState(() => _isLoading = false);
+  } finally {
+    _isFetching = false;
+  }
+}
+```
+
+**教训**：**首屏 loading 标志与请求重入守卫绝对不能共用同一个布尔**。首屏标志初始必须为真（否则会闪一下空列表），而守卫需要「初始为假、进入时置真」才能放行首次请求。两者语义不同，必须拆分。
 
 ---
 

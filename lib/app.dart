@@ -14,11 +14,6 @@ import 'core/dev_tools.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  FlutterError.onError = (details) {
-    FlutterError.presentError(details);
-    // ignore: avoid_print
-    print('=== FLUTTER ERROR ===\n${details.exception}\n${details.stack}');
-  };
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);

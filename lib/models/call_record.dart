@@ -14,6 +14,10 @@ class CallRecord {
   final int? duration;
   final String? recordingUrl;
   final int createdAt;
+  /// 是否违规（0/1），api 返回整数，缺省为 0
+  final int violation;
+  /// 关联线索姓名（后端补字段）。为空时列表回退显示号码。
+  final String? leadName;
 
   const CallRecord({
     required this.id,
@@ -27,6 +31,8 @@ class CallRecord {
     this.duration,
     this.recordingUrl,
     required this.createdAt,
+    this.violation = 0,
+    this.leadName,
   });
 
   /// 格式化的时长文本（M:SS）
@@ -61,8 +67,27 @@ class CallRecord {
       duration: _toInt(json['duration']),
       recordingUrl: json['recordingUrl']?.toString(),
       createdAt: _toInt(json['createdAt']) ?? 0,
+      violation: _toInt(json['violation']) ?? 0,
+      leadName: json['leadName']?.toString(),
     );
   }
+
+  /// 列表第一行展示名
+  ///
+  /// 优先 [leadName]（后端已补），其次 [phone]（脱敏或明文），
+  /// 两者皆空时返回「未知号码」。
+  String get displayName {
+    final name = leadName;
+    if (name != null && name.isNotEmpty) return name;
+    if (phone.isNotEmpty) return phone;
+    return '未知号码';
+  }
+
+  /// 是否违规（[violation] == 1）
+  bool get isViolation => violation == 1;
+
+  /// 是否已接通（可正常显示时长）
+  bool get isAnswered => answerType == 'answered';
 
   static int? _toInt(dynamic v) {
     if (v == null) return null;

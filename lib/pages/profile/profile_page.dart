@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/home_stats.dart';
 import 'package:telemarketing_app/pages/coming_soon_page.dart';
+import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_menu_row.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_stats_card.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_user_card.dart';
@@ -196,8 +197,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                   ProfileMenuRow(
                     icon: Icons.call,
                     title: '通话记录',
-                    onTap: () =>
-                        _push(const ComingSoonPage(featureName: '通话记录')),
+                    onTap: () => _push(const CallRecordsPage()),
                   ),
                   ProfileMenuRow(
                     icon: Icons.people,
