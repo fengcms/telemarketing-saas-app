@@ -53,6 +53,10 @@ class ApiConstants {
 
   static const String calls = '/api/tenant/calls';
 
+  // ── 客户 ──
+
+  static const String customers = '/api/tenant/customers';
+
   // ── 下拉选项 ──
 
   static const String optionsCategories = '/api/tenant/options/categories';

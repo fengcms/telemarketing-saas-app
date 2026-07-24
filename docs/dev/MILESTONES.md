@@ -582,6 +582,44 @@ ApiClient 拦截器链：
 
 ---
 
+## 节点 v0.18 — 客户列表页（doc 17）（2026-07-24）
+
+> 计划：`docs/dev/PLAN_17_CUSTOMER_LIST.md`；进度：本节点实测通过。
+> 取代个人中心「客户列表」菜单项的 `ComingSoonPage` 占位。
+> 用户拍板：不开发客户详情页（doc18），点卡片直接跳对应线索详情（同通话记录决策）。
+
+### 完成内容
+
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 列表页 `CustomerListPage` | ✅ | 手机号搜索 + 等级通栏筛选 + scope 切换 + 下拉刷新 + 无限滚动 + 骨架/空态/错误态 |
+| 搜索栏 `CustomerSearchBar` | ✅ | 手机号键盘 + 清空 + 蓝色「搜索」按钮；回车/点按钮才触发（对齐线索/通话记录搜索交互） |
+| 等级筛选 `CustomerFilterBar` | ✅ | **通栏分段控件**（全部/普通/重要/VIP/流失），5 项等宽 `Expanded` 占满 100%，选中浅蓝底 |
+| 客户卡片 `CustomerCard` | ✅ | 4 行：姓名(半粗) + 右对齐等级标签(success/brand/warning/error) / 电话 / 公司(空则隐藏) / 转化日期 |
+| 接口 `CustomerService.fetchCustomers` | ✅ | `GET /api/tenant/customers`，支持 `scope` + `q`(非空才传) + `level` + `sort=-convertedAt` 分页 |
+| 模型 `Customer` | ✅ | 解析后端真实返回字段（`leadId`/`name`/`phone`/`company`/`level`/`convertedAt`/`erasedAt` 等）；等级映射、日期解析 `YYYY-MM-DD` |
+| 卡片点击跳线索详情 | ✅ | `_openCustomer(c)` → `LeadDetailPage(leadId: c.leadId)`；仅 `leadId` 非空才跳 |
+| scope 切换（TM/TA） | ✅ | 原生 `PopupMenuButton` 切「我的/全部」；TE 固定 mine 隐藏按钮 |
+| 个人中心接入 | ✅ | 「客户列表」菜单项由 `ComingSoonPage` 改为 push `CustomerListPage()` |
+
+### 关键决策
+
+| 决策 | 选择 | 原因 |
+|------|------|------|
+| 详情页 | **不开发**，点卡片跳线索详情 | 用户拍板（同通话记录决策），列表已呈现姓名/电话/公司/等级/转化日期等关键信息 |
+| level 枚举 | `normal`/`important`/`vip`/`lost` | 以 api.md 为准（实测确认），非 doc17 的 A/B/C/D |
+| convertedAt 类型 | Unix 秒 | 实测确认，前端 `fromMillisecondsSinceEpoch(sec*1000)` 解析 |
+| 搜索参数 | `q` | 对齐线索/通话记录搜索，非空才传避 400 坑 |
+| 等级筛选 UI | **通栏分段控件** | 实测后用户要求改，5 项等宽占满 100% |
+| scope 切换 | 原生 `PopupMenuButton`，不用 TDesign | 规避此前 TDesign 弹层崩溃风险 |
+| company 字段 | 后端**确实返回**（实测真机抓包确认），但多为 null | 空则隐藏公司行，容错如前所述 |
+
+### 搜索栏与筛选栏间分隔线
+
+实测后用户要求加 `Divider(height:1, thickness:1, color:#EEEEEE)`，分隔搜索栏与通栏筛选，视觉上更清晰。
+
+---
+
 ## 下一步节点规划
 
 > ⚠️ 下方 P0 核心流程**实际已完成**，见 v0.1~v0.11。剩余工作均为 P1 及以后。
@@ -605,7 +643,7 @@ ApiClient 拦截器链：
 | 日程列表页 | 10 | P1 | ✅ v0.12（双 Tab/范围/分组吸顶/共享统计+角标） |
 | 日程详情页（doc 11）+ 操作（完成/取消/新建） | 11/12 | P1 | ✅ v0.13 / v0.14 打磨 |
 | 公海线索池 | 06 | P1 | 未开发 |
-| 客户列表 / 客户详情 | 17/18 | P1 | 未开发 |
+| 客户列表 | 17 | P1 | ✅ v0.18（客户详情拍板不开发，点卡片跳线索详情） |
 | 个人中心 / 个人统计 | 13/14 | P1 | ✅ v0.16（个人中心页；个人统计子页仍占位） |
 | 修改密码页 | 15 | P1 | 未开发（与强制改密不同） |
 | 设置页 | 19 | P1 | 未开发 |
@@ -615,4 +653,4 @@ ApiClient 拦截器链：
 
 > 本文档与 `docs/dev/HANDOVER.md`（交接文档）配套使用。
 > ⚠️ 旧 `HANDOVER_05_LEAD_DETAIL.md` 中"3 个并行请求""拨号后弹面板未做"等描述已过时，以本表与代码现状为准。
-> 节点版本：v0.16 | 更新日期：2026-07-24
+> 节点版本：v0.18 | 更新日期：2026-07-24
