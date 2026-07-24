@@ -792,6 +792,53 @@ showModalBottomSheet<bool?>(
 
 ---
 
+### 11.5 全屏遮罩 `Stack` + `Center` 不能放在零高度子组件内
+**严重级别**：🟠 **功能性（P1）**
+
+**现象**：删除日程时，loading 圈圈出现在屏幕左上角状态栏位置，而非屏幕中央。
+
+**原因**：删除 loading 的 `Stack(children: [ModalBarrier, Center(CircularProgressIndicator)])` 放在 `_buildActionBar()` 方法内，而 ActionBar 是 `Scaffold` → `Column` 的底部子元素。当 `_isDeleting=true` 时 ActionBar 内的操作按钮被隐藏，`Stack` 的高度坍缩为零，`Center` 的参考系缩到左上角 → loading 圈跑到屏幕左上角。
+
+**解决方案**：将遮罩 + loading 移到最外层 `Scaffold` 的 `Stack` 中，作为 `SafeArea` 的同级兄弟，而不是放在子组件内：
+
+```dart
+return Scaffold(
+  body: Stack(
+    children: [
+      SafeArea(child: Column(children: […] )),  // 正常页面内容
+      if (_isDeleting) const ModalBarrier(dismissible: false, color: Color(0x66000000)),
+      if (_isDeleting) const Center(child: CircularProgressIndicator()),
+    ],
+  ),
+);
+```
+
+**教训**：任何全屏 `Overlay` / `ModalBarrier` + `Center` 的组合，都必须放在**能撑满全屏的外层 Widget**（如 `Scaffold.body` 的 `Stack`）中，不要放在可能为零高度的子区块内。`Center` 的参考系是其父 `Stack` 的大小，父 Stack 的高度不足时就会定位偏移。
+
+---
+
+### 11.6 公开 ShimmerBlock 需补 `super.key` 参数
+**严重级别**：🟢 **info 级（P3）**
+
+**现象**：将 `_ShimmerBlock` 从私有类改为公开类 `ShimmerBlock` 后，`flutter analyze` 报 `use_key_in_widget_constructors`  info。
+
+**原因**：Dart 规范要求公开 Widget 的构造函数必须提供可选的 `Key? key` 参数（`super.key`）。原有私有构造没有，暴露为公开类后 analyze 提示。
+
+**修复**：
+```dart
+class ShimmerBlock extends StatelessWidget {
+  const ShimmerBlock({
+    super.key,        // ← 补上
+    required this.ctrl,
+    this.width = double.infinity,
+    this.height = 14,
+  });
+```
+
+**教训**：任何 Widget 从 `_私有` 改为公开时，需同时检查构造函数是否接受 `super.key`（`super.key`），否则 analyzer 会报 info。
+
+---
+
 ## 10. 已知待解决问题
 
 | # | 问题 | 优先级 | 状态 | 说明 |

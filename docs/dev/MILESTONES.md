@@ -448,6 +448,45 @@ ApiClient 拦截器链：
 
 ---
 
+## 节点 v0.15 — 日程模块统一视觉风格（2026-07-24）
+
+> 用户实测基础功能可用后，统一日程相关页面的视觉风格，对齐线索详情的白卡片/底部抽屉/输入框/TagChip/骨架屏模式。
+> 拆为三小轮：v0.15a 表单抽屉 8 项优化 → v0.15b 抽屉第二批 5 项 → v0.15c 两项修复（删除 loading + 骨架屏）。
+
+### 完成内容
+
+| 模块 | 轮次 | 说明 |
+|------|:----:|------|
+| 表单抽屉去白卡片/背景 | a | 删 `_card()`，每节仅留间距，无背景色圆角 |
+| 关联线索一行 | a | 去图标，显示"姓名-手机号" |
+| 计划时间去图标 | a | 标题纯文字 |
+| 输入框白底灰边框 | a | `#F3F3F3` → `Colors.white`，对齐登录页 |
+| 快捷按钮 TagChip | a | `ChoiceChip` → `TagChipRow` + `TagChipData` |
+| 删标题输入框 | a | 标题自动生成，用户不可见不可改 |
+| 备注换 TDTextarea | a | TextField → TDTextarea，灰边框 8px 圆角 |
+| 抽屉自适应+全宽按钮 | b | 去 `maxHeight`；`SheetHeader` 标题+小关闭；全宽 TDButton；去底部操作栏 |
+| 去（只读）文字 | b | 删除关联线索后的灰色"（只读）" |
+| 输入框高度缩小 | b | 56px → 44px；快捷 TagChip `scrollable:true` |
+| 备注字数 200 | b | `maxLength:2000` → `200` |
+| 删除 loading 居中 | c | 从零高度 ActionBar 移至 `Scaffold` 外层 `Stack`，`Center` 以全屏为参考系 |
+| 骨架屏统一 shimmer | c | 详情 `_buildSkeleton` 从静态灰块改白卡片+`ShimmerBlock` 扫光；`_ShimmerBlock`→公开 `ShimmerBlock` |
+| UI 风格文档 | — | 新建 `docs/dev/UI_STYLE_GUIDE.md`，固化已完成视觉模式 |
+
+### 踩坑记录
+
+详见 `docs/dev/DEVELOPMENT_PITFALLS.md`：
+
+- **§11.5**：全屏遮罩 `Stack` + `Center` 需放在最外层 `Scaffold` 的 `Stack` 中，不能放在零高度的子组件内，否则 Center 参考系错误导致 loading 图标跑到左上角。
+- **§11.6**：`_ShimmerBlock` 从私有改为公开时需加 `super.key` 构造参数，否则 `use_key_in_widget_constructors` info 级 warning。
+
+### 待开发（本批次未做）
+
+- **拨号返回反馈面板**：详情页拨号后弹快捷备注/接通结果面板（v0.13 决议留待后续）。
+- **详情页下拉刷新**：当前依赖缓存 + 操作后 invalidate；未接入下拉手动刷新手势。
+- **团队视图统计**：`/schedules/stats`（团队）未接入，角标仍取「我的」`dueToday`。
+
+---
+
 ## 下一步节点规划
 
 > ⚠️ 下方 P0 核心流程**实际已完成**，见 v0.1~v0.11。剩余工作均为 P1 及以后。
@@ -481,4 +520,4 @@ ApiClient 拦截器链：
 
 > 本文档与 `docs/dev/HANDOVER.md`（交接文档）配套使用。
 > ⚠️ 旧 `HANDOVER_05_LEAD_DETAIL.md` 中"3 个并行请求""拨号后弹面板未做"等描述已过时，以本表与代码现状为准。
-> 节点版本：v0.14 | 更新日期：2026-07-24
+> 节点版本：v0.15 | 更新日期：2026-07-24
