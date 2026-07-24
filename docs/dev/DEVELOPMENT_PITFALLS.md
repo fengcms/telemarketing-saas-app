@@ -879,7 +879,78 @@ Widget _divider() => SizedBox(
 
 ---
 
-## 12. 通话记录模块开发坑点
+### 11.8 `InputDecoration.prefixIcon` 自带 padding 导致输入文字偏移
+
+**严重级别**：🟡 **P2（视觉缺陷，纯客户端）**
+
+**现象**：日程搜索页搜索框内输入文字偏下偏右，与线索列表/通话记录的搜索栏视觉不一致。
+
+**原因**：使用了 `TextField` 的 `InputDecoration.prefixIcon` 属性放置搜索图标。该属性会自动在图标周围添加默认 padding（约 12px），且图标与输入文字共享同一行基线对齐逻辑——这会把输入区域的起始位置推右、垂直中线推偏。而线索列表/通话记录搜索栏均用 `Row` 手动布局（Icon + Expanded(TextField)），不依赖 prefixIcon，因此文字位置精确。
+
+```dart
+// ❌ 偏下偏右
+TextField(
+  decoration: InputDecoration(
+    prefixIcon: Icon(Icons.search, size: 18),
+    ...
+  ),
+)
+
+// ✅ 行内手动放图标 + isDense
+Container(
+  height: 40,
+  decoration: BoxDecoration(
+    color: const Color(0xFFF3F3F3),
+    borderRadius: BorderRadius.circular(20),
+  ),
+  child: Row(
+    children: [
+      const Padding(
+        padding: EdgeInsets.only(left: 12),
+        child: Icon(Icons.search, size: 18, color: Color(0xFFA6A6A6)),
+      ),
+      Expanded(
+        child: TextField(
+          style: const TextStyle(fontSize: 14, color: Color(0xFF181818)),
+          decoration: const InputDecoration(
+            hintText: '搜索手机号',
+            hintStyle: TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
+            isDense: true,                              // 关键：紧凑模式
+            contentPadding: EdgeInsets.symmetric(vertical: 10), // 精确垂直居中
+            border: InputBorder.none,
+          ),
+        ),
+      ),
+    ],
+  ),
+)
+```
+
+**教训**：要用精确的文字位置控制，优先用 `Row` + `Expanded(TextField)` + `isDense: true` + `contentPadding` 手动布局，不要依赖 `prefixIcon` 或 `suffixIcon`——它们自带不可控的 padding 与基线对齐逻辑。
+
+---
+
+### 11.9 `fetchSchedules` 后端默认只返回 `pending`，搜索场景须显式传 `status__in`
+
+**严重级别**：🟠 **功能性（P1）**
+
+**现象**：日程搜索页按手机号搜索，只搜到 `pending` 状态的日程，已完成的搜不到。
+
+**原因**：`GET /api/tenant/schedules` 接口在不传 `status` 参数时，后端**默认按 `status=pending` 过滤**（此默认行为与前端无关，是后端实现）。之前以为传 `status: null`（即不传该参数）就能拿到全部状态，实际上拿到的只是 pending。
+
+**解决方案**：用 `status__in` 参数显式声明要查哪些状态：
+
+```dart
+// ❌ 只返回 pending
+fetchSchedules(q: query, status: null, page: 1)
+
+// ✅ 返回三种状态
+fetchSchedules(q: query, statusIn: 'pending,completed,cancelled', page: 1)
+```
+
+`fetchSchedules` 方法签名新增可选参数 `statusIn`（`String?`），非空时传 `status__in` 查询参数并跳过 `status`（二者互斥），空时走原 `status` 逻辑。
+
+**教训**：后端接口的默认行为不一定是"不传参=不限"——很多接口不传参其实是传了服务端的默认值（如 `pending`）。涉及"查询全部状态"的场景，务必与后端确认是否需要显式传多值参数（如 `status__in`、`status[]`），而不能假设"不传 = 不限"。
 
 ### 12.1 首屏 `_isLoading=true` 同时作骨架标志与请求守卫致首屏不拉取
 

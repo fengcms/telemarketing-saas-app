@@ -12,6 +12,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/models/lead_detail.dart';
 import 'package:telemarketing_app/models/lead_list_context.dart';
+import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
+import 'package:telemarketing_app/pages/schedules/schedule_search_page.dart';
 import 'package:telemarketing_app/providers/lead_detail_provider.dart';
 import 'widgets/lead_header_section.dart';
 import 'widgets/lead_action_bar.dart';
@@ -121,7 +123,10 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
           ),
           SliverToBoxAdapter(child: _buildActionBar(detail)),
           SliverToBoxAdapter(
-            child: ScheduleSection(schedules: state.schedules),
+            child: ScheduleSection(
+              schedules: state.schedules,
+              onViewAll: () => _jumpToScheduleSearch(detail.phone),
+            ),
           ),
           SliverToBoxAdapter(
             child: _buildFollowUpSection(state),
@@ -132,10 +137,9 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
               total: 0,
               isLoading: false,
               errorMessage: null,
+              onViewAll: () => _jumpToCallRecords(detail.phone),
             ),
           ),
-          // 底部操作栏：跟进 / 日程 / 编辑（拨打后快速操作）
-          SliverToBoxAdapter(child: _buildBottomActionBar(detail)),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
@@ -215,14 +219,20 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
     );
   }
 
-  /// 底部操作栏（跟进 / 日程 / 编辑），追加在通话记录下方
-  Widget _buildBottomActionBar(LeadDetail detail) {
-    return Container(
-      height: 44,
-      color: Colors.white,
-      child: LeadActionBar(
-        detail: detail,
-        leadId: detail.id,
+  /// 跳日程搜索页（带线索手机号，搜索该号码关联的日程）
+  void _jumpToScheduleSearch(String phone) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ScheduleSearchPage(initialQuery: phone),
+      ),
+    );
+  }
+
+  /// 跳通话记录页（带线索手机号，搜索该号码的通话记录）
+  void _jumpToCallRecords(String phone) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CallRecordsPage(initialQuery: phone),
       ),
     );
   }

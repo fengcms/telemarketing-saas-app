@@ -17,7 +17,10 @@ import 'package:telemarketing_app/pages/leads/lead_detail_page.dart';
 
 /// 通话记录列表页
 class CallRecordsPage extends ConsumerStatefulWidget {
-  const CallRecordsPage({super.key});
+  /// 初始搜索词（从线索详情"查看全部"跳来时传入手机号）
+  final String? initialQuery;
+
+  const CallRecordsPage({super.key, this.initialQuery});
 
   @override
   ConsumerState<CallRecordsPage> createState() => _CallRecordsPageState();
@@ -44,6 +47,11 @@ class _CallRecordsPageState extends ConsumerState<CallRecordsPage> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    // 从线索详情跳来时预填搜索词，首屏即带 q 查询
+    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+      _searchCtrl.text = widget.initialQuery!;
+      _phoneQuery = widget.initialQuery;
+    }
     _loadInitial();
   }
 

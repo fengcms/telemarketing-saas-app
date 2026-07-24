@@ -22,12 +22,16 @@ class CallRecordsSection extends ConsumerWidget {
   final bool isLoading;
   final String? errorMessage;
 
+  /// 「查看全部」点击回调（跳通话记录列表页，带手机号搜索）
+  final VoidCallback? onViewAll;
+
   const CallRecordsSection({
     super.key,
     required this.records,
     required this.total,
     this.isLoading = false,
     this.errorMessage,
+    this.onViewAll,
   });
 
   @override
@@ -79,10 +83,7 @@ class CallRecordsSection extends ConsumerWidget {
         ),
         const Spacer(),
         GestureDetector(
-          onTap: () {
-            // Node 5: 跳转通话记录列表页
-            // Navigator.push -> /lead/:id/calls
-          },
+          onTap: onViewAll,
           child: const Text(
             '查看全部',
             style: TextStyle(

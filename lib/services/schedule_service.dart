@@ -40,28 +40,41 @@ class ScheduleService {
 
   /// 获取日程列表
   ///
-  /// [status] pending/completed/cancelled（默认 pending）
+  /// [status] pending/completed/cancelled（默认 pending）；
+  ///   传 null 时不传 status 参数（但后端仍默认 pending）。
+  /// [statusIn] 多状态筛选（如 'pending,completed,cancelled'），
+  ///   非空时传 `status__in` 参数覆盖默认 pending，用于搜索场景取全部状态。
   /// [userId] 不传（null）时 TM/TA 取团队，TE 强制自己
   /// [page]/[size] 分页；[sort] 默认 scheduledAt。
+  /// [q] 手机号搜索词，非空时传给后端做模糊匹配。
   /// 注意：本端点后端仅支持 [sort] 字段，方向由后端固定为升序
   /// （按 scheduledAt 由近到远），不接受 `order`/`sortDir` 等方向参数，
   /// 传了会触发 400 INVALID_FILTER_FIELD 导致整请求失败。
   Future<ScheduleListResult> fetchSchedules({
-    String status = 'pending',
+    String? status = 'pending',
+    String? statusIn,
     String? userId,
     int page = 1,
     int size = 20,
     String sort = 'scheduledAt',
+    String? q,
   }) async {
     try {
       final query = <String, dynamic>{
-        'status': status,
         'page': page,
         'size': size,
         'sort': sort,
       };
+      if (statusIn != null && statusIn.isNotEmpty) {
+        query['status__in'] = statusIn;
+      } else if (status != null) {
+        query['status'] = status;
+      }
       if (userId != null && userId.isNotEmpty) {
         query['userId'] = userId;
+      }
+      if (q != null && q.isNotEmpty) {
+        query['q'] = q;
       }
       final response = await _apiClient.dio.get(
         ApiConstants.schedules,

@@ -620,6 +620,33 @@ ApiClient 拦截器链：
 
 ---
 
+## 节点 v0.19 — 线索详情查看全部跳转 + 日程搜索页（2026-07-24 末）
+
+> 本节点是对 v0.7 线索详情页与 v0.12 日程列表页的补全：从线索详情跳转日程列表/通话记录时，按手机号预填充搜索词。
+
+### 完成内容
+
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 线索详情「最近日程」查看全部 | ✅ | 跳 `ScheduleSearchPage(initialQuery: detail.phone)`，按手机号预填搜索 |
+| 线索详情「最近通话」查看全部 | ✅ | 跳 `CallRecordsPage(initialQuery: detail.phone)`，按手机号预填搜索 |
+| 线索详情删除重复底部操作栏 | ✅ | 删 `_buildBottomActionBar`（上方已有跟进/日程/编辑按钮） |
+| 日程搜索页 `ScheduleSearchPage` | ✅ | 独立页面（局部 state，不碰全局 `scheduleListProvider`），搜索栏预填手机号，`status__in=pending,completed,cancelled` |
+| `CallRecordsPage` 加 `initialQuery` | ✅ | 构造参数预填搜索框 + 查询词，复用原有搜索逻辑 |
+| `ScheduleService.fetchSchedules` 加 `q` + `statusIn` | ✅ | `q` 手机号搜索；`statusIn` 传 `status__in` 查全部状态 |
+| 日程搜索框文字偏移修复 | ✅ | `InputDecoration.prefixIcon` 改为 `Row` 手动布局 + `isDense:true` + `contentPadding` |
+| 日程搜索 status__in 修复 | ✅ | `status: null` 后端只返回 pending → 改 `statusIn: 'pending,completed,cancelled'` |
+
+### 关键决策
+
+| 决策 | 选择 | 原因 |
+|------|------|------|
+| 日程搜索页 vs 改造现有列表页 | **新建独立页面** | 日程列表页用全局共享 `scheduleListProvider`（底部 Tab 也用它），改造会污染底部 Tab 状态；通话记录页本就是局部 state → 加参数即可 |
+| `status__in` vs 不传 status | **显式传三个状态** | 后端不传 status 默认只返回 pending，传 `status: null` 无效；须 `status__in=pending,completed,cancelled` 才拿到全部 |
+| 搜索框 UI | `Row` 手动布局 | 统一对齐线索/通话记录搜索栏，解决 prefixIcon 文字偏移问题 |
+
+---
+
 ## 下一步节点规划
 
 > ⚠️ 下方 P0 核心流程**实际已完成**，见 v0.1~v0.11。剩余工作均为 P1 及以后。
@@ -639,12 +666,13 @@ ApiClient 拦截器链：
 
 | 模块 | 设计文档 | 优先级 | 现状 |
 |------|---------|:------:|------|
-| 通话记录列表页（补全「查看全部」跳转目标） | 16 | P1 | `ComingSoonPage` 占位，详情页「查看全部」无目标页 |
+| 通话记录列表页 | 16 | P1 | ✅ v0.17（手机号搜索 + 行跳线索详情；详情页/编辑/删除留作下轮） |
 | 日程列表页 | 10 | P1 | ✅ v0.12（双 Tab/范围/分组吸顶/共享统计+角标） |
 | 日程详情页（doc 11）+ 操作（完成/取消/新建） | 11/12 | P1 | ✅ v0.13 / v0.14 打磨 |
-| 公海线索池 | 06 | P1 | 未开发 |
 | 客户列表 | 17 | P1 | ✅ v0.18（客户详情拍板不开发，点卡片跳线索详情） |
-| 个人中心 / 个人统计 | 13/14 | P1 | ✅ v0.16（个人中心页；个人统计子页仍占位） |
+| 个人中心 | 13 | P1 | ✅ v0.16（个人中心页 + 5 处 UI 调整；个人统计子页仍占位） |
+| 线索详情「查看全部」跳转 + 日程搜索页 | — | P1 | ✅ v0.19（最近日程/通话查看全部跳搜索页 + 删除重复操作栏） |
+| 公海线索池 | 06 | P1 | 未开发 |
 | 修改密码页 | 15 | P1 | 未开发（与强制改密不同） |
 | 设置页 | 19 | P1 | 未开发 |
 | 团队模块（入口/统计/日程/线索池） | 20/21/22/23 | P1 | 均未开发 |
@@ -653,4 +681,4 @@ ApiClient 拦截器链：
 
 > 本文档与 `docs/dev/HANDOVER.md`（交接文档）配套使用。
 > ⚠️ 旧 `HANDOVER_05_LEAD_DETAIL.md` 中"3 个并行请求""拨号后弹面板未做"等描述已过时，以本表与代码现状为准。
-> 节点版本：v0.18 | 更新日期：2026-07-24
+> 节点版本：v0.19 | 更新日期：2026-07-24

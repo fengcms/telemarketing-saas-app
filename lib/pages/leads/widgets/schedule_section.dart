@@ -11,7 +11,10 @@ import 'package:telemarketing_app/models/schedule.dart';
 class ScheduleSection extends StatelessWidget {
   final List<Schedule> schedules;
 
-  const ScheduleSection({super.key, required this.schedules});
+  /// 「查看全部」点击回调（跳日程搜索页，带手机号搜索）
+  final VoidCallback? onViewAll;
+
+  const ScheduleSection({super.key, required this.schedules, this.onViewAll});
 
   @override
   Widget build(BuildContext context) {
@@ -47,9 +50,7 @@ class ScheduleSection extends StatelessWidget {
         ),
         const Spacer(),
         GestureDetector(
-          onTap: () {
-            // Node：跳转日程列表页（待开发）
-          },
+          onTap: onViewAll,
           child: const Text(
             '查看全部',
             style: TextStyle(fontSize: 13, color: Color(0xFF0052D9)),
