@@ -1355,7 +1355,7 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/erase \
 | `status` | string | `pending`/`completed`/`cancelled`；不传且 `status__in` 不传时默认 `pending` |
 | `status__in` | string | 多值如 `pending,completed` |
 | `q` | string | 模糊搜索，跨 `title` + `content` + `leads.name`（线索姓名） |
-| `page` / `size` / `sort` / `order` | — | 通用查询 DSL（§9.4）；`sort` 默认 `scheduledAt`，`order` 默认 `asc` |
+| `page` / `size` / `sort` | — | 通用查询 DSL（§9.4）；`sort` 默认 `scheduledAt`。**本端点仅认 `sort`，不认 `order`/`sortBy`/`sortDir`，排序方向由后端固定（按 `scheduledAt` 升序）** |
 
 > 另有通用字段筛选（如 `userId`、`leadId`、`callRecordId`、`title`、`completedAt`、`createdAt`，及 `__gte/__lte/__in` 后缀）由 `SCHEDULE_ALLOWED` 暴露，详见 §9.4。
 

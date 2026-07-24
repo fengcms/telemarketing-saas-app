@@ -483,6 +483,126 @@ Future<void> _fetchBundle(String leadId, bool raw) async {
 
 ---
 
+### 8.2 API 文档字段笔误（`order` 排序参数不存在）
+
+**严重级别**：🟠 **正确性（P1）**
+
+**现象**：日程列表页调 `GET /api/tenant/schedules` 时，按 `api.md` 写的 `order=asc` 传入，后端返回 `400 INVALID_FILTER_FIELD: unknown field order`，整个请求被拒 → 列表页统一显示"加载失败"。首页因为用的参数**不带 `order`** 反而正常，成了对照证据。
+
+**原因**：`api.md` 日程接口那段写了 `sort` / `order` 参数并说"默认 `order=asc`"，但后端该端点实际**只认 `sort`**（值如 `scheduledAt`），**不认 `order` / `sortBy` / `sortDir` 任何方向参数**；排序方向由后端固定默认（按 `scheduledAt` 升序，正好是想要的"最近优先"）。通用查询 DSL（§9.4）定义的 `sortBy` / `sortDir` 在此端点同样不被接受。
+
+**验证**（curl 实测，lina 账号）：
+
+| 参数 | 后端反应 |
+|---|---|
+| `sort=scheduledAt` | ✅ 接受（首页即用，正常） |
+| `order=asc` | ❌ unknown field order |
+| `sortBy=scheduledAt` | ❌ unknown field sortBy |
+| `sortDir=asc` | ❌ unknown field sortDir |
+
+**解决方案**：`lib/services/schedule_service.dart` 的 `fetchSchedules` 删除 `order` 参数与其在 query 中的注入（所有调用方都没传它，删除零风险）。`api.md` 该处笔误已修正。
+
+**教训**：照文档写请求参数前，**先 curl 验证端点真实接受的字段**，尤其"排序方向"这类常被文档夸大 / 写错的参数。文档和后端实现不一致时，以 curl 实测为准。
+
+---
+
+### 8.3 Alice 网络调试浮窗集成（dev-only）
+
+**严重级别**：🟢 **调试基建（非阻断）**
+
+**背景**：排查真机网络问题时，需要在 app 内看到每个请求的完整 URL / 参数 / 响应体 / 错误码。成熟第三方方案是 **Alice**（`pub.dev` 上的 HTTP Inspector）。
+
+**坑点（alice 已升级，旧教程失效）**：
+
+1. **`alice: ^1.0.0` 已重构为适配器模式**：无旧版的 `getDioInterceptor()`、也无旧版自动浮标。网上大量旧代码里的 `alice.getDioInterceptor()` 现在直接编译报错。
+2. **Dio 拦截器需单独装 `alice_dio` 包**（^1.0.7）。`AliceDioAdapter` 本身是 Dio `Interceptor` 子类，直接 `_dio.interceptors.add(AliceDioAdapter(alice))` 即可，**会覆盖全 app 共用的同一个 Dio 实例**（所有 Service 经 `apiClientProvider` 取到）。
+3. **1.0.0 取消自动浮标**：需自定义一个全局浮标按钮（右下角 FAB），点击调 `alice.showInspector()` 唤出请求列表面板。
+4. **Android 构建失败**：`flutter_local_notifications`（alice 间接依赖）要求开启 **core library desugaring**。需在 `android/app/build.gradle.kts` 加：
+   ```kotlin
+   compileOptions {
+       // Alice 依赖 flutter_local_notifications，需开启 core library desugaring
+       isCoreLibraryDesugaringEnabled = true
+       sourceCompatibility = JavaVersion.VERSION_17
+       targetCompatibility = JavaVersion.VERSION_17
+   }
+   dependencies {
+       coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+   }
+   ```
+   ⚠️ Kotlin DSL 里属性名是 `isCoreLibraryDesugaringEnabled`（不是 `coreLibraryDesugaringEnabled`），desugar 版本需 ≥ 2.1.4。
+
+**方案**：`lib/core/alice_manager.dart` 封装 Alice 单例 + `AliceDioAdapter` 注入 + `showInspector()`；`lib/app.dart` 的 `MaterialApp.builder` 注入全局浮标；是否启用由 `lib/core/dev_tools.dart` 的 `enableDevTools` 控制（仅 dev 构建）。
+
+---
+
+### 8.4 dev-only 编译开关（`--dart-define=DEV_TOOLS`）
+
+**背景**：希望调试浮窗 + 登录预填只在开发包出现，正式包**零残留**。
+
+**方案**：`lib/core/dev_tools.dart` 定义：
+
+```dart
+const bool enableDevTools = bool.fromEnvironment('DEV_TOOLS', defaultValue: false);
+```
+
+- 开发版：`flutter build apk --dart-define=DEV_TOOLS=true`（浮窗 + 预填都生效）
+- 正式版：`flutter build apk`（不传则 `false`，相关代码被编译期死代码消除）
+
+Dart 编译器对 `if (enableDevTools) { ... }` 在 `false` 分支做消除，正式包不携带 alice / 测试凭据。
+
+**注意**：alice 的初始化与浮标必须包在 `enableDevTools` 守卫内，否则正式包会因"引用了 dev 才存在的 alice 实例"或误触浮标而出问题。`pubspec.yaml` 里的 `alice` / `alice_dio` 依赖可常驻（不影响正式包体积多少，且避免切换构建时重复 pub get）。
+
+---
+
+### 8.5 登录预填测试账号（仅 dev）
+
+**背景**：真机每次登录手输账号麻烦，开发阶段希望自动填好测试账号。
+
+**方案**：`lib/pages/login/login_page.dart` 的 `_loadSavedCredentials` 末尾，`enableDevTools` 为 true 时自动填入测试账号前缀 + 域名（本项目即 `lina@qq.com`）与密码（`Dev@123456`）。正式包该分支编译期消除，不包含任何测试凭据。
+
+**注意**：测试账号明文只存在于 dev 分支代码，且被编译期消除——**切勿把真实生产账号写进此处**。若担心泄露，可改为读取环境变量而非硬编码。
+
+---
+
+### 8.6 `flutter install` 不认 apk 路径
+
+**现象**：执行 `flutter install build/app/outputs/flutter-apk/app-debug.apk` 时，apk 路径参数被**忽略**，Flutter 自行重新 `flutter build` 一个 **release** 并安装到它默认的"第一个"设备。输出里显示的 `Installing ... to 2211133C` 中的 `2211133C` 实为**设备型号名**（非另一台设备序列号），极易误判。
+
+**后果**：装上去的不是你要的那个包（比如你想装 debug 却装了 release），且可能装错设备。
+
+**解决方案**：要安装**指定 apk 文件**，用 `adb` 直接装：
+
+```bash
+adb -s <deviceId> install -r build/app/outputs/flutter-apk/app-debug.apk
+```
+
+`flutter install`（不带路径）只适合"构建当前项目并装上去"的场景；一旦你想装某个已构建好的 apk，必须走 `adb install`。
+
+---
+
+### 8.7 真机"无法登录"排查教训（release 模式 Dart 异常不可见）
+
+**严重级别**：🟠 **排查方法论**
+
+**现象**：用户报 app 无法登录，Alice 里能看到请求已发出、但无响应；`adb logcat` 却**无任何** DioException / 超时 / 证书报错，看似"零报错"。
+
+**根因**：之前安装的是 `flutter build apk`（**release 模式**）。release 下 Dart 的异常和 `print` **不输出到 logcat**，所以"零报错"是**假象**——Dio 其实在 15s 超时内抛了异常，只是看不见。你在 Alice 面板里看到的"有请求、无响应"，是请求卡在网络 / TLS 层、直到超时 `onError` 触发前的 pending 状态。
+
+**方法论（已验证有效）**：
+
+1. **先用 `adb shell` 实测手机侧真实可达性**，区分"app 代码问题"还是"手机网络 / 软路由隧道未覆盖 app"：
+   ```bash
+   adb -s <id> shell curl -s -m 12 https://<域名>/health
+   adb -s <id> shell curl -s -m 12 -X POST https://<域名>/api/auth/login -H 'Content-Type: application/json' -d '{"email":"x","password":"y"}'
+   adb -s <id> shell nslookup <域名>
+   ```
+2. **要看到 Dart 真实异常，必须装 debug 版**（`flutter build apk --debug --dart-define=DEV_TOOLS=true`），或用 `flutter logs` / `adb logcat` 抓 Dart 输出。release 版只会吞异常。
+3. 本项目测试 API（`tm-api-test.kao9.com`）经**软路由全屋隧道**，手机浏览器 / `adb curl` 均通，app 也应通。若 app 异常而 curl 通，优先怀疑 **release 模式吞异常 / WiFi 手动代理残留 / Dio 拦截器**，而非"域名不可达"（后者用 `adb curl` 一测便知）。
+
+**本次结论**：最终在 **debug 版**下验证登录 / 日程列表 / Alice 浮窗**均正常**；之前"无法登录"更可能是临时网络环境波动 + release 模式异常不可见共同造成的排查盲区，**未在代码层复现硬伤**。提交后建议再用日常 release 构建命令实机验一次，确认 release 路径也正常。
+
+---
+
 ## 9. 已知待解决问题
 
 | # | 问题 | 优先级 | 状态 | 说明 |

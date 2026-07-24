@@ -42,6 +42,9 @@ dependencies:
   # 网络请求
   dio: ^5.7.0
 
+  # 开发调试：网络请求检视浮窗（仅开发版通过 DEV_TOOLS 启用）
+  alice: ^1.0.0
+
   # 状态管理
   flutter_riverpod: ^2.6.1
 
@@ -59,6 +62,7 @@ dependencies:
 
   # 系统拨号盘
   url_launcher: ^6.3.0
+  alice_dio: ^1.0.7
 
 dependency_overrides:
   # 升级 image_picker_android 以修复 Android 构建兼容性

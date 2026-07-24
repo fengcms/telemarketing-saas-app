@@ -12,6 +12,8 @@ import 'package:dio/dio.dart';
 import 'api_constants.dart';
 import 'api_exception.dart';
 import 'token_storage.dart';
+import 'package:telemarketing_app/core/alice_manager.dart';
+import 'package:telemarketing_app/core/dev_tools.dart';
 
 /// API 客户端（Dio 单例）
 ///
@@ -78,6 +80,11 @@ class ApiClient {
       },
     ));
 
+    // 开发版：注入 Alice 的 Dio 适配器（捕获全部请求/响应）
+    if (enableDevTools) {
+      alice.addAdapter(aliceDioAdapter);
+      _dio.interceptors.add(aliceDioAdapter);
+    }
   }
 
   /// 获取 Dio 实例供业务 Service 调用

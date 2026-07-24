@@ -7,6 +7,7 @@
 /// - [content]：日程备注（可选）
 /// - [scheduledAt]：预定时间（Unix 秒）
 /// - [status]：状态（pending / completed / cancelled）
+/// - [userId]：日程归属人 ID（"归属：XXX"映射用）
 /// - [leadName]：关联线索姓名（来自 lead.name，擦除时为 null）
 /// - [leadPhone]：关联线索手机号（来自 lead.phone，擦除时为 null）
 class Schedule {
@@ -15,6 +16,7 @@ class Schedule {
   final String? content;
   final int scheduledAt;
   final String status;
+  final String? userId;
   final String? leadName;
   final String? leadPhone;
 
@@ -24,6 +26,7 @@ class Schedule {
     this.content,
     required this.scheduledAt,
     required this.status,
+    this.userId,
     this.leadName,
     this.leadPhone,
   });
@@ -36,6 +39,7 @@ class Schedule {
       content: json['content']?.toString(),
       scheduledAt: _toInt(json['scheduledAt']),
       status: json['status']?.toString() ?? 'pending',
+      userId: json['userId']?.toString(),
       leadName: lead?['name']?.toString(),
       leadPhone: lead?['phone']?.toString(),
     );

@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
+import 'package:telemarketing_app/core/dev_tools.dart';
 
 /// 登录页
 ///
@@ -122,6 +123,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           _passwordCtrl.text = savedPassword;
         });
       }
+    }
+
+    // 开发版：自动预填测试账号，省去真机重复输入（正式构建不编译此分支）
+    if (enableDevTools && mounted) {
+      setState(() {
+        _emailCtrl.text = 'lina';
+        _selectedDomain = 'qq.com';
+        _isFullEmailMode = false;
+        _passwordCtrl.text = 'Dev@123456';
+      });
     }
 
   }

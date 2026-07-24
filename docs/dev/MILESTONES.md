@@ -353,6 +353,38 @@ ApiClient 拦截器链：
 
 ---
 
+## 节点 v0.12 — 日程列表页 + 调试基建（2026-07-24）
+
+> 提交：feat(schedule): 日程列表页 + 共享统计 Provider + 底部 Tab 角标；fix: 移除日程接口多余 `order` 参数（api.md 笔误）；feat(dev): Alice 网络浮窗 + 登录预填（dev-only）
+
+### 完成内容
+
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 日程列表页 `ScheduleListPage` | ✅ | 待办/已完成 双 Tab（计数来自共享 `scheduleStatsProvider`）；TM/TA 可切「我的/团队」 |
+| 分组与吸顶 | ✅ | 纯前端按日期分桶（今天/明天/后天/本周/更早）+ 逾期置顶；日期头与逾期头 `SliverPersistentHeader` 吸顶 |
+| 四态卡片 `ScheduleCard` | ✅ | 常规/逾期/已完成/已取消 四态（左侧色条+状态标签）；归属人经 `optionsCacheService.getUserName` 映射 |
+| 共享统计 `ScheduleStatsProvider` | ✅ | 单一拉取 `/schedules/stats/mine`，底部 Tab 角标（dueToday）与列表 Tab 计数同源（决策 c） |
+| 底部 Tab 角标 | ✅ | 日程入口接入 `dueToday` 角标（复用 `scheduleStatsProvider`） |
+| `users` 缓存 | ✅（已具备） | `OptionsCacheService` 的 `getUserName`/缓存经核对已存在，本节点直接复用（决策 d） |
+
+### 调试基建（dev-only，本批次一并提交）
+
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| Alice 网络浮窗 | ✅ | `alice` + `alice_dio` 适配器注入共用的 Dio 实例；右下角自定义浮标调 `showInspector()`。详见 `DEVELOPMENT_PITFALLS.md §8.2` |
+| 登录预填测试账号 | ✅ | dev 构建自动填 `lina@qq.com` / `Dev@123456`，正式包编译期消除。详见 §8.4 |
+| dev-only 编译开关 | ✅ | `--dart-define=DEV_TOOLS=true` 同时管浮窗 + 预填；不传则正式包零残留。详见 §8.3 |
+| Android desugaring | ✅ | `android/app/build.gradle.kts` 开 `isCoreLibraryDesugaringEnabled`（alice 链依赖要求）。详见 §8.2 |
+
+### 待开发（本节点未做，已记入 `docs/review/history/schedule-list-dev-2026-07-24.md`）
+
+- **跨天重算**：日期分组标签按设备本地时间计算，跨天后不自动刷新；需回前台/切 Tab 重算（决策 b，机制待定）。
+- **日程详情页（doc 11）/ 列表项完成·取消 / 新建日程（doc 12）**：拆为下一节点 v0.13。
+- **团队视图统计**：`/schedules/stats`（团队）未接入，当前角标取「我的」`dueToday`。
+
+---
+
 ## 下一步节点规划
 
 > ⚠️ 下方 P0 核心流程**实际已完成**，见 v0.1~v0.11。剩余工作均为 P1 及以后。
@@ -373,7 +405,8 @@ ApiClient 拦截器链：
 | 模块 | 设计文档 | 优先级 | 现状 |
 |------|---------|:------:|------|
 | 通话记录列表页（补全「查看全部」跳转目标） | 16 | P1 | `ComingSoonPage` 占位，详情页「查看全部」无目标页 |
-| 日程列表页 + 操作（完成/取消/新建） | 10/11 | P1 | 同上，详情页「最近日程」仅展示 5 条 |
+| 日程列表页 | 10 | P1 | ✅ v0.12（双 Tab/范围/分组吸顶/共享统计+角标） |
+| 日程详情页（doc 11）+ 操作（完成/取消/新建） | 11/12 | P1 | 待开发（v0.13） |
 | 公海线索池 | 06 | P1 | 未开发 |
 | 客户列表 / 客户详情 | 17/18 | P1 | 未开发 |
 | 个人中心 / 个人统计 | 13/14 | P1 | 「我的」Tab 仅含用户信息 + 退出 |
@@ -385,4 +418,4 @@ ApiClient 拦截器链：
 
 > 本文档与 `docs/dev/HANDOVER.md`（交接文档）配套使用。
 > ⚠️ 旧 `HANDOVER_05_LEAD_DETAIL.md` 中"3 个并行请求""拨号后弹面板未做"等描述已过时，以本表与代码现状为准。
-> 节点版本：v0.11 | 更新日期：2026-07-24
+> 节点版本：v0.12 | 更新日期：2026-07-24
