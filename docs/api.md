@@ -670,12 +670,17 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/projects \
 
 ### GET /api/tenant/quick-notes
 
-快捷备注列表（TA/TM/TE 都可读，按 sort 升序）。用于跟进时快速选择常用文案。
+快捷备注列表（TA/TM/TE 都可读，按 sort 升序）。用于跟进时快速选择常用文案。支持 `type` / `type__in` 过滤（场景分类闭集枚举：`followup`/`schedule`/`call`/`assign`/`recycle`），不传返回全部（兼容旧客户端）；非法 `type` 值 → `VALIDATION` 400。
 
 **curl：**
 
 ```bash
-curl https://tm-api-test.kao9.com/api/tenant/quick-notes \
+# 跟进面板：只取跟进类
+curl 'https://tm-api-test.kao9.com/api/tenant/quick-notes?type=followup' \
+  -H 'Authorization: Bearer <ta_token>'
+
+# 多类（如未来管理端）：type__in
+curl 'https://tm-api-test.kao9.com/api/tenant/quick-notes?type__in=followup,schedule' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 
@@ -687,10 +692,10 @@ curl https://tm-api-test.kao9.com/api/tenant/quick-notes \
 curl -X POST https://tm-api-test.kao9.com/api/tenant/quick-notes \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <ta_token>' \
-  -d '{"content":"客户要求改天再联系","sort":1}'
+  -d '{"content":"客户要求改天再联系","sort":1,"type":"followup"}'
 ```
 
-> `content` 必填（≤500 字），`sort` 可选（排序权重，默认 0）。无 PATCH 端点，编辑时删后重建即可。
+> `content` 必填（≤500 字），`sort` 可选（排序权重，默认 0），`type` 可选（场景分类闭集枚举，缺省 `followup`；传其他值 → `VALIDATION` 400）。无 PATCH 端点，编辑时删后重建即可。
 
 ### DELETE /api/tenant/quick-notes/:id
 
@@ -762,7 +767,7 @@ curl https://tm-api-test.kao9.com/api/tenant/options/projects \
 
 ### GET /api/tenant/options/quick-notes
 
-快捷备注下拉选项（`id` + `content`，按 sort 权重排序，不含软删）。
+快捷备注下拉选项（`id` + `content` + `type`，按 sort 权重排序，不含软删）。**全量返回所有分类**，由前端按 `type` 字段自行筛选使用（不提供后端过滤参数）。
 
 **响应：**
 
@@ -770,8 +775,8 @@ curl https://tm-api-test.kao9.com/api/tenant/options/projects \
 {
   "success": true,
   "data": [
-    { "id": "cc14fe7a-...", "content": "客户忙，稍后再联系" },
-    { "id": "da41e321-...", "content": "预约看房，周末到访" }
+    { "id": "cc14fe7a-...", "content": "客户忙，稍后再联系", "type": "followup" },
+    { "id": "da41e321-...", "content": "预约看房，周末到访", "type": "schedule" }
   ],
   "error": null
 }
@@ -780,7 +785,8 @@ curl https://tm-api-test.kao9.com/api/tenant/options/projects \
 **curl：**
 
 ```bash
-curl https://tm-api-test.kao9.com/api/tenant/options/categories \
+# 日程表单：只取日程类
+curl 'https://tm-api-test.kao9.com/api/tenant/options/quick-notes?type=schedule' \
   -H 'Authorization: Bearer <token>'
 ```
 
@@ -1355,7 +1361,7 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/leads/<lead_id>/erase \
 | `status` | string | `pending`/`completed`/`cancelled`；不传且 `status__in` 不传时默认 `pending` |
 | `status__in` | string | 多值如 `pending,completed` |
 | `q` | string | 模糊搜索，跨 `title` + `content` + `leads.name`（线索姓名） |
-| `page` / `size` / `sort` | — | 通用查询 DSL（§9.4）；`sort` 默认 `scheduledAt`。**本端点仅认 `sort`，不认 `order`/`sortBy`/`sortDir`，排序方向由后端固定（按 `scheduledAt` 升序）** |
+| `page` / `size` / `sort` / `order` | — | 通用查询 DSL（§9.4）；`sort` 默认 `scheduledAt`，`order` 默认 `asc` |
 
 > 另有通用字段筛选（如 `userId`、`leadId`、`callRecordId`、`title`、`completedAt`、`createdAt`，及 `__gte/__lte/__in` 后缀）由 `SCHEDULE_ALLOWED` 暴露，详见 §9.4。
 
@@ -1853,6 +1859,7 @@ curl 'https://tm-api-test.kao9.com/api/tenant/calls?dateFrom=2026-07-18&dateTo=2
         "id": "call-uuid",
         "tenantId": "tenant-uuid",
         "leadId": "lead-uuid",
+        "leadName": "张三",
         "userId": "user-uuid",
         "projectId": "project-uuid",
         "phone": "13800138000",
@@ -1879,7 +1886,7 @@ curl 'https://tm-api-test.kao9.com/api/tenant/calls?dateFrom=2026-07-18&dateTo=2
 }
 ```
 
-> `direction` 枚举 `outbound` / `inbound`。`answerType` 枚举 `answered` / `no_answer` / `rejected` / `empty_number` / `suspended`。`violation` 为 `0/1`，`1` 表示命中免打扰时段。
+> `direction` 枚举 `outbound` / `inbound`。`answerType` 枚举 `answered` / `no_answer` / `rejected` / `empty_number` / `suspended`。`violation` 为 `0/1`，`1` 表示命中免打扰时段。每条含 `leadName`（关联线索姓名；未关联线索或线索无姓名时为 `null`）。
 
 ### POST /api/tenant/calls
 
@@ -2019,7 +2026,7 @@ curl https://tm-api-test.kao9.com/api/tenant/calls/<call_id> \
 }
 ```
 
-> 详情不脱敏。`recordingUrl` 仅在已录音时返回，当前 MVP 恒为 NULL。
+> 详情不脱敏。`recordingUrl` 仅在已录音时返回，当前 MVP 恒为 NULL。详情含 `leadName`（关联线索姓名；未关联线索或线索无姓名时为 `null`）。
 
 ### DELETE /api/tenant/calls/:id
 

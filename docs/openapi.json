@@ -22,55 +22,174 @@
       "AssignmentBatch": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "description": "批次主键(UUID)，同时作为 lead_assignments.batch_id" },
-          "action": { "type": "string", "enum": ["assign", "reassign", "recycle", "claim", "status-change"], "description": "assign=分配 / reassign=改派 / recycle=回收公海 / claim=自领 / status-change=批量改状态" },
-          "operatorId": { "type": "string", "description": "操作人 ID" },
-          "operatorRole": { "type": "string", "description": "操作人角色(审计用)" },
-          "fromUserId": { "type": "string", "description": "统一来源(单条/全公海填实际值；批量混合为 null)" },
-          "toUserId": { "type": "string", "description": "目标归属人(退回公海/无归属变更为 null)" },
-          "toStatus": { "type": "string", "description": "仅 action=status-change 时记新状态(取值同 leads.status: pending/assigned/following/converted/invalid)" },
-          "total": { "type": "integer", "description": "本次操作目标线索数" },
-          "success": { "type": "integer", "description": "实际成功数" },
-          "failed": { "type": "integer", "description": "失败数(线索不存在等)" },
-          "skipped": { "type": "integer", "description": "跳过总数" },
-          "skipDetail": { "type": "object", "description": "跳过原因细分(已为对象，前端直接 map 渲染)：alreadyOwned / notStale / notInvalid / blocklisted" },
-          "note": { "type": "string", "description": "操作备注" },
-          "createdAt": { "type": "integer", "description": "创建时间(unix秒)" }
+          "id": {
+            "type": "string",
+            "description": "批次主键(UUID)，同时作为 lead_assignments.batch_id"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "assign",
+              "reassign",
+              "recycle",
+              "claim",
+              "status-change"
+            ],
+            "description": "assign=分配 / reassign=改派 / recycle=回收公海 / claim=自领 / status-change=批量改状态"
+          },
+          "operatorId": {
+            "type": "string",
+            "description": "操作人 ID"
+          },
+          "operatorRole": {
+            "type": "string",
+            "description": "操作人角色(审计用)"
+          },
+          "fromUserId": {
+            "type": "string",
+            "description": "统一来源(单条/全公海填实际值；批量混合为 null)"
+          },
+          "toUserId": {
+            "type": "string",
+            "description": "目标归属人(退回公海/无归属变更为 null)"
+          },
+          "toStatus": {
+            "type": "string",
+            "description": "仅 action=status-change 时记新状态(取值同 leads.status: pending/assigned/following/converted/invalid)"
+          },
+          "total": {
+            "type": "integer",
+            "description": "本次操作目标线索数"
+          },
+          "success": {
+            "type": "integer",
+            "description": "实际成功数"
+          },
+          "failed": {
+            "type": "integer",
+            "description": "失败数(线索不存在等)"
+          },
+          "skipped": {
+            "type": "integer",
+            "description": "跳过总数"
+          },
+          "skipDetail": {
+            "type": "object",
+            "description": "跳过原因细分(已为对象，前端直接 map 渲染)：alreadyOwned / notStale / notInvalid / blocklisted"
+          },
+          "note": {
+            "type": "string",
+            "description": "操作备注"
+          },
+          "createdAt": {
+            "type": "integer",
+            "description": "创建时间(unix秒)"
+          }
         }
       },
       "Assignment": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "description": "明细主键(UUID)" },
-          "leadId": { "type": "string", "description": "关联线索 ID" },
-          "action": { "type": "string", "enum": ["assign", "reassign", "recycle", "claim"], "description": "明细动作(头表 status-change 不写明细)" },
-          "fromUserId": { "type": "string", "description": "原归属(退回公海为 null)" },
-          "toUserId": { "type": "string", "description": "新归属(退回公海为 null)" },
-          "operatorId": { "type": "string", "description": "操作人" },
-          "operatorRole": { "type": "string", "description": "操作人角色(审计用)" },
-          "note": { "type": "string", "description": "操作备注" },
-          "batchId": { "type": "string", "description": "关联批次头 UUID" },
-          "createdAt": { "type": "integer", "description": "创建时间(unix秒)" }
+          "id": {
+            "type": "string",
+            "description": "明细主键(UUID)"
+          },
+          "leadId": {
+            "type": "string",
+            "description": "关联线索 ID"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "assign",
+              "reassign",
+              "recycle",
+              "claim"
+            ],
+            "description": "明细动作(头表 status-change 不写明细)"
+          },
+          "fromUserId": {
+            "type": "string",
+            "description": "原归属(退回公海为 null)"
+          },
+          "toUserId": {
+            "type": "string",
+            "description": "新归属(退回公海为 null)"
+          },
+          "operatorId": {
+            "type": "string",
+            "description": "操作人"
+          },
+          "operatorRole": {
+            "type": "string",
+            "description": "操作人角色(审计用)"
+          },
+          "note": {
+            "type": "string",
+            "description": "操作备注"
+          },
+          "batchId": {
+            "type": "string",
+            "description": "关联批次头 UUID"
+          },
+          "createdAt": {
+            "type": "integer",
+            "description": "创建时间(unix秒)"
+          }
         }
       },
       "PaginatedAssignmentBatches": {
         "type": "object",
         "properties": {
-          "items": { "type": "array", "items": { "$ref": "#/components/schemas/AssignmentBatch" } },
-          "total": { "type": "integer", "description": "符合条件的总记录数" },
-          "page": { "type": "integer", "description": "当前页码(从1起)" },
-          "size": { "type": "integer", "description": "每页条数(默认20，上限200)" },
-          "pages": { "type": "integer", "description": "总页数" }
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssignmentBatch"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "符合条件的总记录数"
+          },
+          "page": {
+            "type": "integer",
+            "description": "当前页码(从1起)"
+          },
+          "size": {
+            "type": "integer",
+            "description": "每页条数(默认20，上限200)"
+          },
+          "pages": {
+            "type": "integer",
+            "description": "总页数"
+          }
         }
       },
       "PaginatedAssignments": {
         "type": "object",
         "properties": {
-          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Assignment" } },
-          "total": { "type": "integer", "description": "明细总数" },
-          "page": { "type": "integer", "description": "当前页(从1起)" },
-          "size": { "type": "integer", "description": "每页条数(默认20，上限200)" },
-          "pages": { "type": "integer", "description": "总页数" }
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Assignment"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "明细总数"
+          },
+          "page": {
+            "type": "integer",
+            "description": "当前页(从1起)"
+          },
+          "size": {
+            "type": "integer",
+            "description": "每页条数(默认20，上限200)"
+          },
+          "pages": {
+            "type": "integer",
+            "description": "总页数"
+          }
         }
       }
     }
@@ -778,25 +897,35 @@
           {
             "name": "page",
             "in": "query",
-            "schema": { "type": "integer", "default": 1 },
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
             "description": "页码(从1起)"
           },
           {
             "name": "size",
             "in": "query",
-            "schema": { "type": "integer", "default": 20 },
+            "schema": {
+              "type": "integer",
+              "default": 20
+            },
             "description": "每页条数(默认20，上限200)"
           },
           {
             "name": "sort",
             "in": "query",
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "排序字段，前缀 - 表倒序，如 sort=-createdAt；可逗号分隔多字段"
           },
           {
             "name": "id",
             "in": "query",
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "按批次 id 精确匹配(通用查询 DSL：默认 eq；支持 id__in=a,b)"
           },
           {
@@ -804,38 +933,54 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": ["assign", "reassign", "recycle", "claim", "status-change"]
+              "enum": [
+                "assign",
+                "reassign",
+                "recycle",
+                "claim",
+                "status-change"
+              ]
             },
             "description": "按动作过滤(通用查询 DSL)"
           },
           {
             "name": "operatorId",
             "in": "query",
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "按操作人 ID 过滤(通用查询 DSL：默认 eq；支持 operatorId__in=a,b)"
           },
           {
             "name": "fromUserId",
             "in": "query",
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "按统一来源用户 ID 过滤(默认 eq)"
           },
           {
             "name": "toUserId",
             "in": "query",
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "按目标归属用户 ID 过滤(默认 eq)"
           },
           {
             "name": "toStatus",
             "in": "query",
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "按目标状态过滤(仅 action=status-change 有值；取值同 leads.status: pending/assigned/following/converted/invalid)"
           },
           {
             "name": "createdAt",
             "in": "query",
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "按创建时间区间过滤。通用查询 DSL 日期操作符后缀：createdAt__gte=起, createdAt__lte=止(epoch秒或 YYYY-MM-DD)；或 createdAt__between=起~止。注意：不接受 createdAt__from/__to"
           }
         ],
@@ -847,9 +992,18 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean", "description": "请求是否成功" },
-                    "data": { "$ref": "#/components/schemas/PaginatedAssignmentBatches" },
-                    "error": { "type": "object", "nullable": true, "description": "失败时含 {code,message}，成功为 null" }
+                    "success": {
+                      "type": "boolean",
+                      "description": "请求是否成功"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PaginatedAssignmentBatches"
+                    },
+                    "error": {
+                      "type": "object",
+                      "nullable": true,
+                      "description": "失败时含 {code,message}，成功为 null"
+                    }
                   }
                 }
               }
@@ -928,19 +1082,46 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean", "description": "请求是否成功" },
+                    "success": {
+                      "type": "boolean",
+                      "description": "请求是否成功"
+                    },
                     "data": {
                       "type": "object",
                       "properties": {
-                        "batch": { "$ref": "#/components/schemas/AssignmentBatch" },
-                        "items": { "type": "array", "description": "当前页明细", "items": { "$ref": "#/components/schemas/Assignment" } },
-                        "total": { "type": "integer", "description": "明细总数" },
-                        "page": { "type": "integer", "description": "当前页(从1起)" },
-                        "size": { "type": "integer", "description": "每页条数(默认20/上限200)" },
-                        "pages": { "type": "integer", "description": "总页数" }
+                        "batch": {
+                          "$ref": "#/components/schemas/AssignmentBatch"
+                        },
+                        "items": {
+                          "type": "array",
+                          "description": "当前页明细",
+                          "items": {
+                            "$ref": "#/components/schemas/Assignment"
+                          }
+                        },
+                        "total": {
+                          "type": "integer",
+                          "description": "明细总数"
+                        },
+                        "page": {
+                          "type": "integer",
+                          "description": "当前页(从1起)"
+                        },
+                        "size": {
+                          "type": "integer",
+                          "description": "每页条数(默认20/上限200)"
+                        },
+                        "pages": {
+                          "type": "integer",
+                          "description": "总页数"
+                        }
                       }
                     },
-                    "error": { "type": "object", "nullable": true, "description": "失败时含 {code,message}，成功为 null" }
+                    "error": {
+                      "type": "object",
+                      "nullable": true,
+                      "description": "失败时含 {code,message}，成功为 null"
+                    }
                   }
                 }
               }
@@ -1104,12 +1285,14 @@
         "summary": "List calls (TE forced own, masked)",
         "responses": {
           "200": {
-            "description": "paginated"
+            "description": "paginated (each item incl leadName)"
           }
         }
       },
       "post": {
-        "tags": ["Calls"],
+        "tags": [
+          "Calls"
+        ],
         "summary": "Create call (idempotent; optional content→atomic followup REQ-04)",
         "requestBody": {
           "content": {
@@ -1117,16 +1300,44 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "phone": { "type": "string" },
-                  "startedAt": { "type": "integer" },
-                  "externalCallId": { "type": "string" },
-                  "leadId": { "type": "string" },
-                  "answerType": { "type": "string", "enum": ["answered","no_answer","rejected","empty_number","suspended"] },
-                  "content": { "type": "string", "maxLength": 2000 },
-                  "categoryId": { "type": "string" },
-                  "duration": { "type": "integer" }
+                  "phone": {
+                    "type": "string"
+                  },
+                  "startedAt": {
+                    "type": "integer"
+                  },
+                  "externalCallId": {
+                    "type": "string"
+                  },
+                  "leadId": {
+                    "type": "string"
+                  },
+                  "answerType": {
+                    "type": "string",
+                    "enum": [
+                      "answered",
+                      "no_answer",
+                      "rejected",
+                      "empty_number",
+                      "suspended"
+                    ]
+                  },
+                  "content": {
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "categoryId": {
+                    "type": "string"
+                  },
+                  "duration": {
+                    "type": "integer"
+                  }
                 },
-                "required": ["phone", "startedAt", "externalCallId"]
+                "required": [
+                  "phone",
+                  "startedAt",
+                  "externalCallId"
+                ]
               }
             }
           }
@@ -1156,7 +1367,7 @@
         ],
         "responses": {
           "200": {
-            "description": "detail (masked)"
+            "description": "detail (masked, incl leadName)"
           }
         }
       },
@@ -1560,7 +1771,9 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
+                    "success": {
+                      "type": "boolean"
+                    },
                     "data": {
                       "type": "object",
                       "properties": {
@@ -1569,27 +1782,67 @@
                           "items": {
                             "type": "object",
                             "properties": {
-                              "id": { "type": "string" },
-                              "name": { "type": "string" },
-                              "phone": { "type": "string" },
-                              "status": { "type": "string", "enum": ["pending","assigned","following","converted","invalid"] },
-                              "ownerId": { "type": "string" },
-                              "isBlocked": { "type": "integer" },
-                              "lastFollowupAt": { "type": "integer" },
-                              "nextFollowupAt": { "type": "integer" },
-                              "createdAt": { "type": "integer" },
-                              "updatedAt": { "type": "integer" },
-                              "erasedAt": { "type": "integer", "nullable": true }
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "phone": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "pending",
+                                  "assigned",
+                                  "following",
+                                  "converted",
+                                  "invalid"
+                                ]
+                              },
+                              "ownerId": {
+                                "type": "string"
+                              },
+                              "isBlocked": {
+                                "type": "integer"
+                              },
+                              "lastFollowupAt": {
+                                "type": "integer"
+                              },
+                              "nextFollowupAt": {
+                                "type": "integer"
+                              },
+                              "createdAt": {
+                                "type": "integer"
+                              },
+                              "updatedAt": {
+                                "type": "integer"
+                              },
+                              "erasedAt": {
+                                "type": "integer",
+                                "nullable": true
+                              }
                             }
                           }
                         },
-                        "total": { "type": "integer" },
-                        "page": { "type": "integer" },
-                        "size": { "type": "integer" },
-                        "pages": { "type": "integer" }
+                        "total": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "size": {
+                          "type": "integer"
+                        },
+                        "pages": {
+                          "type": "integer"
+                        }
                       }
                     },
-                    "error": { "type": "null" }
+                    "error": {
+                      "type": "null"
+                    }
                   }
                 }
               }
@@ -1855,42 +2108,199 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
+                    "success": {
+                      "type": "boolean"
+                    },
                     "data": {
                       "type": "object",
                       "properties": {
-                        "id": { "type": "string" },
-                        "name": { "type": "string" },
-                        "phone": { "type": "string" },
-                        "status": { "type": "string" },
-                        "ownerId": { "type": "string" },
-                        "projectId": { "type": "string" },
-                        "isBlocked": { "type": "integer" },
-                        "createdAt": { "type": "integer" },
-                        "erasedAt": { "type": "integer", "nullable": true },
-                        "timeline": {
+                        "lead": {
+                          "type": "object",
+                          "description": "线索对象（含 categoryId，前端用 GET /api/tenant/options/categories 映射分类名）",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "tenantId": {
+                              "type": "string"
+                            },
+                            "projectId": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "phone": {
+                              "type": "string"
+                            },
+                            "company": {
+                              "type": "string"
+                            },
+                            "wechat": {
+                              "type": "string"
+                            },
+                            "address": {
+                              "type": "string"
+                            },
+                            "remark": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string"
+                            },
+                            "ownerId": {
+                              "type": "string"
+                            },
+                            "categoryId": {
+                              "type": "string"
+                            },
+                            "isBlocked": {
+                              "type": "integer"
+                            },
+                            "nextFollowupAt": {
+                              "type": "integer"
+                            },
+                            "createdAt": {
+                              "type": "integer"
+                            },
+                            "updatedAt": {
+                              "type": "integer"
+                            },
+                            "erasedAt": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        "followups": {
                           "type": "array",
+                          "description": "跟进记录列表（按 createdAt 倒序，含 callId 可关联通话）",
                           "items": {
                             "type": "object",
                             "properties": {
-                              "id": { "type": "string" },
-                              "type": { "type": "string", "enum": ["followup","call"] },
-                              "content": { "type": "string" },
-                              "answerType": { "type": "string" },
-                              "createdAt": { "type": "integer" }
+                              "id": {
+                                "type": "string"
+                              },
+                              "content": {
+                                "type": "string"
+                              },
+                              "answerType": {
+                                "type": "string"
+                              },
+                              "duration": {
+                                "type": "integer"
+                              },
+                              "callId": {
+                                "type": "string"
+                              },
+                              "userName": {
+                                "type": "string"
+                              },
+                              "createdAt": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        "calls": {
+                          "type": "array",
+                          "description": "该线索最近 5 条通话记录（按 startedAt 倒序）；更多请调 GET /api/tenant/calls?leadId=",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "leadId": {
+                                "type": "string"
+                              },
+                              "userId": {
+                                "type": "string"
+                              },
+                              "phone": {
+                                "type": "string"
+                              },
+                              "startedAt": {
+                                "type": "integer"
+                              },
+                              "endedAt": {
+                                "type": "integer"
+                              },
+                              "duration": {
+                                "type": "integer"
+                              },
+                              "answerType": {
+                                "type": "string"
+                              },
+                              "direction": {
+                                "type": "string"
+                              },
+                              "externalCallId": {
+                                "type": "string"
+                              },
+                              "violation": {
+                                "type": "integer"
+                              },
+                              "createdAt": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        "schedules": {
+                          "type": "array",
+                          "description": "该线索最近 5 条日程（按 scheduledAt 倒序，含 pending/completed/cancelled 全部未删）；更多请调 GET /api/tenant/schedules?leadId=",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "leadId": {
+                                "type": "string"
+                              },
+                              "userId": {
+                                "type": "string"
+                              },
+                              "callRecordId": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "content": {
+                                "type": "string"
+                              },
+                              "scheduledAt": {
+                                "type": "integer"
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "completedAt": {
+                                "type": "integer"
+                              },
+                              "createdAt": {
+                                "type": "integer"
+                              }
                             }
                           }
                         }
                       }
                     },
-                    "error": { "type": "null" }
+                    "error": {
+                      "type": "null"
+                    }
                   }
                 }
               }
             }
           }
         },
-        "security": [{ "BearerAuth": [] }]
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "patch": {
         "tags": [
@@ -2104,6 +2514,79 @@
         }
       }
     },
+    "/api/tenant/leads/{id}/calls": {
+      "post": {
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Complete a call on a lead (atomic call_records + optional followup; idempotent by externalCallId)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "startedAt": {
+                    "type": "integer"
+                  },
+                  "externalCallId": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "endedAt": {
+                    "type": "integer"
+                  },
+                  "duration": {
+                    "type": "integer"
+                  },
+                  "answerType": {
+                    "type": "string",
+                    "enum": [
+                      "answered",
+                      "no_answer",
+                      "rejected",
+                      "empty_number",
+                      "suspended"
+                    ]
+                  },
+                  "direction": {
+                    "type": "string",
+                    "enum": [
+                      "outbound",
+                      "inbound"
+                    ]
+                  },
+                  "projectId": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "categoryId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "startedAt",
+                  "externalCallId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "call created (with followupId/followupCreated when content provided)"
+          },
+          "200": {
+            "description": "idempotent update when externalCallId already exists (followupId null)"
+          }
+        }
+      }
+    },
     "/api/tenant/leads/{id}/followups": {
       "get": {
         "tags": [
@@ -2183,33 +2666,80 @@
     },
     "/api/tenant/leads/{id}/followups/{fid}": {
       "patch": {
-        "tags": ["Leads"],
+        "tags": [
+          "Leads"
+        ],
         "summary": "Edit follow-up content (REQ-01; TE 5min own, TM/TA any)",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
-          { "name": "fid", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "properties": { "content": { "type": "string", "maxLength": 2000 } },
-                "required": ["content"]
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "content"
+                ]
               }
             }
           }
         },
-        "responses": { "200": { "description": "updated" } }
+        "responses": {
+          "200": {
+            "description": "updated"
+          }
+        }
       },
       "delete": {
-        "tags": ["Leads"],
+        "tags": [
+          "Leads"
+        ],
         "summary": "Soft-delete follow-up (REQ-01; TE own only, TM/TA any)",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
-          { "name": "fid", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
-        "responses": { "200": { "description": "deleted" } }
+        "responses": {
+          "200": {
+            "description": "deleted"
+          }
+        }
       }
     },
     "/api/tenant/leads/{id}/reactivate": {
@@ -2303,10 +2833,10 @@
         "tags": [
           "Options"
         ],
-        "summary": "快捷备注下拉选项 (id + content, sorted by sort, limit 100)",
+        "summary": "快捷备注下拉选项 (id + content + type, 全量返回前端自行筛选, sorted by sort, limit 100)",
         "responses": {
           "200": {
-            "description": "快捷备注选项数组"
+            "description": "快捷备注选项数组（含 type 字段，前端按 type 筛选）"
           }
         }
       }
@@ -2445,6 +2975,33 @@
           "QuickNotes"
         ],
         "summary": "List quick notes (TA/TM/TE; sorted by sort+createdAt)",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "followup",
+                "schedule",
+                "call",
+                "assign",
+                "recycle"
+              ]
+            },
+            "description": "场景分类过滤（闭集枚举）；不传返回全部；非法值 → 400"
+          },
+          {
+            "name": "type__in",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "逗号分隔多类过滤，如 followup,schedule；非法值 → 400"
+          }
+        ],
         "responses": {
           "200": {
             "description": "list"
@@ -2468,6 +3025,18 @@
                   },
                   "sort": {
                     "type": "integer"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "followup",
+                      "schedule",
+                      "call",
+                      "assign",
+                      "recycle"
+                    ],
+                    "default": "followup",
+                    "description": "场景分类闭集枚举；缺省 followup；传其他值 → 400"
                   }
                 },
                 "required": [
@@ -2968,27 +3537,51 @@
         }
       },
       "patch": {
-        "tags": ["Tenant"],
+        "tags": [
+          "Tenant"
+        ],
         "summary": "Update tenant profile (TA only)",
-        "security": [{ "BearerAuth": [] }],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "name": { "type": "string" },
-                  "contactName": { "type": "string" },
-                  "contactPhone": { "type": "string" },
-                  "contactEmail": { "type": "string" },
-                  "industry": { "type": "string" },
-                  "address": { "type": "string" },
-                  "intro": { "type": "string" },
-                  "website": { "type": "string" },
+                  "name": {
+                    "type": "string"
+                  },
+                  "contactName": {
+                    "type": "string"
+                  },
+                  "contactPhone": {
+                    "type": "string"
+                  },
+                  "contactEmail": {
+                    "type": "string"
+                  },
+                  "industry": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "intro": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  },
                   "settings": {
                     "type": "object",
                     "properties": {
-                      "allowSelfClaim": { "type": "boolean" }
+                      "allowSelfClaim": {
+                        "type": "boolean"
+                      }
                     }
                   }
                 }
@@ -2997,7 +3590,9 @@
           }
         },
         "responses": {
-          "200": { "description": "updated tenant info" }
+          "200": {
+            "description": "updated tenant info"
+          }
         }
       }
     },
