@@ -9,7 +9,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:telemarketing_app/widgets/app_toast.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'password_rules_hint.dart';
 import 'password_nav_bar.dart';
@@ -177,8 +177,7 @@ class _ForceChangePasswordPageState
 
     if (success) {
       // 成功：显示 Toast 后跳转
-      TDToast.showText('密码修改成功，请重新登录',
-          context: context);
+      AppToast.show(context, '密码修改成功，请重新登录');
       await Future.delayed(const Duration(milliseconds: 1500));
       if (mounted) {
         // AuthNotifier 已将状态设为 unauthenticated，AuthGate 自动跳转登录页

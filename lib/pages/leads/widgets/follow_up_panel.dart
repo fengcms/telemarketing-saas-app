@@ -7,7 +7,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:telemarketing_app/widgets/app_toast.dart';
 import 'package:telemarketing_app/providers/lead_detail_provider.dart';
 import 'package:telemarketing_app/providers/lead_list_provider.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
@@ -425,11 +425,11 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
       ref.read(leadDetailProvider.notifier).refreshBundle();
 
       // 显示成功提示
-      TDToast.showText('跟进记录已添加', context: context);
+      AppToast.show(context, '跟进记录已添加');
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      TDToast.showText('提交失败，请重试', context: context);
+      AppToast.show(context, '提交失败，请重试');
     }
   }
 }

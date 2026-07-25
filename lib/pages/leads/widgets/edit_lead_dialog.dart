@@ -6,7 +6,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:telemarketing_app/widgets/app_toast.dart';
 import 'package:telemarketing_app/constants/lead_constants.dart';
 import 'package:telemarketing_app/models/lead_detail.dart';
 import 'package:telemarketing_app/models/option_item.dart';
@@ -189,11 +189,11 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
       if (!mounted) return;
       Navigator.of(context).pop();
       ref.read(leadDetailProvider.notifier).refreshBundle();
-      TDToast.showText('线索已更新', context: context);
+      AppToast.show(context, '线索已更新');
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      TDToast.showText('保存失败，请重试', context: context);
+      AppToast.show(context, '保存失败，请重试');
     }
   }
 }

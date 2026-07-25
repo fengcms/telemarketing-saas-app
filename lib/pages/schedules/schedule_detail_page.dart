@@ -13,7 +13,7 @@ library;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:telemarketing_app/widgets/app_toast.dart';
 import 'package:telemarketing_app/models/schedule_detail.dart';
 import 'package:telemarketing_app/pages/leads/lead_detail_page.dart';
 import 'package:telemarketing_app/pages/leads/widgets/dial_helper.dart';
@@ -429,16 +429,16 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
     try {
       await apiCall();
       if (!mounted) return;
-      TDToast.showText(toastMsg, context: context);
+      AppToast.show(context, toastMsg);
       ref.read(scheduleDetailCacheProvider).invalidate(_detail!.id);
       await _fetchFromServer();
       _refreshList();
     } on ApiException catch (e) {
       if (!mounted) return;
-      TDToast.showText(e.message, context: context);
+      AppToast.show(context, e.message);
     } catch (_) {
       if (!mounted) return;
-      TDToast.showText('操作失败，请重试', context: context);
+      AppToast.show(context, '操作失败，请重试');
     } finally {
       if (mounted) setState(() => _actionLoading = false);
     }
@@ -496,15 +496,15 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
       if (!mounted) return;
       ref.read(scheduleDetailCacheProvider).invalidate(_detail!.id);
       _refreshList();
-      TDToast.showText('日程已删除', context: context);
+      AppToast.show(context, '日程已删除');
       Navigator.of(context).pop();
     } on ApiException catch (e) {
       if (!mounted) return;
-      TDToast.showText(e.message, context: context);
+      AppToast.show(context, e.message);
       setState(() => _isDeleting = false);
     } catch (_) {
       if (!mounted) return;
-      TDToast.showText('删除失败，请重试', context: context);
+      AppToast.show(context, '删除失败，请重试');
       setState(() => _isDeleting = false);
     }
   }

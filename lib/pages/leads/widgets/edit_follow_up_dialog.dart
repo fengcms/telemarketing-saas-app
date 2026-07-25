@@ -7,6 +7,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:telemarketing_app/widgets/app_toast.dart';
 import 'package:telemarketing_app/providers/lead_detail_provider.dart';
 import 'package:telemarketing_app/providers/lead_list_provider.dart';
 
@@ -149,11 +150,11 @@ class _EditFollowUpDialogState extends ConsumerState<_EditFollowUpDialog> {
       if (!mounted) return;
       Navigator.of(context).pop();
       ref.read(leadDetailProvider.notifier).refreshBundle();
-      TDToast.showText('跟进记录已更新', context: context);
+      AppToast.show(context, '跟进记录已更新');
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      TDToast.showText('保存失败，请重试', context: context);
+      AppToast.show(context, '保存失败，请重试');
     }
   }
 }

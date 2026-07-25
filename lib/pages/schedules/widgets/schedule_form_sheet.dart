@@ -13,6 +13,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:telemarketing_app/widgets/app_toast.dart';
 import 'package:telemarketing_app/models/option_item.dart';
 import 'package:telemarketing_app/models/schedule_detail.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
@@ -277,7 +278,7 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
           dt.minute == _selectedTime.minute;
       final sameContent = (init.content ?? '') == content;
       if (sameTime && sameContent) {
-        TDToast.showText('内容未变更', context: context);
+        AppToast.show(context, '内容未变更');
         return;
       }
     }
@@ -295,7 +296,7 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
           content: content.isNotEmpty ? content : null,
         );
         if (!mounted) return;
-        TDToast.showText('日程已更新', context: context);
+        AppToast.show(context, '日程已更新');
       } else {
         await svc.createSchedule(
           leadId: widget.leadId!,
@@ -305,7 +306,7 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
           userId: _owner?.id,
         );
         if (!mounted) return;
-        TDToast.showText('日程已创建', context: context);
+        AppToast.show(context, '日程已创建');
       }
       try {
         ref.read(scheduleListProvider.notifier).refresh();
@@ -315,11 +316,11 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      TDToast.showText(e.message, context: context);
+      AppToast.show(context, e.message);
     } catch (_) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      TDToast.showText('保存失败，请重试', context: context);
+      AppToast.show(context, '保存失败，请重试');
     }
   }
 }

@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:telemarketing_app/widgets/app_toast.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/core/dev_tools.dart';
@@ -158,7 +159,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (_savePassword && password.isNotEmpty) {
       await storage.savePassword(password);
       if (mounted) {
-        TDToast.showText('密码已加密保存', context: context);
+        AppToast.show(context, '密码已加密保存');
       }
     } else {
       await storage.clearPassword();
@@ -226,11 +227,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     // 简单的错误提示显示（使用 SnackBar）
     if (emailErr != null) {
-      TDToast.showText(emailErr, context: context);
+      AppToast.show(context, emailErr);
       return;
     }
     if (pwdErr != null) {
-      TDToast.showText(pwdErr, context: context);
+      AppToast.show(context, pwdErr);
       return;
     }
 
