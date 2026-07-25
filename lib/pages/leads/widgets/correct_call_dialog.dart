@@ -6,7 +6,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/widgets/app_toast.dart';
 import 'package:telemarketing_app/models/call_record.dart';
 import 'package:telemarketing_app/providers/lead_detail_provider.dart';
@@ -193,11 +192,11 @@ class _CorrectCallDialogState
           children: [
             SizedBox(
               width: 80,
-              child: TDStepper(
+              child: _buildStepper(
                 value: _durationMinutes,
                 min: 0,
                 max: 99,
-                onChange: (v) =>
+                onChanged: (v) =>
                     setState(() => _durationMinutes = v),
               ),
             ),
@@ -212,17 +211,16 @@ class _CorrectCallDialogState
             const SizedBox(width: 12),
             SizedBox(
               width: 80,
-              child: TDStepper(
+              child: _buildStepper(
                 value: _durationSeconds,
                 min: 0,
                 max: 59,
                 step: 5,
-                onChange: (v) =>
+                onChanged: (v) =>
                     setState(() => _durationSeconds = v),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4),
+            const Padding(              padding: EdgeInsets.symmetric(horizontal: 4),
               child: Text(
                 '秒',
                 style:
@@ -259,5 +257,50 @@ class _CorrectCallDialogState
       setState(() => _isSubmitting = false);
       AppToast.show(context, '保存失败，请重试');
     }
+  }
+
+  /// 自绘步进器（替代 TDStepper）
+  Widget _buildStepper({
+    required int value,
+    required int min,
+    required int max,
+    int step = 1,
+    required ValueChanged<int> onChanged,
+  }) {
+    return Row(
+      children: [
+        _stepperButton(Icons.remove, value > min, () {
+          if (value > min) onChanged(value - step);
+        }),
+        const SizedBox(width: 4),
+        Text(
+          value.toString().padLeft(2, '0'),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(width: 4),
+        _stepperButton(Icons.add, value < max, () {
+          if (value < max) onChanged(value + step);
+        }),
+      ],
+    );
+  }
+
+  Widget _stepperButton(IconData icon, bool enabled, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: enabled ? const Color(0xFFF3F3F3) : const Color(0xFFF8F8F8),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(
+          icon,
+          size: 16,
+          color: enabled ? const Color(0xFF181818) : const Color(0xFFDCDCDC),
+        ),
+      ),
+    );
   }
 }

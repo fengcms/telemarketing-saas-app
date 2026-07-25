@@ -12,7 +12,6 @@ library;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/widgets/app_toast.dart';
 import 'package:telemarketing_app/models/option_item.dart';
 import 'package:telemarketing_app/models/schedule_detail.dart';

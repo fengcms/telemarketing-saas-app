@@ -10,7 +10,6 @@ library;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/widgets/app_toast.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
@@ -569,23 +568,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return SizedBox(
       width: double.infinity,
       height: 52,
-      child: TDButton(
-        text: isLoading ? '' : '登 录',
-        theme: TDButtonTheme.primary,
-        shape: TDButtonShape.round,
-        disabled: isLoading,
-        onTap: _onLogin,
-        iconWidget: isLoading
+      child: FilledButton(
+        onPressed: isLoading ? null : _onLogin,
+        child: isLoading
             ? const SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(Colors.white),
+                  color: Colors.white,
                 ),
               )
-            : null,
+            : const Text('登 录'),
       ),
     );
   }

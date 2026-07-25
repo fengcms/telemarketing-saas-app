@@ -6,8 +6,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/widgets/app_toast.dart';
+import 'package:telemarketing_app/widgets/app_textarea.dart';
 import 'package:telemarketing_app/providers/lead_detail_provider.dart';
 import 'package:telemarketing_app/providers/lead_list_provider.dart';
 
@@ -85,26 +85,11 @@ class _EditFollowUpDialogState extends ConsumerState<_EditFollowUpDialog> {
               style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              height: 120,
-              child: TDTextarea(
-                controller: _controller,
-                hintText: '请输入跟进内容...',
-                onChanged: (_) => setState(() {}),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                '${_controller.text.length}/2000',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: _controller.text.length >= 2000
-                      ? const Color(0xFFD54941)
-                      : const Color(0xFFA6A6A6),
-                ),
-              ),
+            AppTextarea(
+              controller: _controller,
+              hintText: '请输入跟进内容...',
+              maxLength: 2000,
+              onChanged: (_) => setState(() {}),
             ),
           ],
         ),

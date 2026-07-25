@@ -307,64 +307,37 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
 
   // ── 选择器（复用已验证的 TDPicker 调用） ──
 
-  /// 日期选择（TDPicker.showDatePicker，onConfirm 回调参数为 `Map<String, int>`）
+  /// 日期选择（Material showDatePicker）
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    TDPicker.showDatePicker(
-      context,
-      title: '选择日期',
-      dateStart: [today.year, today.month, today.day],
-      dateEnd: [today.year + 1, today.month, today.day],
-      initialDate: [
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-      ],
-      onConfirm: (selected) {
-        final map = selected;
-        setState(() {
-          _selectedDate = DateTime(
-            map['year'] ?? _selectedDate.year,
-            map['month'] ?? _selectedDate.month,
-            map['day'] ?? _selectedDate.day,
-          );
-          _dirty = true;
-        });
-        Navigator.of(context).pop();
-      },
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
     );
+    if (picked != null && mounted) {
+      setState(() {
+        _selectedDate = picked;
+        _dateError = null;
+        _dirty = true;
+      });
+    }
   }
 
-  /// 时间选择（TDPicker.showDatePicker，仅启用 hour/minute）
+  /// 时间选择（Material showTimePicker）
   Future<void> _pickTime() async {
-    TDPicker.showDatePicker(
-      context,
-      title: '选择时间',
-      useYear: false,
-      useMonth: false,
-      useDay: false,
-      useHour: true,
-      useMinute: true,
-      useSecond: false,
-      initialDate: [
-        DateTime.now().year,
-        DateTime.now().month,
-        _selectedTime.hour,
-        _selectedTime.minute,
-      ],
-      onConfirm: (selected) {
-        final map = selected;
-        setState(() {
-          _selectedTime = TimeOfDay(
-            hour: map['hour'] ?? _selectedTime.hour,
-            minute: map['minute'] ?? _selectedTime.minute,
-          );
-          _dirty = true;
-        });
-        Navigator.of(context).pop();
-      },
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
     );
+    if (picked != null && mounted) {
+      setState(() {
+        _selectedTime = picked;
+        _dirty = true;
+      });
+    }
   }
 
   /// 判断两个日期是否同一天

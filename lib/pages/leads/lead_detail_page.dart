@@ -9,7 +9,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/models/lead_detail.dart';
 import 'package:telemarketing_app/models/lead_list_context.dart';
 import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
@@ -154,23 +153,14 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
 
   /// 统一的导航栏
   PreferredSizeWidget _buildNavBar() {
-    return TDNavBar(
-      title: '线索详情',
+    return AppBar(
+      title: const Text('线索详情'),
       backgroundColor: Colors.white,
-      useDefaultBack: false,
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x0A000000),
-          blurRadius: 2,
-          offset: Offset(0, 1),
-        ),
-      ],
-      leftBarItems: [
-        TDNavBarItem(
-          icon: Icons.chevron_left,
-          action: () => Navigator.of(context).pop(),
-        ),
-      ],
+      surfaceTintColor: Colors.white,
+      leading: IconButton(
+        icon: const Icon(Icons.chevron_left),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
     );
   }
 
@@ -194,12 +184,9 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
             ),
           ),
           const SizedBox(height: 24),
-          TDButton(
-            text: '返回列表',
-            theme: TDButtonTheme.primary,
-            size: TDButtonSize.medium,
-            shape: TDButtonShape.round,
-            onTap: () => Navigator.of(context).pop(),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('返回列表'),
           ),
         ],
       ),
