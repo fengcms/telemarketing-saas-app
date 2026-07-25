@@ -127,7 +127,20 @@ const [mine, home] = await Promise.all([
 - `401` `AUTH_INVALID` / `AUTH_EXPIRED`：token 失效，走重新登录流程（与现有列表接口一致）。
 - 无新增业务错误码；参数固定无输入，不存在 400 校验失败。
 
-## 八、一句话结论
+## 八、全端 Badge 口径统一（避免数字不一致）
+
+同一账号在 App 内不同位置显示的「待办数」必须一致。为此：
+
+- `GET /api/tenant/schedules/stats/mine` 与 `GET /api/tenant/schedules/stats`（团队版）现在**顶层都返回 `todayPending`**，与 `home-summary.todayPending` 由**同一函数**计算（严格今日窗口、北京时间、不含逾期），三者数值逐字节相同。
+- **四个位置统一读 `todayPending`**：
+  - 首页「今日待办」Badge ← `home-summary.todayPending`
+  - 首页四宫格「今日到期」← `home-summary.todayPending`
+  - 底部 Tab「日程」角标 ← `stats/mine.todayPending`（TE）或 `stats.todayPending`（TM/TA）
+  - 个人中心「今日待办」 ← `stats/mine.todayPending`（TE）或 `stats.todayPending`（TM/TA）
+- ⚠️ **不要**再用 `dueToday`（旧字段，含历史逾期，数字会偏大）或 `byStatus.pending`（全量待办，不限日期，数字最大）做 Badge——这两个字段口径与首页不同，正是此前「首页显示 5、Tab 显示 7」不一致的根因。
+- 逾期事项若产品希望仍可见，用已有的 `overdue` 字段单独做红色「逾期 N」角标或列表高亮，不要塞进主 Badge。
+
+## 九、一句话结论
 
 首页日程区以后**只调一个** `GET /api/tenant/schedules/home-summary`：
 `todayPending`（今日待办）、`dueSoonCount`（即将到期）、`pendingTotal`（待办总数）、`schedules[≤5]`（预览列表）一次性拿到，列表项直接用 `Schedule.fromJson` 解析，时区放心交给服务端。

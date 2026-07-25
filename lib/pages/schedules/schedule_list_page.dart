@@ -10,6 +10,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/models/schedule.dart';
 import 'package:telemarketing_app/providers/schedule_list_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
@@ -64,54 +65,21 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F3F3),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildTopBar(listState, canTeam),
-            _buildTabBar(listState, statsState),
-            Expanded(child: _buildBody(listState)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── 顶部导航栏 ──
-
-  Widget _buildTopBar(ScheduleListState state, bool canTeam) {
-    return Container(
-      height: 56,
-      decoration: const BoxDecoration(
-        color: Color(0xFF0052D9),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 16),
-          const Expanded(
-            child: Text(
-              '日程',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-                color: Colors.white,
-              ),
-            ),
-          ),
+      appBar: AppBar(
+        title: const Text('日程'),
+        backgroundColor: BrandColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        actions: [
           if (canTeam)
             GestureDetector(
               onTap: () {
                 final next =
-                    state.scope == 'mine' ? 'team' : 'mine';
+                    listState.scope == 'mine' ? 'team' : 'mine';
                 ref.read(scheduleListProvider.notifier).switchScope(next);
               },
               child: Container(
+                margin: const EdgeInsets.only(right: 8),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
@@ -119,12 +87,17 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Text(
-                  state.scope == 'mine' ? '我的' : '团队',
+                  listState.scope == 'mine' ? '我的' : '团队',
                   style: const TextStyle(fontSize: 13, color: Colors.white),
                 ),
               ),
             ),
-          const SizedBox(width: 12),
+        ],
+      ),
+      body: Column(
+        children: [
+          _buildTabBar(listState, statsState),
+          Expanded(child: _buildBody(listState)),
         ],
       ),
     );

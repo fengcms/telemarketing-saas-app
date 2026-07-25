@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:telemarketing_app/widgets/app_dialog.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/home_provider.dart';
 import 'package:telemarketing_app/pages/coming_soon_page.dart';
@@ -110,90 +111,49 @@ class _HomePageState extends ConsumerState<HomePage>
     final homeState = ref.watch(homePageProvider);
     final authState = ref.watch(authProvider);
     final user = authState.user;
+    final isManager =
+        user?.role == 'tenant_admin' || user?.role == 'tenant_manager';
+    final showLogout = isManager;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F3F3),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildNavBar(user?.role ?? ''),
-            if (homeState.isOffline) _buildOfflineBanner(),
-            if (homeState.shouldShowDueSoonBanner) _buildDueSoonBanner(),
-            Expanded(
-              child: _buildBody(homeState),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── TDNavBar ──
-
-  Widget _buildNavBar(String role) {
-    final isManager = role == 'tenant_admin' || role == 'tenant_manager';
-    return Container(
-      height: 56,
-      decoration: const BoxDecoration(
-        color: Color(0xFF0052D9),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 16),
-          const Expanded(
-            child: Text(
-              '首页',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-                color: Colors.white,
-              ),
-            ),
-          ),
+      appBar: AppBar(
+        title: const Text('首页'),
+        backgroundColor: BrandColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        actions: [
           if (isManager)
             GestureDetector(
               onTap: () {
-                // 团队看板 — 待开发
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => const ComingSoonPage(
-                        featureName: '团队看板'),
+                    builder: (_) =>
+                        const ComingSoonPage(featureName: '团队看板'),
                   ),
                 );
               },
               child: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                child: Text(
-                  '团队看板',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white,
-                  ),
-                ),
+                child: Text('团队看板',
+                    style: TextStyle(fontSize: 14, color: Colors.white)),
               ),
             ),
-          // 退出按钮（MVP 测试用）
-          GestureDetector(
-            onTap: () => _onLogout(context),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-              child: Text(
-                '退出',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white70,
-                ),
+          if (showLogout)
+            GestureDetector(
+              onTap: () => _onLogout(context),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                child: Icon(Icons.logout, size: 20, color: Colors.white70),
               ),
             ),
-          ),
-          const SizedBox(width: 4),
+        ],
+      ),
+      body: Column(
+        children: [
+          if (homeState.isOffline) _buildOfflineBanner(),
+          if (homeState.shouldShowDueSoonBanner) _buildDueSoonBanner(),
+          Expanded(child: _buildBody(homeState)),
         ],
       ),
     );

@@ -26,6 +26,7 @@ import 'package:telemarketing_app/widgets/app_dialog.dart';
 import 'package:telemarketing_app/services/api_exception.dart';
 import 'widgets/schedule_form_sheet.dart';
 import 'widgets/schedule_detail_cards.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'widgets/schedule_detail_actions.dart';
 
 /// 日程详情页
@@ -177,87 +178,54 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
     final showContent = !_isLoading && _errorCode == null && _detail != null;
     return Scaffold(
       backgroundColor: const Color(0xFFF3F3F3),
-      body: Stack(
-        children: [
-          SafeArea(
-            child: Column(
-              children: [
-                _buildTopBar(),
-                Expanded(child: _buildBody()),
-                if (showContent && _detail != null)
-                  actionBar(
-                    isPending: _detail!.status == 'pending',
-                    hasLead: _detail!.lead != null,
-                    actionLoading: _actionLoading,
-                    onCancel: _onCancel,
-                    onDial: _onDial,
-                    onComplete: _onComplete,
-                    onReopen: _onReopen,
+      appBar: AppBar(
+        backgroundColor: BrandColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left, color: Colors.white, size: 24),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text('日程详情'),
+        actions: [
+          if (_showMenu)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: Colors.white, size: 22),
+              onSelected: _onMenuSelected,
+              itemBuilder: (_) => [
+                if (_canDelete)
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Text('删除',
+                        style: TextStyle(
+                            fontSize: 14, color: Color(0xFFD54941))),
                   ),
               ],
             ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              Expanded(child: _buildBody()),
+              if (showContent && _detail != null)
+                actionBar(
+                  isPending: _detail!.status == 'pending',
+                  hasLead: _detail!.lead != null,
+                  actionLoading: _actionLoading,
+                  onCancel: _onCancel,
+                  onDial: _onDial,
+                  onComplete: _onComplete,
+                  onReopen: _onReopen,
+                ),
+            ],
           ),
           // 删除 loading：全屏半透明遮罩 + 居中转圈
           if (_isDeleting)
             const ModalBarrier(dismissible: false, color: Color(0x66000000)),
           if (_isDeleting)
             const Center(child: CircularProgressIndicator()),
-        ],
-      ),
-    );
-  }
-
-  // ── 顶栏 ──
-
-  Widget _buildTopBar() {
-    return Container(
-      height: 56,
-      decoration: const BoxDecoration(
-        color: Color(0xFF0052D9),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 4),
-          IconButton(
-            icon: const Icon(Icons.chevron_left, color: Colors.white, size: 24),
-            tooltip: '返回',
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          const Expanded(
-            child: Text(
-              '日程详情',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          if (_showMenu)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Colors.white),
-              tooltip: '更多',
-              onSelected: _onMenuSelected,
-              itemBuilder: (ctx) => [
-                if (_canDelete)
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Text(
-                      '删除',
-                      style:
-                          TextStyle(fontSize: 14, color: Color(0xFFD54941)),
-                    ),
-                  ),
-              ],
-            ),
-          const SizedBox(width: 8),
         ],
       ),
     );

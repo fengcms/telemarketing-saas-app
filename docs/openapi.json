@@ -307,10 +307,32 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Logout",
+        "summary": "Logout (revoke current device refresh token, single-device)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refreshToken": {
+                    "type": "string",
+                    "description": "当前设备的 refresh token；缺失或空 → 400 VALIDATION"
+                  }
+                },
+                "required": [
+                  "refreshToken"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK (refresh token jti blacklisted)"
+          },
+          "400": {
+            "description": "VALIDATION: missing or invalid refreshToken"
           }
         }
       }
@@ -1548,11 +1570,20 @@
                 1
               ]
             }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "keyword cross-field OR search over name/company/phone (phone masked only in response); empty/omitted = no effect",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "paginated (masked); each item carries erasedAt (null=not erased, unix seconds=erased)"
+            "description": "paginated (masked); each item carries erasedAt (null=not erased, unix seconds=erased). Supports q cross-field search (name/company/phone) and §9.4.G field filters"
           }
         }
       },
@@ -3133,10 +3164,10 @@
         "tags": [
           "Schedules"
         ],
-        "summary": "Team stats (TA/TM)",
+        "summary": "Team stats (TA/TM; todayPending by BJT)",
         "responses": {
           "200": {
-            "description": "byStatus+overdue"
+            "description": "byStatus+overdue+todayPending"
           }
         }
       }
@@ -3146,10 +3177,23 @@
         "tags": [
           "Schedules"
         ],
-        "summary": "Personal stats (TE; dueToday by BJT)",
+        "summary": "Personal stats (TE; todayPending by BJT)",
         "responses": {
           "200": {
-            "description": "byStatus+overdue+dueToday"
+            "description": "byStatus+overdue+dueToday+todayPending"
+          }
+        }
+      }
+    },
+    "/api/tenant/schedules/home-summary": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Home schedule summary (all roles; TE scoped to self)",
+        "responses": {
+          "200": {
+            "description": "todayPending(BJT window, no overdue)+dueSoonCount(next 30min)+pendingTotal+schedules[5] with lead snapshot; replaces 3 redundant requests"
           }
         }
       }

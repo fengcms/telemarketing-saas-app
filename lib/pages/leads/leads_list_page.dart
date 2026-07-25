@@ -307,37 +307,49 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
 
     return Scaffold(
       backgroundColor: BrandColors.surface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── 顶部标题栏（左 Tab + 右筛选/排序） ──
-            LeadsTopBar(
-              state: state,
-              activeTab: _activeTab,
-              showPublicTab: _showPublicTab,
-              onTabChanged: _onTabChanged,
-              onShowSort: () => _showSortSheet(state),
-              onShowFilter: _showFilterSheet,
+      body: Column(
+        children: [
+          // 蓝色头顶块：填满状态栏高度
+          Container(
+            height: MediaQuery.of(context).padding.top,
+            color: BrandColors.primary,
+          ),
+          Expanded(
+            child: SafeArea(
+              top: false,
+              child: Column(
+                children: [
+                  // ── 顶部标题栏（左 Tab + 右筛选/排序） ──
+                  LeadsTopBar(
+                    state: state,
+                    activeTab: _activeTab,
+                    showPublicTab: _showPublicTab,
+                    onTabChanged: _onTabChanged,
+                    onShowSort: () => _showSortSheet(state),
+                    onShowFilter: _showFilterSheet,
+                  ),
+
+                  // ── 团队统计摘要条（仅 TM/TA 可见，显示共 X 条） ──
+                  if (isManager && !isPublic)
+                    _buildSummaryBar(state.total),
+
+                  // ── 搜索栏（双控制器，切换 Tab 不丢失文字） ──
+                  AppSearchBar(
+                    controller: _activeTab == 0 ? _mineSearchCtrl : _publicSearchCtrl,
+                    onSearch: _doSearch,
+                    hintText: isPublic ? '搜索公海线索姓名/电话' : '搜索线索姓名/电话/公司',
+                  ),
+
+                  // ── 我的线索筛选标签栏 ──
+                  if (!isPublic && state.hasActiveFilters)
+                    _buildFilterTags(state),
+
+                  Expanded(child: isPublic ? _buildPublicBody() : _buildBody(state, isManager)),
+                ],
+              ),
             ),
-
-            // ── 团队统计摘要条（仅 TM/TA 可见，显示共 X 条） ──
-            if (isManager && !isPublic)
-              _buildSummaryBar(state.total),
-
-            // ── 搜索栏（双控制器，切换 Tab 不丢失文字） ──
-            AppSearchBar(
-              controller: _activeTab == 0 ? _mineSearchCtrl : _publicSearchCtrl,
-              onSearch: _doSearch,
-              hintText: isPublic ? '搜索公海线索姓名/电话' : '搜索线索姓名/电话/公司',
-            ),
-
-            // ── 我的线索筛选标签栏 ──
-            if (!isPublic && state.hasActiveFilters)
-              _buildFilterTags(state),
-
-            Expanded(child: isPublic ? _buildPublicBody() : _buildBody(state, isManager)),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

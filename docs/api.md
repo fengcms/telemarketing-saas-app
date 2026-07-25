@@ -221,13 +221,25 @@ curl -X POST https://tm-api-test.kao9.com/api/auth/refresh \
 
 ### POST /api/auth/logout
 
-登出（当前 Token 加入黑名单 `jti`）。
+登出（将当前设备的 `refreshToken` 的 `jti` 加入黑名单，单设备吊销刷新能力）。
+
+> **请求体必填** `refreshToken`（字符串）：当前登录设备持有的刷新令牌。未传或字段缺失 → `VALIDATION`(400)。仅吊销该设备的刷新能力，其他设备不受影响（全设备登出请用 `logout-all`）。
+
+**请求：**
+
+```json
+{
+  "refreshToken": "<当前设备的 refreshToken>"
+}
+```
 
 **curl：**
 
 ```bash
 curl -X POST https://tm-api-test.kao9.com/api/auth/logout \
-  -H 'Authorization: Bearer <accessToken>'
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <accessToken>' \
+  -d '{"refreshToken":"<refreshToken>"}'
 ```
 
 ### POST /api/auth/change-password
@@ -320,197 +332,6 @@ curl -X POST https://tm-api-test.kao9.com/api/platform/tenants/tenant-dev-001/ex
 ```bash
 curl 'https://tm-api-test.kao9.com/api/platform/stats?dateFrom=2026-07-18&dateTo=2026-07-19' \
   -H 'Authorization: Bearer <psa_token>'
-```
-
-```json
-{
-    "success": true,
-    "data": {
-        "total": 1125,
-        "byStatus": {
-            "pool": 186,
-            "assigned": 535,
-            "following": 220,
-            "converted": 103,
-            "invalid": 81
-        },
-        "byCategory": {
-            "c000100a-0000-0000-0000-000000000001": 179,
-            "c000100b-0000-0000-0000-000000000001": 182,
-            "c000100c-0000-0000-0000-000000000001": 186,
-            "c000100d-0000-0000-0000-000000000001": 170,
-            "__null__": 397
-        },
-        "byProject": {
-            "p0010a-0000-0000-0000-000000000001": {
-                "count": 220,
-                "converted": 17
-            },
-            "p0010b-0000-0000-0000-000000000001": {
-                "count": 216,
-                "converted": 9
-            },
-            "p0010c-0000-0000-0000-000000000001": {
-                "count": 210,
-                "converted": 13
-            },
-            "uncategorized-t1000001-0000-0000-0000-000000000001": {
-                "count": 470,
-                "converted": 2
-            }
-        },
-        "addedCount": 229,
-        "followupCount": 70,
-        "convertedCount": 7,
-        "answeredCount": 32,
-        "noAnswerCount": 27,
-        "callCount": 66,
-        "agentPerf": [
-            {
-                "userId": "u00000003-0000-0000-0000-000000000003",
-                "name": "销售经理",
-                "ownedLeads": 4,
-                "followedCount": 27,
-                "answeredCount": 14,
-                "noAnswerCount": 1,
-                "convertedCount": 3,
-                "avgDuration": 0,
-                "lastFollowupAt": 1784707340
-            },
-            {
-                "userId": "u00000004-0000-0000-0000-000000000004",
-                "name": "张伟",
-                "ownedLeads": 120,
-                "followedCount": 19,
-                "answeredCount": 15,
-                "noAnswerCount": 2,
-                "convertedCount": 2,
-                "avgDuration": 0,
-                "lastFollowupAt": 1784716324
-            },
-            {
-                "userId": "u00000005-0000-0000-0000-000000000005",
-                "name": "李娜",
-                "ownedLeads": 111,
-                "followedCount": 26,
-                "answeredCount": 16,
-                "noAnswerCount": 0,
-                "convertedCount": 4,
-                "avgDuration": 0,
-                "lastFollowupAt": 1784815515
-            },
-            {
-                "userId": "u00000006-0000-0000-0000-000000000006",
-                "name": "赵磊",
-                "ownedLeads": 3,
-                "followedCount": 1,
-                "answeredCount": 0,
-                "noAnswerCount": 0,
-                "convertedCount": 0,
-                "avgDuration": 0,
-                "lastFollowupAt": 1784712462
-            },
-            {
-                "userId": "u00000007-0000-0000-0000-000000000007",
-                "name": "刘艳",
-                "ownedLeads": 7,
-                "followedCount": 3,
-                "answeredCount": 0,
-                "noAnswerCount": 2,
-                "convertedCount": 0,
-                "avgDuration": 0,
-                "lastFollowupAt": 1784708012
-            }
-        ],
-        "funnel": {
-            "pool": 0,
-            "assigned": 755,
-            "following": 220,
-            "converted": 103
-        },
-        "poolTotal": 0,
-        "staleInPool": 0,
-        "byAnswerType": {
-            "answered": 32,
-            "no_answer": 27,
-            "rejected": 0,
-            "empty_number": 0,
-            "suspended": 0
-        },
-        "dailyTrend": [
-            {
-                "date": "2026-07-16",
-                "added": 4,
-                "followup": 12,
-                "converted": 1,
-                "answered": 3,
-                "total": 86
-            },
-            {
-                "date": "2026-07-17",
-                "added": 3,
-                "followup": 12,
-                "converted": 2,
-                "answered": 6,
-                "total": 94
-            },
-            {
-                "date": "2026-07-18",
-                "added": 7,
-                "followup": 10,
-                "converted": 2,
-                "answered": 7,
-                "total": 91
-            },
-            {
-                "date": "2026-07-19",
-                "added": 2,
-                "followup": 8,
-                "converted": 2,
-                "answered": 3,
-                "total": 100
-            },
-            {
-                "date": "2026-07-20",
-                "added": 5,
-                "followup": 8,
-                "converted": 0,
-                "answered": 5,
-                "total": 119
-            },
-            {
-                "date": "2026-07-21",
-                "added": 3,
-                "followup": 4,
-                "converted": 0,
-                "answered": 6,
-                "total": 137
-            },
-            {
-                "date": "2026-07-22",
-                "added": 205,
-                "followup": 10,
-                "converted": 0,
-                "answered": 0,
-                "total": 249
-            },
-            {
-                "date": "2026-07-23",
-                "added": 0,
-                "followup": 6,
-                "converted": 0,
-                "answered": 2,
-                "total": 249
-            }
-        ],
-        "compareYesterday": {
-            "addedDiff": -205,
-            "followupDiff": -4,
-            "convertedDiff": 0
-        }
-    },
-    "error": null
-}
 ```
 
 ### PATCH /api/platform/tenants/:id
@@ -1812,7 +1633,7 @@ curl -X DELETE https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id> \
 
 ### GET /api/tenant/schedules/stats
 
-团队日程统计（TA/TM）。返回按状态分布 + 逾期数。
+团队日程统计（TA/TM）。返回按状态分布 + 逾期数 + 今日待办数（`todayPending`，全团队）。
 
 **响应：**
 
@@ -1820,10 +1641,13 @@ curl -X DELETE https://tm-api-test.kao9.com/api/tenant/schedules/<schedule_id> \
 {
   "success": true,
   "data": {
-    "byStatus": { "pending": 12, "completed": 45, "cancelled": 3, "overdue": 2 }
+    "byStatus": { "pending": 12, "completed": 45, "cancelled": 3, "overdue": 2 },
+    "todayPending": 7
   }
 }
 ```
+
+> `todayPending` 与 `GET /api/tenant/schedules/home-summary` 的 `todayPending` 同源（严格今日窗口，北京时间），APP 各位置 Badge 统一读此字段即可保持一致。
 
 **curl：**
 
@@ -1834,7 +1658,7 @@ curl https://tm-api-test.kao9.com/api/tenant/schedules/stats \
 
 ### GET /api/tenant/schedules/stats/mine
 
-个人日程统计（TE）。返回状态分布 + `overdue`（已逾期）+ `dueToday`（今日待办，按北京时间）。
+个人日程统计（TE）。返回状态分布 + `overdue`（已逾期）+ `dueToday`（今日待办，按北京时间，**旧字段，建议改用 `todayPending`**）+ 顶层 `todayPending`（严格今日窗口今日待办数）。
 
 **curl：**
 
@@ -1849,9 +1673,68 @@ curl https://tm-api-test.kao9.com/api/tenant/schedules/stats/mine \
 {
   "success": true,
   "data": {
-    "byStatus": { "pending": 5, "completed": 3, "cancelled": 1, "overdue": 2, "dueToday": 7 }
+    "byStatus": { "pending": 9, "completed": 3, "cancelled": 1, "overdue": 2, "dueToday": 7 },
+    "todayPending": 5
   }
 }
+```
+
+> **字段口径与一致性**：`todayPending` 与 `GET /api/tenant/schedules/home-summary` 的 `todayPending` 由同一函数计算（严格今日窗口，北京时间，不含逾期），APP 首页 Badge / 四宫格 / Tab 角标 / 个人中心**四处统一读 `todayPending`** 即可保证数字一致。`dueToday`（`pending` 且 `scheduledAt ≤ 今日 23:59:59`，含历史逾期）保留兼容，新代码请改用 `todayPending`。`byStatus.pending` 为**全量待办**（不限日期），不可用作「今日待办」Badge。
+
+### GET /api/tenant/schedules/home-summary
+
+首页日程区聚合端点（全角色可读，TE 仅统计本人）。**一次性返回首页日程区全部数据**，用于替代原先 3 个冗余请求（`schedules/stats/mine` 取 `dueToday` + `schedules?status=pending&size=5` 取预览 + 时间范围查询取到期数）。
+
+- 时区：**北京时间（UTC+8）**，与 `dueToday` 边界一致（REQ-05）。
+- TE 仅统计 `userId=当前用户`；TM/TA 统计全团队。
+- 无请求参数，「今日」由服务端按北京时间计算。
+- `schedules` 元素结构与 `GET /api/tenant/schedules` 列表项完全一致（含 `lead` 快照），前端可直接 `Schedule.fromJson` 复用。
+
+**字段：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `todayPending` | int | 今日待办数：`status=pending` 且 `scheduledAt` 落在今日 00:00:00~23:59:59（北京时间）内。**严格今日窗口，不含历史逾期**。 |
+| `dueSoonCount` | int | 未来 30 分钟内到期数：`status=pending` 且 `scheduledAt ∈ [now, now+1800]`。 |
+| `pendingTotal` | int | 全量待办总数（跨日期），预留「查看全部」入口。 |
+| `schedules` | array | 待办预览：`status=pending` 按 `scheduledAt` 升序取前 5 条（含逾期置顶）；不足 5 条返回实际条数，无待办返回 `[]`。 |
+
+**响应：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "todayPending": 7,
+    "dueSoonCount": 2,
+    "pendingTotal": 12,
+    "schedules": [
+      {
+        "id": "3cb04ac1-58d2-46e2-88b4-7a891e358912",
+        "tenantId": "t1000001-0000-0000-0000-000000000001",
+        "userId": "u00000004-0000-0000-0000-000000000004",
+        "leadId": "25cfa352-0271-448f-99ff-66f6308c27ad",
+        "callRecordId": null,
+        "title": "确认联系方式",
+        "content": "客户说等发工资再聊",
+        "scheduledAt": 1785526368,
+        "status": "pending",
+        "completedAt": null,
+        "createdAt": 1784720387,
+        "updatedAt": 1784720387,
+        "deletedAt": null,
+        "lead": { "name": "王磊", "phone": "15500010045" }
+      }
+    ]
+  }
+}
+```
+
+**curl：**
+
+```bash
+curl https://tm-api-test.kao9.com/api/tenant/schedules/home-summary \
+  -H 'Authorization: Bearer <token>'
 ```
 
 ---
@@ -1868,8 +1751,10 @@ curl https://tm-api-test.kao9.com/api/tenant/schedules/stats/mine \
 |------|------|------|
 | `scope` | string | `mine` / `all` |
 | `erased` | 0/1 | **新增** PIPL 擦除过滤：`0`=仅未擦除（推荐正常列表）；`1`=仅已擦除（回收站）；**缺省不过滤，已擦除空记录混在列表中** |
+| `q` | string | **关键词跨字段搜索（OR 模糊匹配）**：按 `name` / `company` / `phone` 任一字段包含即命中；`phone` 仅在响应层脱敏，不影响搜索。为空/缺省不生效 |
 
 > 客户擦除**不清除 `deletedAt`**，已擦除记录仍会留在列表（PII 置空为 null）。每条记录返回 `erasedAt` 字段（`null`=未擦除，非 `null`=擦除时间）。正常列表建议传 `?erased=0`。
+> 通用字段过滤（§9.4.G customers）仍可用，如 `?level=vip`、`?ownerId=xxx`、`?createdAt__gte=...` 等；`q` 与字段过滤可叠加。
 
 **curl：**
 
@@ -1879,6 +1764,10 @@ curl 'https://tm-api-test.kao9.com/api/tenant/customers?scope=all' \
 
 # 仅显示未擦除（推荐正常业务列表）
 curl 'https://tm-api-test.kao9.com/api/tenant/customers?scope=all&erased=0' \
+  -H 'Authorization: Bearer <ta_token>'
+
+# 关键词搜索（姓名/公司/手机号 跨字段 OR 模糊匹配）
+curl 'https://tm-api-test.kao9.com/api/tenant/customers?scope=all&q=%E5%90%B4' \
   -H 'Authorization: Bearer <ta_token>'
 ```
 

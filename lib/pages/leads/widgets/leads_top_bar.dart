@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/providers/lead_list_provider.dart';
 
 /// 线索列表顶部导航栏
@@ -78,9 +79,9 @@ class LeadsTopBar extends StatelessWidget {
                     Icons.filter_list,
                     size: 22,
                     color: _isPublic
-                        ? Colors.white30
+                        ? Colors.white38
                         : state.hasActiveFilters
-                            ? Colors.white70
+                            ? Colors.white
                             : Colors.white,
                   ),
                   if (!_isPublic && state.hasActiveFilters)
@@ -121,9 +122,7 @@ class LeadsTopBar extends StatelessWidget {
               child: Icon(
                 Icons.sort_rounded,
                 size: 22,
-                color: state.sortBy != '-updatedAt'
-                    ? Colors.white70
-                    : Colors.white,
+                color: Colors.white,
               ),
             ),
           ),
@@ -135,24 +134,23 @@ class LeadsTopBar extends StatelessWidget {
   Widget _buildTabItem(String label, int tabIndex) {
     final selected = activeTab == tabIndex;
     return Expanded(
-      child: GestureDetector(
-        onTap: () => onTabChanged(tabIndex),
-        child: Container(
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: selected ? Colors.white : Colors.transparent,
-                width: 2,
-              ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+        child: GestureDetector(
+          onTap: () => onTabChanged(tabIndex),
+          child: Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: selected ? Colors.white : Colors.white24,
+              borderRadius: BorderRadius.circular(6),
             ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              color: selected ? Colors.white : Colors.white70,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: selected ? BrandColors.primary : Colors.white,
+              ),
             ),
           ),
         ),
