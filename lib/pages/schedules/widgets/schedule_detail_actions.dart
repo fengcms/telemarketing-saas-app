@@ -6,7 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:telemarketing_app/widgets/app_action_bar.dart';
 
 /// 底部操作栏（pending：取消/拨号/完成；其余：重新打开）
 Widget actionBar({
@@ -18,26 +18,38 @@ Widget actionBar({
   required VoidCallback? onComplete,
   required VoidCallback? onReopen,
 }) {
-  return _actionBarInner(
-    isPending: isPending,
-    hasLead: hasLead,
-    actionLoading: actionLoading,
-    onCancel: onCancel,
-    onDial: onDial,
-    onComplete: onComplete,
-    onReopen: onReopen,
-  );
-}
-
-Widget _actionBarInner({
-  required bool isPending,
-  required bool hasLead,
-  required bool actionLoading,
-  required VoidCallback? onCancel,
-  required VoidCallback? onDial,
-  required VoidCallback? onComplete,
-  required VoidCallback? onReopen,
-}) {
+  final actions = <ActionItem>[];
+  if (isPending) {
+    actions.addAll([
+      ActionItem(
+        text: '取消日程',
+        type: ActionType.light,
+        onTap: actionLoading ? null : onCancel,
+      ),
+      if (hasLead)
+        ActionItem(
+          text: '拨号',
+          type: ActionType.light,
+          icon: Icons.call,
+          onTap: actionLoading ? null : onDial,
+        ),
+      ActionItem(
+        text: '标记完成',
+        type: ActionType.primary,
+        loading: actionLoading,
+        onTap: actionLoading ? null : onComplete,
+      ),
+    ]);
+  } else {
+    actions.add(
+      ActionItem(
+        text: '🔄 重新打开',
+        type: ActionType.primary,
+        loading: actionLoading,
+        onTap: actionLoading ? null : onReopen,
+      ),
+    );
+  }
   return Container(
     height: 64,
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -52,97 +64,7 @@ Widget _actionBarInner({
         ),
       ],
     ),
-    child: isPending
-        ? _pendingActions(
-            hasLead: hasLead,
-            actionLoading: actionLoading,
-            onCancel: onCancel,
-            onDial: onDial,
-            onComplete: onComplete,
-          )
-        : _doneActions(actionLoading: actionLoading, onReopen: onReopen),
-  );
-}
-
-/// pending（含逾期）：[取消日程] [📞] [✅ 标记完成]
-/// 三者等宽、形状统一（round）；取消/拨号为浅色、完成为主色（保留主次层级）
-Widget _pendingActions({
-  required bool hasLead,
-  required bool actionLoading,
-  required VoidCallback? onCancel,
-  required VoidCallback? onDial,
-  required VoidCallback? onComplete,
-}) {
-  return Row(
-    children: [
-      Expanded(
-        child: TDButton(
-          text: '取消日程',
-          theme: TDButtonTheme.light,
-          shape: TDButtonShape.round,
-          onTap: actionLoading ? null : onCancel,
-        ),
-      ),
-      if (hasLead) const SizedBox(width: 12),
-      if (hasLead)
-        Expanded(
-          child: TDButton(
-            text: '拨号',
-            theme: TDButtonTheme.light,
-            shape: TDButtonShape.round,
-            iconWidget:
-                const Icon(Icons.call, size: 18, color: Color(0xFF0052D9)),
-            onTap: actionLoading ? null : onDial,
-          ),
-        ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: TDButton(
-          text: actionLoading ? '' : '标记完成',
-          theme: TDButtonTheme.primary,
-          shape: TDButtonShape.round,
-          iconWidget: actionLoading
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : null,
-          onTap: actionLoading ? null : onComplete,
-        ),
-      ),
-    ],
-  );
-}
-
-/// completed / cancelled：[🔄 重新打开]
-Widget _doneActions({
-  required bool actionLoading,
-  required VoidCallback? onReopen,
-}) {
-  return Row(
-    children: [
-      const Spacer(),
-      TDButton(
-        text: actionLoading ? '' : '🔄 重新打开',
-        theme: TDButtonTheme.primary,
-        shape: TDButtonShape.round,
-        iconWidget: actionLoading
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : null,
-        onTap: actionLoading ? null : onReopen,
-      ),
-    ],
+    child: AppActionBar(actions: actions),
   );
 }
 

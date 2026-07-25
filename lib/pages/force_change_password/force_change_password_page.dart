@@ -9,10 +9,12 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:telemarketing_app/widgets/app_toast.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'password_rules_hint.dart';
 import 'password_nav_bar.dart';
+import 'package:telemarketing_app/widgets/app_dialog.dart';
+import 'package:telemarketing_app/widgets/app_action_bar.dart';
 
 /// 强制改密页
 ///
@@ -175,8 +177,7 @@ class _ForceChangePasswordPageState
 
     if (success) {
       // 成功：显示 Toast 后跳转
-      TDToast.showText('密码修改成功，请重新登录',
-          context: context);
+      AppToast.show(context, '密码修改成功，请重新登录');
       await Future.delayed(const Duration(milliseconds: 1500));
       if (mounted) {
         // AuthNotifier 已将状态设为 unauthenticated，AuthGate 自动跳转登录页
@@ -191,28 +192,13 @@ class _ForceChangePasswordPageState
 
   /// 返回按钮确认弹窗
   Future<void> _onBack() async {
-    final result = await showDialog<bool>(
+    final result = await AppDialog.confirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
-        title: const Text('退出确认',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        content: const Text('修改密码前无法使用系统功能，确定要退出吗？',
-            style: TextStyle(fontSize: 15, color: Color(0xFF4E5969))),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消',
-                style: TextStyle(color: Color(0xFF4E5969))),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('确定退出',
-                style: TextStyle(color: Color(0xFF0052D9))),
-          ),
-        ],
-      ),
+      title: '退出确认',
+      content: '修改密码前无法使用系统功能，确定要退出吗？',
+      cancelText: '取消',
+      confirmText: '确定退出',
+      onConfirm: () {},
     );
     if (result == true && mounted) {
       ref.read(authProvider.notifier).cancelForceChangePassword();
@@ -292,7 +278,7 @@ class _ForceChangePasswordPageState
           child: Row(
             children: [
               const SizedBox(width: 12),
-              const Icon(TDIcons.key, size: 20, color: Color(0xFFA6A6A6)),
+              const Icon(Icons.vpn_key, size: 20, color: Color(0xFFA6A6A6)),
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
@@ -336,7 +322,7 @@ class _ForceChangePasswordPageState
             padding: const EdgeInsets.only(top: 4),
             child: Row(
               children: [
-                const Icon(TDIcons.info_circle,
+                const Icon(Icons.info_outline,
                     size: 14, color: Color(0xFFD54941)),
                 const SizedBox(width: 4),
                 Text(
@@ -419,7 +405,7 @@ class _ForceChangePasswordPageState
           child: Row(
             children: [
               const SizedBox(width: 12),
-              const Icon(TDIcons.key, size: 20, color: Color(0xFFA6A6A6)),
+              const Icon(Icons.vpn_key, size: 20, color: Color(0xFFA6A6A6)),
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
@@ -463,7 +449,7 @@ class _ForceChangePasswordPageState
             padding: const EdgeInsets.only(top: 4),
             child: Row(
               children: [
-                const Icon(TDIcons.info_circle,
+                const Icon(Icons.info_outline,
                     size: 14, color: Color(0xFFD54941)),
                 const SizedBox(width: 4),
                 Text(
@@ -480,27 +466,10 @@ class _ForceChangePasswordPageState
 
 
   Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: TDButton(
-        text: _isLoading ? '' : '确 认',
-        theme: TDButtonTheme.primary,
-        shape: TDButtonShape.round,
-        disabled: _isLoading,
-        onTap: _onSubmit,
-        iconWidget: _isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : null,
-      ),
+    return AppActionBar.submit(
+      text: '确 认',
+      loading: _isLoading,
+      onPressed: _isLoading ? null : _onSubmit,
     );
   }
 
@@ -512,7 +481,7 @@ class _ForceChangePasswordPageState
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(TDIcons.error_circle,
+          const Icon(Icons.error_outline,
               size: 16, color: Color(0xFFD54941)),
           const SizedBox(width: 6),
           Flexible(

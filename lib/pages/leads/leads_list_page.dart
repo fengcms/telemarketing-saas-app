@@ -8,11 +8,12 @@ import 'package:telemarketing_app/providers/lead_list_provider.dart';
 import 'package:telemarketing_app/models/lead.dart';
 import 'package:telemarketing_app/models/lead_list_context.dart';
 import 'package:telemarketing_app/models/option_item.dart';
+import 'package:telemarketing_app/constants/lead_constants.dart';
+import 'package:telemarketing_app/widgets/app_search_bar.dart';
 import 'package:telemarketing_app/widgets/lead_card.dart';
-import 'package:telemarketing_app/widgets/tag_chip.dart';
 import 'lead_detail_page.dart';
+import 'widgets/leads_filter_sheet.dart';
 import 'widgets/leads_skeletons.dart';
-import 'widgets/leads_search_bar.dart';
 import 'widgets/leads_top_bar.dart';
 
 /// 线索列表页
@@ -26,13 +27,6 @@ class LeadsListPage extends ConsumerStatefulWidget {
 class _LeadsListPageState extends ConsumerState<LeadsListPage> {
   final ScrollController _scrollCtrl = ScrollController();
   final TextEditingController _searchCtrl = TextEditingController();
-
-  // 筛选面板临时状态
-  String? _tempStatus;
-  String? _tempCategoryId;
-  String? _tempProjectId;
-  int? _tempDateFrom;
-  int? _tempDateTo;
 
   @override
   void initState() {
@@ -60,6 +54,98 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
     ref.read(leadListProvider.notifier).search(keyword);
   }
 
+  /// 筛选标签栏
+  Widget _buildFilterTags(LeadListState state) {
+    return Container(
+      width: double.infinity,
+      height: 48,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x1A000000),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            if (state.statusFilter != null && state.statusFilter!.isNotEmpty)
+              _buildTag(
+                '状态',
+                LeadConstants.displayName(state.statusFilter),
+                () => ref.read(leadListProvider.notifier).clearFilter('status'),
+              ),
+            if (state.categoryId != null && state.categoryId!.isNotEmpty)
+              _buildTag(
+                '分类',
+                _findOptionName(state.categories, state.categoryId),
+                () => ref.read(leadListProvider.notifier).clearFilter('category'),
+              ),
+            if (state.projectId != null && state.projectId!.isNotEmpty)
+              _buildTag(
+                '项目',
+                _findOptionName(state.projects, state.projectId),
+                () => ref.read(leadListProvider.notifier).clearFilter('project'),
+              ),
+            if (state.dateFrom != null || state.dateTo != null)
+              _buildTag(
+                '时间',
+                '已选',
+                () => ref.read(leadListProvider.notifier).clearFilter('date'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTag(String label, String value, VoidCallback onRemove) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Container(
+        height: 32,
+        padding: const EdgeInsets.only(left: 12, right: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2F3FF),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 120),
+              child: Text(
+                '$label: $value',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF0052D9)),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 4),
+            GestureDetector(
+              onTap: onRemove,
+              child: const Icon(
+                Icons.close,
+                size: 16,
+                color: Color(0xFF0052D9),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _findOptionName(List<OptionItem> options, String? id) {
+    if (id == null) return '';
+    final found = options.where((o) => o.id == id);
+    return found.isNotEmpty ? found.first.name : id;
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(leadListProvider);
@@ -77,12 +163,14 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
               onShowSort: () => _showSortSheet(state),
               onShowFilter: _showFilterSheet,
             ),
-            LeadsSearchBar(
-              searchCtrl: _searchCtrl,
+            AppSearchBar(
+              controller: _searchCtrl,
               onSearch: _doSearch,
-              onShowFilter: _showFilterSheet,
-              onShowSort: () => _showSortSheet(state),
+              hintText: '搜索线索姓名/电话/公司',
             ),
+            // ── 筛选标签栏 ──
+            if (state.hasActiveFilters)
+              _buildFilterTags(state),
             Expanded(child: _buildBody(state, isManager)),
           ],
         ),
@@ -101,56 +189,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              '排序方式',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 16),
-            _sortOption(ctx, '最近更新', '-updatedAt', state.sortBy),
-            const Divider(height: 1),
-            _sortOption(ctx, '待跟进优先', 'nextFollowupAt', state.sortBy),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _sortOption(
-    BuildContext ctx,
-    String label,
-    String value,
-    String current,
-  ) {
-    final selected = value == current;
-    return ListTile(
-      leading: Icon(
-        selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-        color: selected ? const Color(0xFF0052D9) : const Color(0xFFA6A6A6),
-      ),
-      title: Text(
-        label,
-        style: TextStyle(
-          color: selected ? const Color(0xFF0052D9) : const Color(0xFF181818),
-        ),
-      ),
-      onTap: () {
-        Navigator.of(ctx).pop();
-        if (!selected) {
-          final notifier = ref.read(leadListProvider.notifier);
-          // 直接切换排序
-          if (value == '-updatedAt' && current != '-updatedAt') {
-            notifier.toggleSort();
-          } else if (value == 'nextFollowupAt' && current != 'nextFollowupAt') {
-            notifier.toggleSort();
-          }
-        }
-      },
+      builder: (_) => LeadsSortSheet(state: state),
     );
   }
 
@@ -158,181 +197,14 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
 
   void _showFilterSheet() {
     final state = ref.read(leadListProvider);
-    _tempStatus = state.statusFilter;
-    _tempCategoryId = state.categoryId;
-    _tempProjectId = state.projectId;
-    _tempDateFrom = state.dateFrom;
-    _tempDateTo = state.dateTo;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildFilterSheetTitle(ctx, setSheetState),
-              const SizedBox(height: 16),
-              _buildStatusSection(setSheetState),
-              if (state.categories.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                _buildCategorySection(state, setSheetState),
-              ],
-              if (state.projects.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                _buildProjectSection(state, setSheetState),
-              ],
-            ],
-          ),
-        ),
-      ),
+      builder: (_) => LeadsFilterSheet(state: state),
     );
-  }
-
-  Widget _buildFilterSheetTitle(BuildContext ctx, Function setSheetState) {
-    return Row(
-      children: [
-        const Expanded(
-          child: Text(
-            '筛选',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        TextButton(
-          onPressed: () {
-            setSheetState(() {
-              _tempStatus = null;
-              _tempCategoryId = null;
-              _tempProjectId = null;
-              _tempDateFrom = null;
-              _tempDateTo = null;
-            });
-          },
-          child: const Text(
-            '重置',
-            style: TextStyle(color: Color(0xFFA6A6A6)),
-          ),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(ctx).pop();
-            ref
-                .read(leadListProvider.notifier)
-                .applyFilters(
-                  statusFilter: _tempStatus,
-                  categoryId: _tempCategoryId,
-                  projectId: _tempProjectId,
-                  dateFrom: _tempDateFrom,
-                  dateTo: _tempDateTo,
-                );
-          },
-          child: const Text(
-            '确定',
-            style: TextStyle(color: Color(0xFF0052D9)),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatusSection(Function setSheetState) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '状态',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        TagChipRow(chips: _buildStatusChips(setSheetState)),
-      ],
-    );
-  }
-
-  Widget _buildCategorySection(LeadListState state, Function setSheetState) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '分类',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        TagChipRow(chips: _buildOptionChips(
-            state.categories,
-            _tempCategoryId,
-            setSheetState,
-            onSelected: (id) {
-              setSheetState(
-                () => _tempCategoryId = _tempCategoryId == id ? null : id,
-              );
-            },
-          )),
-      ],
-    );
-  }
-
-  Widget _buildProjectSection(LeadListState state, Function setSheetState) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '项目',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        TagChipRow(chips: _buildOptionChips(
-            state.projects,
-            _tempProjectId,
-            setSheetState,
-            onSelected: (id) {
-              setSheetState(
-                () => _tempProjectId = _tempProjectId == id ? null : id,
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  List<TagChipData> _buildStatusChips(Function setSheetState) {
-    final statuses = [
-      ('pending', '待分配'),
-      ('assigned', '待跟进'),
-      ('following', '跟进中'),
-      ('converted', '已转化'),
-      ('invalid', '无效'),
-    ];
-    return statuses.map((s) {
-      final selected = _tempStatus == s.$1;
-      return TagChipData(label: s.$2, selected: selected, onTap: () {
-        setSheetState(() {
-          _tempStatus = selected ? null : s.$1;
-        });
-      });
-    }).toList();
-  }
-
-  List<TagChipData> _buildOptionChips(
-    List<OptionItem> options,
-    String? selectedId,
-    Function setSheetState, {
-    required void Function(String id) onSelected,
-  }) {
-    return options.map((o) {
-      final selected = o.id == selectedId;
-      return TagChipData(label: o.name, selected: selected, onTap: () => onSelected(o.id));
-    }).toList();
   }
 
 

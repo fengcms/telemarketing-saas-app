@@ -9,19 +9,21 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/models/lead_detail.dart';
 import 'package:telemarketing_app/models/lead_list_context.dart';
 import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 import 'package:telemarketing_app/pages/schedules/schedule_search_page.dart';
 import 'package:telemarketing_app/providers/lead_detail_provider.dart';
+import 'package:telemarketing_app/providers/schedule_list_provider.dart';
+import 'package:telemarketing_app/widgets/app_action_bar.dart';
 import 'widgets/lead_header_section.dart';
-import 'widgets/lead_action_bar.dart';
 import 'widgets/follow_up_panel.dart';
 import 'widgets/follow_up_timeline.dart';
 import 'widgets/call_records_section.dart';
 import 'widgets/schedule_section.dart';
 import 'widgets/lead_bottom_nav.dart';
+import 'widgets/edit_lead_dialog.dart';
+import 'package:telemarketing_app/pages/schedules/widgets/schedule_form_sheet.dart';
 
 /// 线索详情页
 ///
@@ -151,23 +153,14 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
 
   /// 统一的导航栏
   PreferredSizeWidget _buildNavBar() {
-    return TDNavBar(
-      title: '线索详情',
+    return AppBar(
+      title: const Text('线索详情'),
       backgroundColor: Colors.white,
-      useDefaultBack: false,
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x0A000000),
-          blurRadius: 2,
-          offset: Offset(0, 1),
-        ),
-      ],
-      leftBarItems: [
-        TDNavBarItem(
-          icon: TDIcons.chevron_left,
-          action: () => Navigator.of(context).pop(),
-        ),
-      ],
+      surfaceTintColor: Colors.white,
+      leading: IconButton(
+        icon: const Icon(Icons.chevron_left),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
     );
   }
 
@@ -178,7 +171,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(
-            TDIcons.info_circle_filled,
+            Icons.info,
             size: 64,
             color: Color(0xFFA6A6A6),
           ),
@@ -191,12 +184,9 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
             ),
           ),
           const SizedBox(height: 24),
-          TDButton(
-            text: '返回列表',
-            theme: TDButtonTheme.primary,
-            size: TDButtonSize.medium,
-            shape: TDButtonShape.round,
-            onTap: () => Navigator.of(context).pop(),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('返回列表'),
           ),
         ],
       ),
@@ -212,9 +202,36 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
           top: BorderSide(color: Color(0xFFEEEEEE), width: 0.5),
         ),
       ),
-      child: LeadActionBar(
-        detail: detail,
-        leadId: detail.id,
+      child: AppActionBar(
+        actions: [
+          ActionItem(
+            text: '跟进', type: ActionType.text, icon: Icons.reply,
+            onTap: detail.isConverted
+                ? null
+                : () => showFollowUpPanel(context, leadId: detail.id),
+          ),
+          ActionItem(
+            text: '日程', type: ActionType.text, icon: Icons.calendar_today,
+            onTap: detail.isConverted
+                ? null
+                : () async {
+                    final changed = await showScheduleFormSheet(
+                      context,
+                      leadId: detail.id,
+                      leadName: detail.name,
+                      leadPhone: detail.phone,
+                    );
+                    if (changed == true) {
+                      try { ref.read(scheduleListProvider.notifier).refresh(); } catch (_) {}
+                      try { ref.read(leadDetailProvider.notifier).refreshBundle(); } catch (_) {}
+                    }
+                  },
+          ),
+          ActionItem(
+            text: '编辑', type: ActionType.text, icon: Icons.edit,
+            onTap: () => showEditLeadDialog(context, leadId: detail.id, detail: detail),
+          ),
+        ],
       ),
     );
   }

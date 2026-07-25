@@ -9,8 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/call_record.dart';
 import 'package:telemarketing_app/providers/call_service_provider.dart';
+import 'package:telemarketing_app/widgets/app_search_bar.dart';
 import 'package:telemarketing_app/pages/call_records/widgets/call_filter_bar.dart';
-import 'package:telemarketing_app/pages/call_records/widgets/call_search_bar.dart';
 import 'package:telemarketing_app/pages/call_records/widgets/call_record_row.dart';
 import 'package:telemarketing_app/pages/call_records/widgets/call_list_skeleton.dart';
 import 'package:telemarketing_app/pages/leads/lead_detail_page.dart';
@@ -174,9 +174,11 @@ class _CallRecordsPageState extends ConsumerState<CallRecordsPage> {
       body: Column(
         children: [
           // 手机号搜索栏
-          CallSearchBar(
-            searchCtrl: _searchCtrl,
+          AppSearchBar(
+            controller: _searchCtrl,
             onSearch: _doSearch,
+            hintText: '搜索手机号',
+            keyboardType: TextInputType.phone,
           ),
           // 接听类型筛选
           CallFilterBar(

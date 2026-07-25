@@ -3,7 +3,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'home/home_page.dart';
 import 'leads/leads_list_page.dart';
 import 'profile/profile_page.dart';
@@ -64,13 +63,13 @@ class MainShell extends ConsumerWidget {
         elevation: 0,
         items: [
           const BottomNavigationBarItem(
-            icon: Icon(TDIcons.home, size: 24),
-            activeIcon: Icon(TDIcons.home, size: 24),
+            icon: Icon(Icons.home, size: 24),
+            activeIcon: Icon(Icons.home, size: 24),
             label: '首页',
           ),
           const BottomNavigationBarItem(
-            icon: Icon(TDIcons.view_list, size: 24),
-            activeIcon: Icon(TDIcons.view_list, size: 24),
+            icon: Icon(Icons.view_list, size: 24),
+            activeIcon: Icon(Icons.view_list, size: 24),
             label: '线索',
           ),
           BottomNavigationBarItem(
@@ -79,8 +78,8 @@ class MainShell extends ConsumerWidget {
             label: '日程',
           ),
           const BottomNavigationBarItem(
-            icon: Icon(TDIcons.user, size: 24),
-            activeIcon: Icon(TDIcons.user, size: 24),
+            icon: Icon(Icons.person_outline, size: 24),
+            activeIcon: Icon(Icons.person_outline, size: 24),
             label: '我的',
           ),
         ],
@@ -95,7 +94,7 @@ class MainShell extends ConsumerWidget {
       isLabelVisible: dueToday > 0,
       label: Text('$dueToday'),
       child: Icon(
-        TDIcons.calendar,
+        Icons.event,
         size: 24,
         color: active ? const Color(0xFF0052D9) : const Color(0xFFA6A6A6),
       ),

@@ -11,8 +11,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/customer.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/customer_service_provider.dart';
+import 'package:telemarketing_app/widgets/app_search_bar.dart';
 import 'package:telemarketing_app/pages/customers/widgets/customer_filter_bar.dart';
-import 'package:telemarketing_app/pages/customers/widgets/customer_search_bar.dart';
 import 'package:telemarketing_app/pages/customers/widgets/customer_card.dart';
 import 'package:telemarketing_app/pages/customers/widgets/customer_list_skeleton.dart';
 import 'package:telemarketing_app/pages/leads/lead_detail_page.dart';
@@ -215,9 +215,10 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
       body: Column(
         children: [
           // 搜索栏
-          CustomerSearchBar(
-            searchCtrl: _searchCtrl,
+          AppSearchBar(
+            controller: _searchCtrl,
             onSearch: _doSearch,
+            hintText: '搜索客户姓名/电话/公司',
           ),
           // 搜索栏与筛选栏间分隔线
           const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),

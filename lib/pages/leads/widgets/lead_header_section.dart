@@ -6,7 +6,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/constants/lead_constants.dart';
 import 'package:telemarketing_app/models/lead_detail.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
@@ -124,7 +123,7 @@ class LeadHeaderSection extends ConsumerWidget {
     return Row(
       children: [
         Icon(
-          TDIcons.call,
+          Icons.call,
           size: 20,
           color: hasPhone
               ? const Color(0xFF0052D9)
@@ -160,7 +159,7 @@ class LeadHeaderSection extends ConsumerWidget {
               },
               backgroundColor: const Color(0xFF0052D9),
               child: const Icon(
-                TDIcons.call,
+                Icons.call,
                 color: Colors.white,
               ),
             ),

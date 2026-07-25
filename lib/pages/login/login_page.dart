@@ -10,7 +10,7 @@ library;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:telemarketing_app/widgets/app_toast.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/core/dev_tools.dart';
@@ -158,7 +158,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (_savePassword && password.isNotEmpty) {
       await storage.savePassword(password);
       if (mounted) {
-        TDToast.showText('密码已加密保存', context: context);
+        AppToast.show(context, '密码已加密保存');
       }
     } else {
       await storage.clearPassword();
@@ -226,11 +226,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     // 简单的错误提示显示（使用 SnackBar）
     if (emailErr != null) {
-      TDToast.showText(emailErr, context: context);
+      AppToast.show(context, emailErr);
       return;
     }
     if (pwdErr != null) {
-      TDToast.showText(pwdErr, context: context);
+      AppToast.show(context, pwdErr);
       return;
     }
 
@@ -321,7 +321,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         color: const Color(0xFF0052D9).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Icon(TDIcons.call, size: 36, color: Color(0xFF0052D9)),
+      child: const Icon(Icons.call, size: 36, color: Color(0xFF0052D9)),
     );
   }
 
@@ -343,7 +343,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           child: Row(
             children: [
               const SizedBox(width: 12),
-              const Icon(TDIcons.mail, size: 20, color: Color(0xFFA6A6A6)),
+              const Icon(Icons.mail_outline, size: 20, color: Color(0xFFA6A6A6)),
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
@@ -399,7 +399,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             AnimatedRotation(
               turns: _isDomainDropdownOpen ? 0.5 : 0,
               duration: const Duration(milliseconds: 200),
-              child: const Icon(TDIcons.chevron_down, size: 16, color: Color(0xFFA6A6A6)),
+              child: const Icon(Icons.keyboard_arrow_down, size: 16, color: Color(0xFFA6A6A6)),
             ),
           ],
         ),
@@ -477,7 +477,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       child: Row(
         children: [
           const SizedBox(width: 12),
-          const Icon(TDIcons.lock_on,
+          const Icon(Icons.lock,
               size: 20, color: Color(0xFFA6A6A6)),
           const SizedBox(width: 8),
           Expanded(
@@ -568,23 +568,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return SizedBox(
       width: double.infinity,
       height: 52,
-      child: TDButton(
-        text: isLoading ? '' : '登 录',
-        theme: TDButtonTheme.primary,
-        shape: TDButtonShape.round,
-        disabled: isLoading,
-        onTap: _onLogin,
-        iconWidget: isLoading
+      child: FilledButton(
+        onPressed: isLoading ? null : _onLogin,
+        child: isLoading
             ? const SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(Colors.white),
+                  color: Colors.white,
                 ),
               )
-            : null,
+            : const Text('登 录'),
       ),
     );
   }
@@ -595,7 +590,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(TDIcons.error_circle,
+        const Icon(Icons.error_outline,
             size: 16, color: Color(0xFFD54941)),
         const SizedBox(width: 6),
         Flexible(

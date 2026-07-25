@@ -20,6 +20,8 @@ import 'package:telemarketing_app/models/home_stats.dart';
 import 'package:telemarketing_app/pages/coming_soon_page.dart';
 import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 import 'package:telemarketing_app/pages/customers/customer_list_page.dart';
+import 'package:telemarketing_app/pages/theme_preview_page.dart';
+import 'package:telemarketing_app/widgets/app_dialog.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_menu_row.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_stats_card.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_user_card.dart';
@@ -27,6 +29,7 @@ import 'package:telemarketing_app/pages/schedules/widgets/schedule_skeleton.dart
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/home_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
+import 'package:telemarketing_app/core/dev_tools.dart';
 
 // ── 颜色常量（对齐 TDesign 设计规范）──
 const Color _brandColor = Color(0xFF0052D9);
@@ -212,6 +215,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                     onTap: () =>
                         _push(const ComingSoonPage(featureName: '设置')),
                   ),
+                  // 开发版：主题预览入口
+                  if (enableDevTools)
+                    ProfileMenuRow(
+                      icon: Icons.palette,
+                      title: '主题预览',
+                      onTap: () => _push(const ThemePreviewPage()),
+                    ),
                   ProfileMenuRow(
                     icon: Icons.logout,
                     title: '退出登录',
@@ -281,25 +291,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
   /// 退出登录确认弹窗，确认后清空登录态跳登录页
   void _onLogout() {
-    showDialog(
+    AppDialog.confirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('确认退出'),
-        content: const Text('确定要退出登录吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ref.read(authProvider.notifier).logout();
-            },
-            child: const Text('退出', style: TextStyle(color: _errorColor)),
-          ),
-        ],
-      ),
+      title: '确认退出',
+      content: '确定要退出登录吗？',
+      confirmText: '退出',
+      confirmColor: _errorColor,
+      onConfirm: () => ref.read(authProvider.notifier).logout(),
     );
   }
 }

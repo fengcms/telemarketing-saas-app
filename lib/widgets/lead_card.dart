@@ -6,7 +6,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/constants/lead_constants.dart';
 import 'package:telemarketing_app/models/lead.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
@@ -95,7 +94,7 @@ class LeadCard extends ConsumerWidget {
   Widget _buildPhoneRow() {
     return Row(
       children: [
-        const Icon(TDIcons.call, size: 14, color: Color(0xFFA6A6A6)),
+        const Icon(Icons.call, size: 14, color: Color(0xFFA6A6A6)),
         const SizedBox(width: 6),
         Text(
           lead.phone,
@@ -158,7 +157,7 @@ class LeadCard extends ConsumerWidget {
   Widget _buildFollowUpRow() {
     return Row(
       children: [
-        const Icon(TDIcons.time, size: 14, color: Color(0xFFA6A6A6)),
+        const Icon(Icons.access_time, size: 14, color: Color(0xFFA6A6A6)),
         const SizedBox(width: 4),
         Text(
           '最后跟进: ${_formatTime(lead.lastFollowupAt)}',
@@ -179,7 +178,7 @@ class LeadCard extends ConsumerWidget {
   Widget _buildOwnerRow() {
     return Row(
       children: [
-        const Icon(TDIcons.user, size: 14, color: Color(0xFFA6A6A6)),
+        const Icon(Icons.person_outline, size: 14, color: Color(0xFFA6A6A6)),
         const SizedBox(width: 4),
         Text(
           '归属: ${lead.owner?.name ?? "--"}',

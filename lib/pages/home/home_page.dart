@@ -13,8 +13,8 @@ library;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:telemarketing_app/widgets/app_dialog.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/home_provider.dart';
 import 'package:telemarketing_app/pages/coming_soon_page.dart';
@@ -95,25 +95,13 @@ class _HomePageState extends ConsumerState<HomePage>
 
   /// 退出登录
   void _onLogout(BuildContext context) {
-    showDialog(
+    AppDialog.confirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('确认退出'),
-        content: const Text('确定要退出登录吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ref.read(authProvider.notifier).logout();
-            },
-            child: const Text('退出', style: TextStyle(color: Color(0xFFD54941))),
-          ),
-        ],
-      ),
+      title: '确认退出',
+      content: '确定要退出登录吗？',
+      confirmText: '退出',
+      confirmColor: const Color(0xFFD54941),
+      onConfirm: () => ref.read(authProvider.notifier).logout(),
     );
   }
 
@@ -215,7 +203,7 @@ class _HomePageState extends ConsumerState<HomePage>
 
   Widget _buildOfflineBanner() {
     return _buildNoticeBar(
-      icon: TDIcons.error_circle,
+      icon: Icons.error_outline,
       iconColor: const Color(0xFFE37318),
       bgColor: const Color(0xFFFFF3E0),
       textColor: const Color(0xFFE37318),
@@ -275,7 +263,7 @@ class _HomePageState extends ConsumerState<HomePage>
                   height: 32,
                   alignment: Alignment.center,
                   child:
-                      const Icon(TDIcons.close, size: 16, color: Color(0xFF0052D9)),
+                      const Icon(Icons.close, size: 16, color: Color(0xFF0052D9)),
                 ),
               ),
           ],

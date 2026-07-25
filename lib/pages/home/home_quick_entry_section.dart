@@ -3,7 +3,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/providers/home_provider.dart';
 import 'package:telemarketing_app/pages/coming_soon_page.dart';
 
@@ -52,7 +51,7 @@ class HomeQuickEntrySection extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: _buildQuickEntryCard(
-                      icon: TDIcons.task,
+                      icon: Icons.assignment,
                       title: '我的线索',
                       subtitle: state.stats != null
                           ? '${state.stats!.myLeadsTotal} 条'
@@ -63,7 +62,7 @@ class HomeQuickEntrySection extends ConsumerWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildQuickEntryCard(
-                      icon: TDIcons.call,
+                      icon: Icons.call,
                       title: '通话记录',
                       subtitle: null,
                       onTap: () {

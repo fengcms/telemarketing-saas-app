@@ -11,14 +11,6 @@
 part of 'schedule_form_sheet.dart';
 
 extension _ScheduleFormFields on _ScheduleFormContentState {
-  /// 区块标题（灰色小字）
-  Widget _sectionTitle(String text) {
-    return Text(
-      text,
-      style: const TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-    );
-  }
-
   // ── 关联线索（只读） ──
 
   Widget _buildLeadSection() {
@@ -28,22 +20,15 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
     final phone = _isEdit
         ? widget.initial?.lead?.phone ?? ''
         : widget.leadPhone ?? '';
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle('关联线索'),
-          const SizedBox(height: 8),
-          Text(
-            name.isEmpty && phone.isEmpty ? '—' : '$name - $phone',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF181818),
-            ),
-          ),
-        ],
+    return AppFormSection(
+      label: '关联线索',
+      child: Text(
+        name.isEmpty && phone.isEmpty ? '—' : '$name - $phone',
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF181818),
+        ),
       ),
     );
   }
@@ -55,21 +40,12 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
         '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+    return AppFormSection(
+      label: '日期',
+      required: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              _sectionTitle('日期'),
-              const Text(
-                ' *',
-                style: TextStyle(fontSize: 12, color: Color(0xFFD54941)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
           // 日期输入框（白底 + 灰边框 + 圆角）
           GestureDetector(
             onTap: _pickDate,
@@ -175,8 +151,8 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
   Widget _buildTimeSection() {
     final timeStr =
         '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+    return AppFormSection(
+      label: '时间',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -283,33 +259,12 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
   // ── 备注 ──
 
   Widget _buildNoteSection() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle('备注'),
-          const SizedBox(height: 8),
-          TDTextarea(
-            controller: _contentCtrl,
-            hintText: '补充说明...',
-            minLines: 2,
-            maxLength: 200,
-            showBottomDivider: false,
-            indicator: true,
-            margin: EdgeInsets.zero,
-            padding: EdgeInsets.zero,
-            inputDecoration: const InputDecoration(
-              contentPadding: EdgeInsets.fromLTRB(12, 10, 12, 10),
-              border: InputBorder.none,
-            ),
-            textareaDecoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFFE7E7E7), width: 1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            onChanged: (_) => setState(() => _dirty = true),
-          ),
-        ],
+    return AppFormSection(
+      label: '备注',
+      child: AppTextarea(
+        controller: _contentCtrl,
+        hintText: '补充说明...',
+        onChanged: (_) => setState(() => _dirty = true),
       ),
     );
   }
@@ -317,32 +272,25 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
   // ── 归属人（仅 TM/TA，编辑模式隐藏） ──
 
   Widget _buildOwnerSection() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle('归属人'),
-          const SizedBox(height: 8),
-          DropdownButton<OptionItem>(
-            isExpanded: true,
-            value: _owner,
-            hint: const Text('选择归属人'),
-            items: _owners
-                .map((u) => DropdownMenuItem(
-                      value: u,
-                      child: Text(u.name),
-                    ))
-                .toList(),
-            onChanged: (v) {
-              if (v == null) return;
-              setState(() {
-                _owner = v;
-                _dirty = true;
-              });
-            },
-          ),
-        ],
+    return AppFormSection(
+      label: '归属人',
+      child: DropdownButton<OptionItem>(
+        isExpanded: true,
+        value: _owner,
+        hint: const Text('选择归属人'),
+        items: _owners
+            .map((u) => DropdownMenuItem(
+                  value: u,
+                  child: Text(u.name),
+                ))
+            .toList(),
+        onChanged: (v) {
+          if (v == null) return;
+          setState(() {
+            _owner = v;
+            _dirty = true;
+          });
+        },
       ),
     );
   }
@@ -350,89 +298,46 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
   // ── 全宽提交按钮 ──
 
   Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: TDButton(
-        text: _isSubmitting ? '' : (_isEdit ? '保存' : '创建日程'),
-        theme: TDButtonTheme.primary,
-        shape: TDButtonShape.round,
-        iconWidget: _isSubmitting
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : null,
-        disabled: _isSubmitting,
-        onTap: _isSubmitting ? null : _submit,
-      ),
+    return AppActionBar.submit(
+      text: _isEdit ? '保存' : '创建日程',
+      loading: _isSubmitting,
+      onPressed: _isSubmitting ? null : _submit,
     );
   }
 
   // ── 选择器（复用已验证的 TDPicker 调用） ──
 
-  /// 日期选择（TDPicker.showDatePicker，onConfirm 回调参数为 `Map<String, int>`）
+  /// 日期选择（Material showDatePicker）
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    TDPicker.showDatePicker(
-      context,
-      title: '选择日期',
-      dateStart: [today.year, today.month, today.day],
-      dateEnd: [today.year + 1, today.month, today.day],
-      initialDate: [
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-      ],
-      onConfirm: (selected) {
-        final map = selected;
-        setState(() {
-          _selectedDate = DateTime(
-            map['year'] ?? _selectedDate.year,
-            map['month'] ?? _selectedDate.month,
-            map['day'] ?? _selectedDate.day,
-          );
-          _dirty = true;
-        });
-        Navigator.of(context).pop();
-      },
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
     );
+    if (picked != null && mounted) {
+      setState(() {
+        _selectedDate = picked;
+        _dateError = null;
+        _dirty = true;
+      });
+    }
   }
 
-  /// 时间选择（TDPicker.showDatePicker，仅启用 hour/minute）
+  /// 时间选择（Material showTimePicker）
   Future<void> _pickTime() async {
-    TDPicker.showDatePicker(
-      context,
-      title: '选择时间',
-      useYear: false,
-      useMonth: false,
-      useDay: false,
-      useHour: true,
-      useMinute: true,
-      useSecond: false,
-      initialDate: [
-        DateTime.now().year,
-        DateTime.now().month,
-        _selectedTime.hour,
-        _selectedTime.minute,
-      ],
-      onConfirm: (selected) {
-        final map = selected;
-        setState(() {
-          _selectedTime = TimeOfDay(
-            hour: map['hour'] ?? _selectedTime.hour,
-            minute: map['minute'] ?? _selectedTime.minute,
-          );
-          _dirty = true;
-        });
-        Navigator.of(context).pop();
-      },
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
     );
+    if (picked != null && mounted) {
+      setState(() {
+        _selectedTime = picked;
+        _dirty = true;
+      });
+    }
   }
 
   /// 判断两个日期是否同一天

@@ -9,7 +9,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
+import 'package:telemarketing_app/widgets/app_toast.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 Future<void> handleDial({
@@ -32,7 +32,7 @@ Future<void> handleDial({
   // 调用系统拨号盘；失败则明确反馈（不在 async gap 内使用 context）
   final launched = await _launchDialer(phone);
   if (!launched && context.mounted) {
-    TDToast.showText('无法启动拨号盘，请检查系统拨号功能', context: context);
+    AppToast.show(context, '无法启动拨号盘，请检查系统拨号功能');
   }
 }
 

@@ -6,7 +6,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/models/follow_up_record.dart';
 import 'follow_up_card.dart';
 import 'edit_follow_up_dialog.dart';
@@ -156,7 +155,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
       child: Column(
         children: [
           Icon(
-            TDIcons.rollback,
+            Icons.undo,
             size: 40,
             color: const Color(0xFFDCDCDC),
           ),
@@ -342,20 +341,15 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
 
   Widget _buildLoadMoreButton() {
     return Center(
-      child: SizedBox(
-        height: 48,
-        child: TDButton(
-          text: '加载更多跟进记录',
-          type: TDButtonType.text,
-          size: TDButtonSize.small,
-          onTap: () {
-            setState(() {
-              _visibleCount =
-                  (_visibleCount + _batchSize)
-                      .clamp(0, widget.allRecords.length);
-            });
-          },
-        ),
+      child: TextButton(
+        onPressed: () {
+          setState(() {
+            _visibleCount =
+                (_visibleCount + _batchSize)
+                    .clamp(0, widget.allRecords.length);
+          });
+        },
+        child: const Text('加载更多跟进记录'),
       ),
     );
   }
