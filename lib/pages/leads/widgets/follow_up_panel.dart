@@ -98,12 +98,12 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
     }
   }
 
-  /// 加载快捷备注选项
+  /// 加载快捷备注选项（仅筛选 type=followup 的数据）
   Future<void> _loadQuickNotes() async {
     try {
       final notes = await ref.read(optionsCacheProvider).getQuickNotes();
       if (!mounted) return;
-      setState(() => _quickNotes = notes);
+      setState(() => _quickNotes = notes.where((n) => n.type == 'followup').toList());
     } catch (_) {
       // 静默失败
     }
@@ -121,10 +121,8 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 跟进内容
+        // 跟进内容 + 快捷备注
         _buildContentField(),
-        // 快捷备注
-        _buildQuickNotes(),
         const SizedBox(height: 16),
         // 接听类型
         _buildAnswerTypeSelector(),
@@ -155,50 +153,12 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
         hintText: '请输入跟进内容...',
         maxLength: 100,
         maxLines: 4,
+        quickNotes: _quickNotes.map((n) => n.name).toList(),
         onChanged: (_) => setState(() {}),
       ),
     );
   }
 
-  // ── 快捷备注 ──
-
-  Widget _buildQuickNotes() {
-    if (_quickNotes.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '快捷备注',
-            style: TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
-          ),
-          const SizedBox(height: 8),
-          TagChipRow(
-            chips: _quickNotes.map((n) => TagChipData(
-              label: n.name,
-              selected: false,
-              onTap: () {
-                final text = _contentController.text;
-                final insert = text.isEmpty || text.endsWith('\n')
-                    ? n.name
-                    : '\n${n.name}';
-                final pos = _contentController.selection.baseOffset;
-                if (pos >= 0 && pos <= text.length) {
-                  final newText = '${text.substring(0, pos)}$insert${text.substring(pos)}';
-                  _contentController.text = newText;
-                  _contentController.selection = TextSelection.collapsed(offset: pos + insert.length);
-                } else {
-                  _contentController.text = text.isEmpty ? n.name : '$text\n${n.name}';
-                }
-                setState(() {});
-              },
-            )).toList(),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ── 接听类型选择 ──
 

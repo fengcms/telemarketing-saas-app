@@ -90,7 +90,11 @@ class OptionsCacheService {
   }
 
   String _encodeList(List<OptionItem> items) {
-    return jsonEncode(items.map((e) => {'id': e.id, 'name': e.name}).toList());
+    return jsonEncode(items.map((e) {
+      final map = <String, dynamic>{'id': e.id, 'name': e.name};
+      if (e.type != null) map['type'] = e.type;
+      return map;
+    }).toList());
   }
 
   List<OptionItem> _decodeList(String json) {
