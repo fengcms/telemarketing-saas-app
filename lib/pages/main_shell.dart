@@ -86,13 +86,13 @@ class MainShell extends ConsumerWidget {
       ),
     );
   }
-  /// 日程 Tab 角标：展示今日待办数（dueToday）
-  /// 数据来自共享的 [scheduleStatsProvider]，与日程列表页 Tab 计数同源。
+  /// 日程 Tab 角标：展示今日待办数（todayPending，严格今日窗口）
+  /// 数据来自共享的 [scheduleStatsProvider]，与首页 / 个人中心同源（均读 todayPending）。
   Widget _scheduleBadge(WidgetRef ref, bool active) {
-    final dueToday = ref.watch(scheduleStatsProvider).dueToday;
+    final todayPending = ref.watch(scheduleStatsProvider).todayPending;
     return Badge(
-      isLabelVisible: dueToday > 0,
-      label: Text('$dueToday'),
+      isLabelVisible: todayPending > 0,
+      label: Text('$todayPending'),
       child: Icon(
         Icons.event,
         size: 24,

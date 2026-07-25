@@ -1065,6 +1065,27 @@ AppBar(
 
 **教训**：改 AppBar 的「背景/前景」必须**成对改**，或干脆不覆盖、直接复用全局 `appBarTheme`；动背景前先想清楚前景色从哪来——本项目通栏统一是蓝底白字，任何页面想「自己来」都得把两色都设齐。
 
+### 11.15 全端待办角标口径统一：弃 `dueToday`、统一读 `todayPending`
+
+**严重级别**：🟡 **接口 / 一致性（P1）**
+
+**背景**：v0.27 首页改读 `home-summary.todayPending`（严格今日窗口、不含逾期）。但底部 Tab 角标 + 个人中心「今日待办」仍读 `schedules/stats/mine.dueToday`（= `pending + overdue`，含历史逾期）。同一账号出现「首页 5、Tab 7」的数字不一致（详见 `API_SCHEDULE_BADGE_CONSISTENCY.md`）。
+
+**后端答复（`HOME_SCHEDULE_MERGE_FRONTEND_GUIDE.md` 第八节）**：
+- `stats/mine` 与 `stats`（团队版）现在**顶层**都返回 `todayPending`，与 `home-summary.todayPending` 由**同一函数**计算（严格今日、北京时间、不含逾期），三者逐字节相同。
+- 逾期事项改用已有的 `overdue` 字段单独做红色「逾期 N」标识，**不塞进主角标**。
+- 弃用 `dueToday`（含逾期，偏大）与 `byStatus.pending`（全量无日期，最大）做角标。
+
+**改法（APP 侧）**：
+- `models/schedule_stats.dart`：`ScheduleStats` 字段 `dueToday` → `todayPending`；`fromJson` 改为从**顶层** `data['todayPending']` 解析（旧 `byStatus.dueToday` 不再使用）。
+- `providers/schedule_stats_provider.dart`：`ScheduleStatsState` 的 `get dueToday` → `get todayPending`（`stats?.todayPending ?? 0`）。
+- `pages/main_shell.dart`：日程 Tab 角标 `_scheduleBadge` 改读 `scheduleStatsProvider.todayPending`。
+- `pages/profile/profile_page.dart` + `widgets/profile_stats_card.dart`：`dueToday` 入参/取值改为 `todayPending`。
+
+**坑点**：`todayPending` 是**顶层**字段，而旧 `dueToday` 在 `byStatus` 内。若沿用旧解析位置（`byStatus['todayPending']`）会拿不到值——必须读 `data` 层。
+
+**教训**：跨端「同一数字」必须来自**同一个接口字段、同一个计算函数**；口径不一致的根因往往是「同一个 API 返回了多个语义相近的字段（pending/dueToday/todayPending），前端在不同位置选了不同字段」。统一前先确认后端是否已提供等价字段，避免前端硬换算时区/窗口造成漂移。
+
 ### 12.1 首屏 `_isLoading=true` 同时作骨架标志与请求守卫致首屏不拉取
 
 **严重级别**：🔴 **阻断性（P0，表现=骨架屏转圈但无请求/无数据）**

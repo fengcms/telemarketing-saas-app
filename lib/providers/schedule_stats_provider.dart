@@ -1,8 +1,8 @@
 /// 日程统计共享 Provider
 ///
-/// 单一数据源：拉取并缓存「我的日程统计」
-/// （GET /api/tenant/schedules/stats/mine）。
-/// 供底部 Tab 角标（dueToday）与日程列表页 Tab 计数共用，
+/// 单一数据源：拉取并缓存「我的 / 团队日程统计」
+/// （GET /api/tenant/schedules/stats/mine 或 stats）。
+/// 供底部 Tab 角标（todayPending）与日程列表页 Tab 计数共用，
 /// 避免重复请求（决策 c：统一数据源）。
 library;
 
@@ -61,8 +61,9 @@ class ScheduleStatsState {
     );
   }
 
-  /// 今日待办数（底部 Tab 角标用）
-  int get dueToday => stats?.dueToday ?? 0;
+  /// 今日待办数（底部 Tab 角标 / 个人中心用，严格今日窗口）
+  /// 与首页 home-summary.todayPending 同源，全端一致。
+  int get todayPending => stats?.todayPending ?? 0;
 
   /// 待办总数（列表 Tab 计数用）
   int get pending => stats?.pending ?? 0;

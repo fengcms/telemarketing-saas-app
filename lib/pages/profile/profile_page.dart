@@ -11,7 +11,7 @@
 /// - 用户信息：authProvider（本地缓存，来自登录响应）
 /// - 所属租户：tenantService.fetchTenantName()（GET /api/tenant/profile）
 /// - 业绩概览：homeService.fetchMyStats(today)（GET /api/tenant/stats/mine）
-/// - 今日待办：共享 scheduleStatsProvider.dueToday（GET /api/tenant/schedules/stats/mine）
+/// - 今日待办：共享 scheduleStatsProvider.todayPending（GET /api/tenant/schedules/stats/mine，严格今日窗口）
 library;
 
 import 'dart:async';
@@ -169,7 +169,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     final role = user?.role ?? '';
     final roleLabel = _roleLabel(role);
     final isManager = role == 'TM' || role == 'TA';
-    final dueToday = ref.watch(scheduleStatsProvider).dueToday;
+    final todayPending = ref.watch(scheduleStatsProvider).todayPending;
 
     return Scaffold(
       backgroundColor: _pageBg,
@@ -209,7 +209,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                           leadsTotal: _stats?.myLeadsTotal ?? 0,
                           followupCount: _stats?.followupCount ?? 0,
                           answeredCount: _stats?.answeredCount ?? 0,
-                          dueToday: dueToday,
+                          todayPending: todayPending,
                           onTap: () =>
                               _push(const ComingSoonPage(featureName: '个人统计')),
                         ),

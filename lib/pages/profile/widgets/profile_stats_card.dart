@@ -12,13 +12,13 @@ import 'package:flutter/material.dart';
 /// [leadsTotal] 我的线索总数（stats/mine.myLeadsTotal）
 /// [followupCount] 今日跟进数（stats/mine.myToday.followupCount）
 /// [answeredCount] 今日接通数（stats/mine.myToday.answeredCount）
-/// [dueToday] 今日待办数（schedules/stats/mine 共享 provider）
+/// [todayPending] 今日待办数（schedules/stats/mine 共享 provider，严格今日窗口）
 /// [onTap] 点击整卡回调（跳个人统计占位页）
 class ProfileStatsCard extends StatelessWidget {
   final int leadsTotal;
   final int followupCount;
   final int answeredCount;
-  final int dueToday;
+  final int todayPending;
   final VoidCallback? onTap;
 
   const ProfileStatsCard({
@@ -26,7 +26,7 @@ class ProfileStatsCard extends StatelessWidget {
     required this.leadsTotal,
     required this.followupCount,
     required this.answeredCount,
-    required this.dueToday,
+    required this.todayPending,
     this.onTap,
   });
 
@@ -56,7 +56,7 @@ class ProfileStatsCard extends StatelessWidget {
             _divider(),
             _column('今日接通', answeredCount),
             _divider(),
-            _column('今日待办', dueToday),
+            _column('今日待办', todayPending),
           ],
         ),
       ),
