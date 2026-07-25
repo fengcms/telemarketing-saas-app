@@ -9,6 +9,10 @@ import 'package:flutter/material.dart';
 import '../theme/color_scheme.dart';
 import '../widgets/tag_chip.dart';
 import '../widgets/app_search_bar.dart';
+import '../widgets/app_form_section.dart';
+import '../widgets/app_action_bar.dart';
+import '../widgets/app_dialog.dart';
+import '../widgets/app_bottom_sheet.dart';
 
 /// 组件预览页
 class ThemePreviewPage extends StatefulWidget {
@@ -94,6 +98,26 @@ class _ThemePreviewPageState extends State<ThemePreviewPage> {
           _PreviewCard(
             title: '搜索栏组件（AppSearchBar）',
             child: _buildSearchBarShowcase(),
+          ),
+          const SizedBox(height: 16),
+          _PreviewCard(
+            title: '表单区块组件（AppFormSection）',
+            child: _buildFormSectionShowcase(),
+          ),
+          const SizedBox(height: 16),
+          _PreviewCard(
+            title: '底部操作栏组件（AppActionBar）',
+            child: _buildActionBarShowcase(),
+          ),
+          const SizedBox(height: 16),
+          _PreviewCard(
+            title: '弹窗组件（AppDialog）',
+            child: _buildDialogShowcase(),
+          ),
+          const SizedBox(height: 16),
+          _PreviewCard(
+            title: '底部抽屉组件（AppBottomSheet）',
+            child: _buildBottomSheetShowcase(),
           ),
           const SizedBox(height: 32),
         ],
@@ -368,6 +392,234 @@ class _ThemePreviewPageState extends State<ThemePreviewPage> {
           },
           hintText: '搜索客户',
           searchButtonText: '查找',
+        ),
+      ],
+    );
+  }
+
+  /// 表单区块组件展示
+  Widget _buildFormSectionShowcase() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('普通区块',
+            style: TextStyle(fontSize: 14, color: BrandColors.textPrimary)),
+        const SizedBox(height: 8),
+        AppFormSection(
+          label: '备注',
+          child: TextField(
+            decoration: const InputDecoration(
+              hintText: '补充说明...',
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        const Text('必填区块 + 复合内容（文本域+快捷备注）',
+            style: TextStyle(fontSize: 14, color: BrandColors.textPrimary)),
+        const SizedBox(height: 8),
+        AppFormSection(
+          label: '跟进内容',
+          required: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                maxLines: 4,
+                minLines: 2,
+                decoration: const InputDecoration(
+                  hintText: '请输入跟进内容...',
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('快捷备注',
+                  style: TextStyle(fontSize: 14, color: BrandColors.textPrimary)),
+              const SizedBox(height: 8),
+              TagChipRow(
+                scrollable: true,
+                chips: ['有意向', '需跟进', '已加微信', '改天联系']
+                    .map((label) => TagChipData(
+                          label: label,
+                          selected: false,
+                          onTap: () {},
+                        ))
+                    .toList(),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 底部操作栏展示
+  Widget _buildActionBarShowcase() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('模式1：提交按钮',
+            style: TextStyle(fontSize: 14, color: BrandColors.textPrimary)),
+        const SizedBox(height: 8),
+        AppActionBar.submit(
+          text: '提交跟进',
+          onPressed: () {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('提交按钮点击')),
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        AppActionBar.submit(
+          text: '保存中...',
+          loading: true,
+          onPressed: null,
+        ),
+        const SizedBox(height: 16),
+        AppActionBar.submit(
+          text: '提交（禁用）',
+          enabled: false,
+          onPressed: null,
+        ),
+        const SizedBox(height: 24),
+        const Text('模式2：文字图标操作行（线索详情）',
+            style: TextStyle(fontSize: 14, color: BrandColors.textPrimary)),
+        const SizedBox(height: 8),
+        AppActionBar(
+          actions: [
+            ActionItem(text: '跟进', type: ActionType.text,
+                icon: Icons.replay, onTap: () {}),
+            ActionItem(text: '日程', type: ActionType.text,
+                icon: Icons.calendar_today, onTap: () {}),
+            ActionItem(text: '编辑', type: ActionType.text,
+                icon: Icons.edit, onTap: () {}),
+          ],
+        ),
+        const SizedBox(height: 24),
+        const Text('模式2：填充按钮操作行（日程详情）',
+            style: TextStyle(fontSize: 14, color: BrandColors.textPrimary)),
+        const SizedBox(height: 8),
+        AppActionBar(
+          actions: [
+            ActionItem(text: '取消日程', type: ActionType.light, onTap: () {}),
+            ActionItem(text: '拨号', type: ActionType.light,
+                icon: Icons.call, onTap: () {}),
+            ActionItem(text: '标记完成', type: ActionType.primary, onTap: () {}),
+          ],
+        ),
+        const SizedBox(height: 16),
+        const Text('含禁用项',
+            style: TextStyle(fontSize: 14, color: BrandColors.textPrimary)),
+        const SizedBox(height: 8),
+        AppActionBar(
+          actions: [
+            ActionItem(text: '跟进', type: ActionType.text,
+                icon: Icons.replay, onTap: null),
+            ActionItem(text: '日程', type: ActionType.text,
+                icon: Icons.calendar_today, onTap: () {}),
+            ActionItem(text: '编辑', type: ActionType.text,
+                icon: Icons.edit, onTap: () {}),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 弹窗组件展示
+  Widget _buildDialogShowcase() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('点击按钮测试弹窗',
+            style: TextStyle(fontSize: 14, color: BrandColors.textPrimary)),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          children: [
+            FilledButton(
+              onPressed: () => AppDialog.confirm(
+                context: context,
+                title: '确认操作',
+                content: '确定要执行此操作吗？',
+                onConfirm: () {},
+              ),
+              child: const Text('确认弹窗'),
+            ),
+            FilledButton(
+              onPressed: () => AppDialog.alert(
+                context: context,
+                title: '提示',
+                content: '操作已成功完成。',
+              ),
+              child: const Text('提示弹窗'),
+            ),
+            FilledButton(
+              onPressed: () => AppDialog.confirm(
+                context: context,
+                title: '确认删除',
+                content: '确定要删除这条跟进记录吗？\n此操作不可恢复。',
+                confirmText: '删除',
+                confirmColor: BrandColors.error,
+                onConfirm: () {},
+              ),
+              child: const Text('确认（红色）'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 底部抽屉组件展示
+  Widget _buildBottomSheetShowcase() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('点击按钮打开底部抽屉',
+            style: TextStyle(fontSize: 14, color: BrandColors.textPrimary)),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: () => AppBottomSheet.show(
+            context: context,
+            title: '新增跟进记录',
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppFormSection(
+                  label: '跟进内容',
+                  required: true,
+                  child: TextField(
+                    maxLines: 4,
+                    minLines: 2,
+                    decoration: const InputDecoration(
+                      hintText: '请输入跟进内容...',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AppFormSection(
+                  label: '快捷备注',
+                  child: TagChipRow(
+                    scrollable: true,
+                    chips: ['有意向', '需跟进', '已加微信']
+                        .map((l) => TagChipData(
+                              label: l,
+                              selected: false,
+                              onTap: () {},
+                            ))
+                        .toList(),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                AppActionBar.submit(
+                  text: '提交跟进',
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ),
+          child: const Text('打开底部抽屉'),
         ),
       ],
     );

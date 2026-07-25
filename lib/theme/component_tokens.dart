@@ -17,8 +17,8 @@ import 'color_scheme.dart';
 abstract final class TdRadius {
   TdRadius._();
 
-  /// 默认圆角（按钮、输入框、卡片默认）
-  static const double button = 6;
+  /// 默认圆角（按钮大圆角，输入框/卡片保留小圆角）
+  static const double button = 100;
   static const double card = 6;
   static const double dialog = 8;
   static const double input = 6;
@@ -35,7 +35,7 @@ class ComponentTokens {
   // ── 按钮 ──
 
   /// FilledButton = TDesign primary 填充按钮
-  /// bg: brandColor7(#0052D9), text: white, radius: 6px
+  /// bg: brandColor7(#0052D9), text: white, 大圆角
   FilledButtonThemeData get filledButton => FilledButtonThemeData(
         style: FilledButton.styleFrom(
           shape: RoundedRectangleBorder(
@@ -46,24 +46,6 @@ class ComponentTokens {
             fontSize: 14,
             fontWeight: FontWeight.w500,
             color: Colors.white,
-          ),
-        ),
-      );
-
-  /// FilledButton.tonal = TDesign light 填充按钮
-  /// bg: brandColor1(#F2F3FF), text: brandColor7(#0052D9), radius: 6px
-  /// 对应项目中原 `TDButton(theme: TDButtonTheme.light)`
-  FilledButtonThemeData get tonalButton => FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: BrandColors.primarySurface, // #F2F3FF
-          foregroundColor: BrandColors.primary, // #0052D9
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(TdRadius.button),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
           ),
         ),
       );

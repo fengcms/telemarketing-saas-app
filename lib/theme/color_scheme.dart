@@ -13,6 +13,9 @@ abstract final class BrandColors {
   /// 品牌主色（TD brand-7）
   static const Color primary = Color(0xFF0052D9);
 
+  /// 品牌次色（TD brand-6），比主色更浅，用于聚焦边框等次级强调
+  static const Color primaryLight = Color(0xFF366EF4);
+
   /// 品牌深色（TD brand-9）
   static const Color primaryDark = Color(0xFF00287A);
 
@@ -69,9 +72,11 @@ const ColorScheme brandColorScheme = ColorScheme(
   primaryContainer: BrandColors.primarySurface,
   onPrimaryContainer: BrandColors.primaryDark,
 
-  // ── 次要色（由种子色自动衍生） ──
+  // ── 次要色 ──
   secondary: Color(0xFF565E71),
   onSecondary: Colors.white,
+  secondaryContainer: BrandColors.primarySurface,
+  onSecondaryContainer: BrandColors.primary,
 
   // ── 第三色 ──
   tertiary: Color(0xFF6E5676),

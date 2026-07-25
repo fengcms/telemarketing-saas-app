@@ -153,7 +153,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
             color: BrandColors.surface,
             borderRadius: BorderRadius.circular(20),
             border: isFocused
-                ? Border.all(color: BrandColors.primary, width: 1.5)
+                ? Border.all(color: BrandColors.primaryLight, width: 1.5)
                 : null,
           ),
           child: Row(
@@ -187,7 +187,12 @@ class _AppSearchBarState extends State<AppSearchBar> {
                       fontSize: 14,
                       color: BrandColors.textDisabled,
                     ),
+                    filled: false,
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
