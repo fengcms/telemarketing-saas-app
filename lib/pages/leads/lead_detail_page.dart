@@ -153,10 +153,10 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
 
   /// 统一的导航栏
   PreferredSizeWidget _buildNavBar() {
+    // 不显式覆盖背景/前景，沿用全局 appBarTheme（蓝底 #0052D9 + 白字白图标），
+    // 与全站其他通栏保持一致。此前误设白底导致继承主题白前景而“看不见”。
     return AppBar(
       title: const Text('线索详情'),
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
       leading: IconButton(
         icon: const Icon(Icons.chevron_left),
         onPressed: () => Navigator.of(context).pop(),

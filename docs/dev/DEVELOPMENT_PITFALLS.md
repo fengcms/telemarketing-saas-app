@@ -1043,6 +1043,28 @@ final allowSelfClaim = settings['allowSelfClaim'] == true;
 
 **教训**：列表缓存第一决策是「放哪一层」，页面级缓存因销毁必丢，服务单例才是正解；角色/枚举判定务必对齐后端真实值，别用内部简称；能复用既有缓存（options）就别重复造。
 
+### 11.14 AppBar 显式白底 + 未覆盖前景 → 继承主题白字「消失」
+
+**严重级别**：🟡 **UI / 可维护（P2）**
+
+**背景**：线索详情页 `_buildNavBar()` 原写法：
+```dart
+AppBar(
+  title: const Text('线索详情'),
+  backgroundColor: Colors.white,   // 显式白底
+  surfaceTintColor: Colors.white,
+  leading: IconButton(icon: const Icon(Icons.chevron_left), ...),
+  // ❌ 没设 foregroundColor
+)
+```
+全局 `appBarTheme`（`component_tokens.dart:142`）= 蓝底 `#0052D9` + **白字白图标**（`foregroundColor: Colors.white`）。该页只覆盖了背景为白、却没覆盖前景，于是 `foregroundColor` 沿优先级 `widget → appBarTheme → colorScheme` 落到主题的白色 → **白底 + 白字/白图标**，顶栏「像消失了一样」。
+
+**坑点**：Flutter `AppBar` 前景色优先级为 `widget.foregroundColor` → `appBarTheme.foregroundColor` → `colorScheme` 派生。**只显式改背景、不改前景**，前景会继承主题值（本项目主题是白），在浅底上直接不可见。这不是「没设字色就用黑」——项目主题把自己定义成了白前景。
+
+**修法**：删掉那两行 white 覆盖，`AppBar` 回退到全局 `appBarTheme`（蓝底白字 + `centerTitle:true`），与全站其他通栏完全一致；不要只为「显白」单独设 `backgroundColor` 而留 `foregroundColor` 空缺。
+
+**教训**：改 AppBar 的「背景/前景」必须**成对改**，或干脆不覆盖、直接复用全局 `appBarTheme`；动背景前先想清楚前景色从哪来——本项目通栏统一是蓝底白字，任何页面想「自己来」都得把两色都设齐。
+
 ### 12.1 首屏 `_isLoading=true` 同时作骨架标志与请求守卫致首屏不拉取
 
 **严重级别**：🔴 **阻断性（P0，表现=骨架屏转圈但无请求/无数据）**
