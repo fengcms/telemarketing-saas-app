@@ -15,13 +15,16 @@ import 'package:telemarketing_app/models/lead_list_context.dart';
 import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 import 'package:telemarketing_app/pages/schedules/schedule_search_page.dart';
 import 'package:telemarketing_app/providers/lead_detail_provider.dart';
+import 'package:telemarketing_app/providers/schedule_list_provider.dart';
+import 'package:telemarketing_app/widgets/app_action_bar.dart';
 import 'widgets/lead_header_section.dart';
-import 'widgets/lead_action_bar.dart';
 import 'widgets/follow_up_panel.dart';
 import 'widgets/follow_up_timeline.dart';
 import 'widgets/call_records_section.dart';
 import 'widgets/schedule_section.dart';
 import 'widgets/lead_bottom_nav.dart';
+import 'widgets/edit_lead_dialog.dart';
+import 'package:telemarketing_app/pages/schedules/widgets/schedule_form_sheet.dart';
 
 /// 线索详情页
 ///
@@ -212,9 +215,36 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
           top: BorderSide(color: Color(0xFFEEEEEE), width: 0.5),
         ),
       ),
-      child: LeadActionBar(
-        detail: detail,
-        leadId: detail.id,
+      child: AppActionBar(
+        actions: [
+          ActionItem(
+            text: '跟进', type: ActionType.text, icon: Icons.reply,
+            onTap: detail.isConverted
+                ? null
+                : () => showFollowUpPanel(context, leadId: detail.id),
+          ),
+          ActionItem(
+            text: '日程', type: ActionType.text, icon: Icons.calendar_today,
+            onTap: detail.isConverted
+                ? null
+                : () async {
+                    final changed = await showScheduleFormSheet(
+                      context,
+                      leadId: detail.id,
+                      leadName: detail.name,
+                      leadPhone: detail.phone,
+                    );
+                    if (changed == true) {
+                      try { ref.read(scheduleListProvider.notifier).refresh(); } catch (_) {}
+                      try { ref.read(leadDetailProvider.notifier).refreshBundle(); } catch (_) {}
+                    }
+                  },
+          ),
+          ActionItem(
+            text: '编辑', type: ActionType.text, icon: Icons.edit,
+            onTap: () => showEditLeadDialog(context, leadId: detail.id, detail: detail),
+          ),
+        ],
       ),
     );
   }

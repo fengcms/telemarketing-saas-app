@@ -17,13 +17,20 @@ import 'package:telemarketing_app/models/option_item.dart';
 import 'package:telemarketing_app/models/schedule_detail.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
+import 'package:telemarketing_app/widgets/app_bottom_sheet.dart';
 import 'package:telemarketing_app/widgets/app_dialog.dart';
+import 'package:telemarketing_app/widgets/app_action_bar.dart';
+import 'package:telemarketing_app/widgets/app_form_section.dart';
 import 'package:telemarketing_app/providers/schedule_list_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'package:telemarketing_app/services/api_exception.dart';
 import 'package:telemarketing_app/widgets/tag_chip.dart';
 
 part 'schedule_form_fields.dart';
+
+/// 日程表单的 State key，供顶层函数访问脏检查关闭
+final GlobalKey<_ScheduleFormContentState> _scheduleFormKey =
+    GlobalKey<_ScheduleFormContentState>();
 
 /// 弹出日程表单抽屉
 ///
@@ -41,11 +48,12 @@ Future<bool?> showScheduleFormSheet(
   String? scheduleId,
   ScheduleDetail? initial,
 }) async {
-  return showModalBottomSheet<bool>(
+  return AppBottomSheet.show<bool>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => ScheduleFormContent(
+    title: initial != null ? '编辑日程' : '新建日程',
+    onClose: () => _scheduleFormKey.currentState?._onBack(),
+    child: ScheduleFormContent(
+      key: _scheduleFormKey,
       leadId: leadId,
       leadName: leadName,
       leadPhone: leadPhone,
@@ -56,10 +64,9 @@ Future<bool?> showScheduleFormSheet(
   );
 }
 
-/// 新建 / 编辑日程表单内容（抽屉内承载）
+/// 新建 / 编辑日程表单内容
 ///
-/// 自带：顶部 SheetHeader（标题+关闭×）；中部滚动表单；底部全宽提交按钮。
-/// 保存成功 → pop(true)；放弃/关闭 → 确认后 pop(false)。
+/// 仅返回表单区块 Column，外部由 [AppBottomSheet] 包裹。
 class ScheduleFormContent extends ConsumerStatefulWidget {
   /// 创建模式：关联线索 ID
   final String? leadId;
@@ -193,61 +200,27 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── 表单区块 ──
+        _buildLeadSection(),
+        const SizedBox(height: 16),
+        _buildDateSection(),
+        const SizedBox(height: 16),
+        _buildTimeSection(),
+        const SizedBox(height: 16),
+        _buildNoteSection(),
+        if (_owners.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _buildOwnerSection(),
+        ],
 
-    return Container(
-      padding: EdgeInsets.only(bottom: bottom),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── 标题行（居中标题 + 右上角小关闭按钮，关闭接 _onBack 脏检查） ──
-              Row(
-                children: [
-                  const Spacer(),
-                  Text(
-                    _isEdit ? '编辑日程' : '新建日程',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF181818),
-                    ),
-                  ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: _onBack,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      child: const Icon(Icons.close, size: 18,
-                          color: Color(0xFFA6A6A6)),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
+        const SizedBox(height: 24),
 
-              // ── 表单区块 ──
-              _buildLeadSection(),
-              _buildDateSection(),
-              _buildTimeSection(),
-              _buildNoteSection(),
-              if (_owners.isNotEmpty) _buildOwnerSection(),
-
-              const SizedBox(height: 24),
-
-              // ── 全宽提交按钮 ──
-              _buildSubmitButton(),
-            ],
-          ),
-        ),
-      ),
+        // ── 全宽提交按钮 ──
+        _buildSubmitButton(),
+      ],
     );
   }
 

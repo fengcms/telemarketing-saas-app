@@ -40,12 +40,14 @@ abstract final class AppBottomSheet {
   /// [context] 用于 [showModalBottomSheet]
   /// [title] 抽屉标题文字
   /// [child] 抽屉主体内容（自动处理滚动与键盘适配）
+  /// [onClose] 可选关闭回调，用于需要脏检查等自定义关闭行为的场景
   ///
   /// 返回类型 [T] 由 child 内部通过 [Navigator.pop] 传入。
   static Future<T?> show<T>({
     required BuildContext context,
     required String title,
     required Widget child,
+    VoidCallback? onClose,
   }) {
     return showModalBottomSheet<T>(
       context: context,
@@ -53,6 +55,7 @@ abstract final class AppBottomSheet {
       backgroundColor: Colors.transparent,
       builder: (_) => _AppBottomSheetContent<T>(
         title: title,
+        onClose: onClose,
         child: child,
       ),
     );
@@ -63,9 +66,11 @@ abstract final class AppBottomSheet {
 class _AppBottomSheetContent<T> extends StatelessWidget {
   final String title;
   final Widget child;
+  final VoidCallback? onClose;
 
   const _AppBottomSheetContent({
     required this.title,
+    this.onClose,
     required this.child,
   });
 
@@ -108,7 +113,7 @@ class _AppBottomSheetContent<T> extends StatelessWidget {
                 const Spacer(),
                 // 关闭按钮（靠右）
                 GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
+                  onTap: onClose ?? () => Navigator.of(context).pop(),
                   child: const Padding(
                     padding: EdgeInsets.all(4),
                     child: Icon(

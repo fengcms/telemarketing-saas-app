@@ -14,6 +14,7 @@ import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'password_rules_hint.dart';
 import 'password_nav_bar.dart';
 import 'package:telemarketing_app/widgets/app_dialog.dart';
+import 'package:telemarketing_app/widgets/app_action_bar.dart';
 
 /// 强制改密页
 ///
@@ -466,27 +467,10 @@ class _ForceChangePasswordPageState
 
 
   Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: TDButton(
-        text: _isLoading ? '' : '确 认',
-        theme: TDButtonTheme.primary,
-        shape: TDButtonShape.round,
-        disabled: _isLoading,
-        onTap: _onSubmit,
-        iconWidget: _isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : null,
-      ),
+    return AppActionBar.submit(
+      text: '确 认',
+      loading: _isLoading,
+      onPressed: _isLoading ? null : _onSubmit,
     );
   }
 

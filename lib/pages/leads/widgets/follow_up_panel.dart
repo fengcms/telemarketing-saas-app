@@ -13,7 +13,9 @@ import 'package:telemarketing_app/providers/lead_list_provider.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/models/option_item.dart';
 import 'package:telemarketing_app/utils/duration_format.dart';
-import 'package:telemarketing_app/widgets/sheet_header.dart';
+import 'package:telemarketing_app/widgets/app_action_bar.dart';
+import 'package:telemarketing_app/widgets/app_form_section.dart';
+import 'package:telemarketing_app/widgets/app_bottom_sheet.dart';
 import 'package:telemarketing_app/widgets/tag_chip.dart';
 
 /// 跟进面板接入点：显示底部弹出面板
@@ -25,11 +27,10 @@ void showFollowUpPanel(
   required String leadId,
   bool fromDial = false,
 }) {
-  showModalBottomSheet(
+  AppBottomSheet.show<void>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => _FollowUpPanel(leadId: leadId, fromDial: fromDial),
+    title: '新增跟进记录',
+    child: _FollowUpPanel(leadId: leadId, fromDial: fromDial),
   );
 }
 
@@ -115,46 +116,29 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-      ),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 标题 + 拖拽手柄
-              const SheetHeader(title: '新增跟进记录'),
-              const SizedBox(height: 20),
-              // 跟进内容
-              _buildContentField(),
-              // 快捷备注
-              _buildQuickNotes(),
-              const SizedBox(height: 16),
-              // 接听类型
-              _buildAnswerTypeSelector(),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 跟进内容
+        _buildContentField(),
+        // 快捷备注
+        _buildQuickNotes(),
+        const SizedBox(height: 16),
+        // 接听类型
+        _buildAnswerTypeSelector(),
         // 通话时长（已接听时显示来自系统通话记录的最近通话时间）
         if (_showDuration) ...[
           const SizedBox(height: 16),
           _buildCallLogDisplay(),
         ],
-              // 修改分类（可选）
-              const SizedBox(height: 16),
-              _buildCategorySelector(),
-              const SizedBox(height: 24),
-              // 提交按钮
-              _buildSubmitButton(),
-            ],
-          ),
-        ),
-      ),
+        // 修改分类（可选）
+        const SizedBox(height: 16),
+        _buildCategorySelector(),
+        const SizedBox(height: 24),
+        // 提交按钮
+        _buildSubmitButton(),
+      ],
     );
   }
 
@@ -162,42 +146,20 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
   // ── 跟进内容输入 ──
 
   Widget _buildContentField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          children: [
-            Text(
-              '跟进内容',
-              style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
-            ),
-            Text(
-              ' *',
-              style: TextStyle(fontSize: 14, color: Color(0xFFD54941)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        TDTextarea(
-          controller: _contentController,
+    return AppFormSection(
+      label: '跟进内容',
+      required: true,
+      child: TextField(
+        controller: _contentController,
+        maxLines: 4,
+        minLines: 2,
+        maxLength: 100,
+        decoration: const InputDecoration(
           hintText: '请输入跟进内容...',
-          minLines: 2,
-          maxLength: 100,
-          showBottomDivider: false,
-          indicator: true,
-          margin: EdgeInsets.zero,
-          padding: EdgeInsets.zero,
-          inputDecoration: InputDecoration(
-            contentPadding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-            border: InputBorder.none,
-          ),
-          textareaDecoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFE7E7E7), width: 1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          onChanged: (_) => setState(() {}),
+          counterText: '',
         ),
-      ],
+        onChanged: (_) => setState(() {}),
+      ),
     );
   }
 
@@ -244,45 +206,31 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
   // ── 接听类型选择 ──
 
   Widget _buildAnswerTypeSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          children: [
-            Text(
-              '接听类型',
-              style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
-            ),
-            Text(
-              ' *',
-              style: TextStyle(fontSize: 14, color: Color(0xFFD54941)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        TagChipRow(
-          scrollable: true,
-          chips: _answerTypes.map((type) {
-            final (value, label) = type;
-            final isSelected = _selectedAnswerType == value;
-            return TagChipData(
-              label: label,
-              selected: isSelected,
-              onTap: () {
-                      setState(() {
-                        _selectedAnswerType = value;
-                        _showDuration = value == 'answered';
-                        if (_showDuration) {
-                          _checkCallLog();
-                        } else {
-                          _callTimeMs = null;
-                        }
-                      });
-                    },
-                  );
-              }).toList(),
-        ),
-      ],
+    return AppFormSection(
+      label: '接听类型',
+      required: true,
+      child: TagChipRow(
+        scrollable: true,
+        chips: _answerTypes.map((type) {
+          final (value, label) = type;
+          final isSelected = _selectedAnswerType == value;
+          return TagChipData(
+            label: label,
+            selected: isSelected,
+            onTap: () {
+              setState(() {
+                _selectedAnswerType = value;
+                _showDuration = value == 'answered';
+                if (_showDuration) {
+                  _checkCallLog();
+                } else {
+                  _callTimeMs = null;
+                }
+              });
+            },
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -426,31 +374,29 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
   // ── 修改分类（可选） ──
 
   Widget _buildCategorySelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '线索分类',
-          style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
-        ),
-        const SizedBox(height: 8),
-        TagChipRow(
-          scrollable: true,
-          chips: _categories.map((c) => TagChipData(
-            label: c.name,
-            selected: _selectedCategoryId == c.id,
-            onTap: () => setState(() => _selectedCategoryId = c.id),
-          )).toList(),
-        ),
-        if (_categories.isEmpty)
-          const Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: Text(
-              '暂无可选分类',
-              style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-            ),
+    return AppFormSection(
+      label: '线索分类',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TagChipRow(
+            scrollable: true,
+            chips: _categories.map((c) => TagChipData(
+              label: c.name,
+              selected: _selectedCategoryId == c.id,
+              onTap: () => setState(() => _selectedCategoryId = c.id),
+            )).toList(),
           ),
-      ],
+          if (_categories.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                '暂无可选分类',
+                style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -462,27 +408,11 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
     final isValid = _contentController.text.trim().isNotEmpty &&
         _selectedAnswerType != null;
 
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: TDButton(
-        text: _isSubmitting ? '' : '提交跟进',
-        theme: TDButtonTheme.primary,
-        shape: TDButtonShape.round,
-        disabled: !isValid || _isSubmitting,
-        onTap: isValid ? _submitFollowUp : null,
-        iconWidget: _isSubmitting
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : null,
-      ),
+    return AppActionBar.submit(
+      text: '提交跟进',
+      loading: _isSubmitting,
+      enabled: isValid,
+      onPressed: isValid ? _submitFollowUp : null,
     );
   }
 

@@ -14,7 +14,9 @@ import 'package:telemarketing_app/providers/lead_detail_provider.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/lead_list_provider.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
-import 'package:telemarketing_app/widgets/sheet_header.dart';
+import 'package:telemarketing_app/widgets/app_action_bar.dart';
+import 'package:telemarketing_app/widgets/app_bottom_sheet.dart';
+import 'package:telemarketing_app/widgets/app_form_section.dart';
 import 'package:telemarketing_app/widgets/tag_chip.dart';
 
 /// 显示编辑线索面板（底部抽屉）
@@ -23,11 +25,10 @@ void showEditLeadDialog(
   required String leadId,
   required LeadDetail detail,
 }) {
-  showModalBottomSheet(
+  AppBottomSheet.show<void>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => _EditLeadPanel(
+    title: '编辑 ${detail.name} 线索',
+    child: _EditLeadPanel(
       leadId: leadId,
       detail: detail,
     ),
@@ -98,40 +99,19 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
-
-    return Container(
-      padding: EdgeInsets.only(bottom: bottom),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── 标题行 ──
-              SheetHeader(title: '编辑 ${widget.detail.name} 线索'),
-              const SizedBox(height: 20),
-
-              // ── 线索分类 ──
-              _buildCategorySelector(),
-              const SizedBox(height: 16),
-
-              // ── 状态 ──
-              _buildStatusSelector(),
-
-              const SizedBox(height: 24),
-
-              // ── 提交按钮 ──
-              _buildSubmitButton(),
-            ],
-          ),
-        ),
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── 线索分类 ──
+        _buildCategorySelector(),
+        const SizedBox(height: 16),
+        // ── 状态 ──
+        _buildStatusSelector(),
+        const SizedBox(height: 24),
+        // ── 提交按钮 ──
+        _buildSubmitButton(),
+      ],
     );
   }
 
@@ -141,29 +121,21 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
   // ── 分类选择器（横向平铺 chips） ──
 
   Widget _buildCategorySelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '线索分类',
-          style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
-        ),
-        const SizedBox(height: 8),
-        if (_categories.isEmpty)
-          const Text(
-            '暂无可选分类',
-            style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-          )
-        else
-          TagChipRow(
-            scrollable: true,
-            chips: _categories.map((c) => TagChipData(
-              label: c.name,
-              selected: _selectedCategoryId == c.id,
-              onTap: () => setState(() => _selectedCategoryId = c.id),
-            )).toList(),
-          ),
-      ],
+    return AppFormSection(
+      label: '线索分类',
+      child: _categories.isEmpty
+          ? const Text(
+              '暂无可选分类',
+              style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
+            )
+          : TagChipRow(
+              scrollable: true,
+              chips: _categories.map((c) => TagChipData(
+                label: c.name,
+                selected: _selectedCategoryId == c.id,
+                onTap: () => setState(() => _selectedCategoryId = c.id),
+              )).toList(),
+            ),
     );
   }
 
@@ -195,26 +167,10 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
   // ── 提交按钮 ──
 
   Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: TDButton(
-        text: _isSubmitting ? '' : '保存',
-        theme: TDButtonTheme.primary,
-        shape: TDButtonShape.round,
-        iconWidget: _isSubmitting
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : null,
-        disabled: _isSubmitting,
-        onTap: _isSubmitting ? null : _submit,
-      ),
+    return AppActionBar.submit(
+      text: '保存',
+      loading: _isSubmitting,
+      onPressed: _isSubmitting ? null : _submit,
     );
   }
 
