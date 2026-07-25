@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/home_stats.dart';
 import 'package:telemarketing_app/models/schedule.dart';
+import 'package:telemarketing_app/models/home_summary.dart';
 import 'package:telemarketing_app/services/home_service.dart';
 import 'auth_provider.dart';
 
@@ -22,16 +23,17 @@ class HomePageState {
   /// 是否处于首屏加载中
   final bool isInitialLoading;
 
-  /// 统计数据（合并自 stats/mine + schedules/stats/mine）
+  /// 统计数据（来自 stats/mine：跟进/接通/线索总数）
   final HomeStats? stats;
 
-  /// 待办日程列表（最多 5 条）
+  /// 待办日程列表（最多 5 条，来自 home-summary）
   final List<Schedule>? schedules;
 
-  /// 日程总数（用于 Badge 显示）
-  final int scheduleTotal;
+  /// 今日待办数（严格今日窗口，来自 home-summary.todayPending）
+  /// 替代原 stats.dueToday（含历史逾期）口径。
+  final int todayPending;
 
-  /// 即将到期日程数（用于提醒条）
+  /// 即将到期日程数（未来 30 分钟，用于提醒条）
   final int dueSoonCount;
 
   /// 统计区域独立加载态
@@ -59,7 +61,7 @@ class HomePageState {
     this.isInitialLoading = true,
     this.stats,
     this.schedules,
-    this.scheduleTotal = 0,
+    this.todayPending = 0,
     this.dueSoonCount = 0,
     this.isLoadingStats = false,
     this.isLoadingSchedules = false,
@@ -74,7 +76,7 @@ class HomePageState {
     bool? isInitialLoading,
     HomeStats? stats,
     List<Schedule>? schedules,
-    int? scheduleTotal,
+    int? todayPending,
     int? dueSoonCount,
     bool? isLoadingStats,
     bool? isLoadingSchedules,
@@ -88,7 +90,7 @@ class HomePageState {
       isInitialLoading: isInitialLoading ?? this.isInitialLoading,
       stats: stats ?? this.stats,
       schedules: schedules ?? this.schedules,
-      scheduleTotal: scheduleTotal ?? this.scheduleTotal,
+      todayPending: todayPending ?? this.todayPending,
       dueSoonCount: dueSoonCount ?? this.dueSoonCount,
       isLoadingStats: isLoadingStats ?? this.isLoadingStats,
       isLoadingSchedules: isLoadingSchedules ?? this.isLoadingSchedules,
@@ -143,50 +145,38 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
     final today = _getTodayDate();
     final homeService = _ref.read(homeServiceProvider);
 
-    // 并行发起 4 个请求
+    // 并行发起 2 个请求：业务统计 + 首页日程聚合
     final results = await Future.wait([
       _safeCall(() => homeService.fetchMyStats(today)),
-      _safeCall(() => homeService.fetchPendingSchedules()),
-      _safeCall(() => homeService.fetchMyScheduleStats()),
-      _safeCall(() => homeService.fetchDueSoonCount(
-          DateTime.now().millisecondsSinceEpoch ~/ 1000)),
+      _safeCall(() => homeService.fetchHomeSummary()),
     ]);
 
     if (_isDisposed) return;
 
     final statsResult = results[0];
-    final schedulesResult = results[1];
-    final scheduleStatsResult = results[2];
-    final dueSoonCount = results[3] as int;
+    final summary =
+        (results[1] is HomeSummary) ? results[1] as HomeSummary : null;
 
     HomeStats? mergedStats;
     String? statsError;
     List<Schedule>? schedules;
-    int scheduleTotal = 0;
+    int todayPending = 0;
+    int dueSoonCount = 0;
     String? schedulesError;
 
     // 处理统计结果
     if (statsResult != null && statsResult is HomeStats) {
       mergedStats = statsResult;
       statsError = null;
-    } else if (statsResult != null && statsResult is HomeStats) {
-      // 复用
     } else {
       statsError = '加载统计数据失败';
     }
 
-    // 处理日程统计（合并 dueToday）
-    if (scheduleStatsResult != null && scheduleStatsResult is HomeStats) {
-      final scheduleStats = scheduleStatsResult;
-      mergedStats = (mergedStats ?? const HomeStats()).merge(scheduleStats);
-    }
-
-    // 处理日程列表
-    if (schedulesResult != null &&
-        schedulesResult is ({List<Schedule> schedules, int total})) {
-      final result = schedulesResult;
-      schedules = result.schedules;
-      scheduleTotal = result.total;
+    // 处理首页日程聚合
+    if (summary != null) {
+      schedules = summary.schedules;
+      todayPending = summary.todayPending;
+      dueSoonCount = summary.dueSoonCount;
       schedulesError = null;
     } else {
       schedulesError = '加载日程失败';
@@ -196,7 +186,7 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
       isInitialLoading: false,
       stats: mergedStats,
       schedules: schedules,
-      scheduleTotal: scheduleTotal,
+      todayPending: todayPending,
       dueSoonCount: dueSoonCount,
       isLoadingStats: false,
       isLoadingSchedules: false,
@@ -257,41 +247,30 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
 
     // 静默刷新不显示 loading 状态
     final stats = await _safeCall(() => homeService.fetchMyStats(today));
-    final schedules =
-        await _safeCall(() => homeService.fetchPendingSchedules());
-    final scheduleStats =
-        await _safeCall(() => homeService.fetchMyScheduleStats());
-    final dueSoonCount = await _safeCall(() =>
-        homeService.fetchDueSoonCount(
-            DateTime.now().millisecondsSinceEpoch ~/ 1000));
+    final summary =
+        await _safeCall(() => homeService.fetchHomeSummary());
 
     if (_isDisposed) return;
 
     HomeStats? mergedStats = state.stats;
-
     if (stats != null && stats is HomeStats) {
       mergedStats = stats;
     }
 
-    if (scheduleStats != null && scheduleStats is HomeStats) {
-      mergedStats =
-          (mergedStats ?? const HomeStats()).merge(scheduleStats);
-    }
-
     List<Schedule>? scheduleList = state.schedules;
-    int total = state.scheduleTotal;
-    if (schedules != null &&
-        schedules is ({List<Schedule> schedules, int total})) {
-      final result = schedules;
-      scheduleList = result.schedules;
-      total = result.total;
+    int todayPending = state.todayPending;
+    int dueSoonCount = state.dueSoonCount;
+    if (summary != null && summary is HomeSummary) {
+      scheduleList = summary.schedules;
+      todayPending = summary.todayPending;
+      dueSoonCount = summary.dueSoonCount;
     }
 
     state = state.copyWith(
       stats: mergedStats,
       schedules: scheduleList,
-      scheduleTotal: total,
-      dueSoonCount: (dueSoonCount ?? 0),
+      todayPending: todayPending,
+      dueSoonCount: dueSoonCount,
     );
   }
 

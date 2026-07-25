@@ -48,7 +48,7 @@ class HomeScheduleSection extends ConsumerWidget {
                     color: Color(0xFF181818),
                   ),
                 ),
-                if ((state.stats?.dueToday ?? 0) > 0)
+                if (state.todayPending > 0)
                   Container(
                     margin: const EdgeInsets.only(left: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -60,7 +60,7 @@ class HomeScheduleSection extends ConsumerWidget {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      '${state.stats?.dueToday ?? 0}',
+                      '${state.todayPending}',
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w500,

@@ -243,6 +243,12 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
                 '已选',
                 () => ref.read(leadListProvider.notifier).clearFilter('date'),
               ),
+            if (state.ownerId != null && state.ownerId!.isNotEmpty)
+              _buildTag(
+                '归属',
+                '已指定',
+                () => ref.read(leadListProvider.notifier).clearFilter('owner'),
+              ),
           ],
         ),
       ),
@@ -314,6 +320,10 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
               onShowFilter: _showFilterSheet,
             ),
 
+            // ── 团队统计摘要条（仅 TM/TA 可见，显示共 X 条） ──
+            if (isManager && !isPublic)
+              _buildSummaryBar(state.total),
+
             // ── 搜索栏（双控制器，切换 Tab 不丢失文字） ──
             AppSearchBar(
               controller: _activeTab == 0 ? _mineSearchCtrl : _publicSearchCtrl,
@@ -345,6 +355,43 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
 
   // ── 顶部导航栏 ──
 
+  /// 统计摘要条（仅 TM/TA 可见）
+  Widget _buildSummaryBar(int total) {
+    return Container(
+      width: double.infinity,
+      height: 40,
+      color: const Color(0xFFF3F3F3),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      alignment: Alignment.centerLeft,
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(fontSize: 12, color: Color(0xFF4E5969)),
+          children: [
+            const TextSpan(text: '共 '),
+            TextSpan(
+              text: _formatNum(total),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0052D9),
+              ),
+            ),
+            const TextSpan(text: ' 条'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatNum(int n) {
+    if (n >= 10000) return '${(n / 10000).toStringAsFixed(1)}万';
+    final str = n.toString();
+    final buf = StringBuffer();
+    for (var i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) buf.write(',');
+      buf.write(str[i]);
+    }
+    return buf.toString();
+  }
 
   // ── 排序弹窗 ──
 
@@ -407,9 +454,11 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
   // ── 线索卡片 ──
 
   Widget _buildLeadCard(Lead lead, bool isManager, int index) {
+    final state = ref.read(leadListProvider);
     return LeadCard(
       lead: lead,
       showOwner: isManager,
+      users: state.users,
       onTap: () {
         // 构建列表上下文（底部导航条用）
         final ids = ref.read(leadListProvider).leads

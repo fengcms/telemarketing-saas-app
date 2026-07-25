@@ -35,6 +35,7 @@ class LeadListState {
   final String? statusFilter;   // status__in
   final String? categoryId;
   final String? projectId;
+  final String? ownerId;        // 归属人筛选（TM/TA）
   final int? dateFrom;
   final int? dateTo;
   final String sortBy;          // -updatedAt / nextFollowupAt
@@ -42,6 +43,7 @@ class LeadListState {
   // 缓存选项数据
   final List<OptionItem> categories;
   final List<OptionItem> projects;
+  final List<OptionItem> users;         // 团队成员（归属人筛选用）
   final bool isLoadingOptions;
 
   const LeadListState({
@@ -56,11 +58,13 @@ class LeadListState {
     this.statusFilter,
     this.categoryId,
     this.projectId,
+    this.ownerId,
     this.dateFrom,
     this.dateTo,
     this.sortBy = '-updatedAt',
     this.categories = const [],
     this.projects = const [],
+    this.users = const [],
     this.isLoadingOptions = false,
   });
 
@@ -76,11 +80,13 @@ class LeadListState {
     Object? statusFilter = _unset,
     Object? categoryId = _unset,
     Object? projectId = _unset,
+    Object? ownerId = _unset,
     Object? dateFrom = _unset,
     Object? dateTo = _unset,
     String? sortBy,
     List<OptionItem>? categories,
     List<OptionItem>? projects,
+    List<OptionItem>? users,
     bool? isLoadingOptions,
   }) {
     return LeadListState(
@@ -95,11 +101,13 @@ class LeadListState {
       statusFilter: statusFilter is _Unset ? this.statusFilter : statusFilter as String?,
       categoryId: categoryId is _Unset ? this.categoryId : categoryId as String?,
       projectId: projectId is _Unset ? this.projectId : projectId as String?,
+      ownerId: ownerId is _Unset ? this.ownerId : ownerId as String?,
       dateFrom: dateFrom is _Unset ? this.dateFrom : dateFrom as int?,
       dateTo: dateTo is _Unset ? this.dateTo : dateTo as int?,
       sortBy: sortBy ?? this.sortBy,
       categories: categories ?? this.categories,
       projects: projects ?? this.projects,
+      users: users ?? this.users,
       isLoadingOptions: isLoadingOptions ?? this.isLoadingOptions,
     );
   }
@@ -109,6 +117,7 @@ class LeadListState {
       (statusFilter != null && statusFilter!.isNotEmpty) ||
       (categoryId != null && categoryId!.isNotEmpty) ||
       (projectId != null && projectId!.isNotEmpty) ||
+      (ownerId != null && ownerId!.isNotEmpty) ||
       dateFrom != null ||
       dateTo != null;
 
@@ -118,6 +127,7 @@ class LeadListState {
     if (statusFilter != null && statusFilter!.isNotEmpty) count++;
     if (categoryId != null && categoryId!.isNotEmpty) count++;
     if (projectId != null && projectId!.isNotEmpty) count++;
+    if (ownerId != null && ownerId!.isNotEmpty) count++;
     if (dateFrom != null || dateTo != null) count++;
     return count;
   }
@@ -170,6 +180,7 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
         statusIn: state.statusFilter,
         categoryId: state.categoryId,
         projectId: state.projectId,
+        ownerId: state.ownerId,
         dateFrom: state.dateFrom,
         dateTo: state.dateTo,
         sort: state.sortBy,
@@ -184,10 +195,12 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
       final results = await Future.wait([
         service.fetchCategories(),
         service.fetchProjects(),
+        service.fetchUsers(),
       ]);
       final cats = results[0];
       final projs = results[1];
-      state = state.copyWith(categories: cats, projects: projs);
+      final users = results[2];
+      state = state.copyWith(categories: cats, projects: projs, users: users);
     } catch (_) {}
   }
 
@@ -242,6 +255,7 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
         statusIn: state.statusFilter,
         categoryId: state.categoryId,
         projectId: state.projectId,
+        ownerId: state.ownerId,
         dateFrom: state.dateFrom,
         dateTo: state.dateTo,
         sort: state.sortBy,
@@ -273,6 +287,7 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
     String? statusFilter,
     String? categoryId,
     String? projectId,
+    String? ownerId,
     int? dateFrom,
     int? dateTo,
   }) {
@@ -280,6 +295,7 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
       statusFilter: statusFilter,
       categoryId: categoryId,
       projectId: projectId,
+      ownerId: ownerId,
       dateFrom: dateFrom,
       dateTo: dateTo,
       isInitialLoading: true,
@@ -302,6 +318,9 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
         state = state.copyWith(
             dateFrom: null, dateTo: null, isInitialLoading: true);
         break;
+      case 'owner':
+        state = state.copyWith(ownerId: null, isInitialLoading: true);
+        break;
     }
     _reloadPage(1);
   }
@@ -311,6 +330,7 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
       statusFilter: null,
       categoryId: null,
       projectId: null,
+      ownerId: null,
       dateFrom: null,
       dateTo: null,
       isInitialLoading: true,
@@ -333,6 +353,7 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
       statusIn: state.statusFilter,
       categoryId: state.categoryId,
       projectId: state.projectId,
+      ownerId: state.ownerId,
       dateFrom: state.dateFrom,
       dateTo: state.dateTo,
       sort: state.sortBy,

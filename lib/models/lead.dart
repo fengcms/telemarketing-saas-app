@@ -11,6 +11,8 @@ class Lead {
   final String? projectId;
   final LeadProject? project;
   final LeadOwner? owner;
+  /// 归属人 ID（扁平字段，API 返回 `ownerId` 字符串）
+  final String? ownerId;
   final int? lastFollowupAt;
   final int? nextFollowupAt;
   final int updatedAt;
@@ -25,6 +27,7 @@ class Lead {
     this.projectId,
     this.project,
     this.owner,
+    this.ownerId,
     this.lastFollowupAt,
     this.nextFollowupAt,
     required this.updatedAt,
@@ -45,6 +48,7 @@ class Lead {
       owner: json['owner'] != null
           ? LeadOwner.fromJson(json['owner'] as Map<String, dynamic>)
           : null,
+      ownerId: json['ownerId']?.toString(),
       lastFollowupAt: _toInt(json['lastFollowupAt']),
       nextFollowupAt: _toInt(json['nextFollowupAt']),
       updatedAt: _toInt(json['updatedAt']),

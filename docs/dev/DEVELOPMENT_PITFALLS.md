@@ -1011,6 +1011,22 @@ final allowSelfClaim = settings['allowSelfClaim'] == true;
 
 **教训**：将 UI 元素从独立行合并到导航栏内时，不仅要考虑布局代码合并，还需同步更新所有交互状态（Tab 切换、搜索控制器、按钮禁用条件）。一次性把四件事想全再改，避免多次迭代。
 
+### 11.12 首页日程聚合接口合并（home-summary）的范围与口径坑
+
+**严重级别**：🟡 **可维护 / 功能（P2）**
+
+**背景**：首页原来并行 4 个请求拼日程区，后端新增 `GET /api/tenant/schedules/home-summary` 一次返回（今日待办 / 即将到期 / 预览列表）。首屏请求降到 2 个。
+
+**关键决策与坑点**：
+1. **改造范围必须限定首页**：`dueToday` 被 4 处消费（首页 Badge、首页四宫格、底部 Tab 角标、个人中心），其中后两处经共享的 `scheduleStatsProvider` 读取 `GET /api/tenant/schedules/stats/mine`。本次只替换首页的 3 个请求，`schedules/stats/mine` 后端**未下线**。因此：
+   - 删除的是 `HomeService` 的 `fetchPendingSchedules` / `fetchMyScheduleStats` / `fetchDueSoonCount`；
+   - **不能** 删 `ScheduleService.fetchMyScheduleStats`（Tab/个人中心依赖）及其 provider。
+2. **口径收窄导致角标可能不一致**：新 `todayPending` = 严格今日窗口（排除历史逾期）；旧 `dueToday` = `scheduledAt ≤ 今日结束`（含逾期）。有逾期待办时新值更小。需求文档已明确定义此为预期行为，但**首页 Badge/四宫格** 与 **Tab 角标/个人中心** 会用不同口径，产品需决策是否统一。
+3. **删方法时别误删共用静态方法**：`HomeService.getServerTime()` 是 `static`，被 `schedule_service.dart` 复用解析响应头时间，删除 3 个方法时必须**保留**它。同理，移除 `fetchPendingSchedules`/`fetchDueSoonCount` 后，`HomeService` 内的私有 `_toInt` 变死代码，需一并删除（Dart 未使用私有成员会报 hint，目标 0 issue）。
+4. **新建聚合模型复用 `Schedule.fromJson` 时要补 import**：`lib/models/home_summary.dart` 解析 `schedules` 直接用 `Schedule.fromJson`，但 `Schedule` 不在该文件作用域，必须 `import 'package:telemarketing_app/models/schedule.dart'` 否则 `non_type_as_type_argument` 编译错误。
+
+**教训**：合并接口前先全局 grep 被删字段/方法的全部引用，分清「首页私有」与「共享 provider」；新建模型若复用既有模型，import 是第一道关。
+
 ### 12.1 首屏 `_isLoading=true` 同时作骨架标志与请求守卫致首屏不拉取
 
 **严重级别**：🔴 **阻断性（P0，表现=骨架屏转圈但无请求/无数据）**

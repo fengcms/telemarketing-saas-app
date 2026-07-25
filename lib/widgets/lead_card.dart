@@ -8,22 +8,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/constants/lead_constants.dart';
 import 'package:telemarketing_app/models/lead.dart';
+import 'package:telemarketing_app/models/option_item.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/services/options_cache_service.dart';
+import 'package:telemarketing_app/theme/user_color.dart';
 
 /// 线索卡片组件
 ///
 /// 5 行布局，严格按 design doc §3.3 实现。
 /// categoryId/projectId 通过 [OptionsCacheService] 解析为显示名。
+/// [users] 为团队成员列表（归属人姓名查找用），由父组件从 [LeadListState] 传入。
 class LeadCard extends ConsumerWidget {
   final Lead lead;
   final bool showOwner; // TM/TA 可见
+  final List<OptionItem>? users; // 归属人姓名查找缓存
   final VoidCallback? onTap;
 
   const LeadCard({
     super.key,
     required this.lead,
     this.showOwner = false,
+    this.users,
     this.onTap,
   });
 
@@ -176,15 +181,30 @@ class LeadCard extends ConsumerWidget {
   // ── 行5（TM/TA 可见）：归属人 ──
 
   Widget _buildOwnerRow() {
+    // owner 可能是嵌套对象或扁平 ownerId；降级从 users 缓存中查找
+    final ownerName = lead.owner?.name;
+    final uid = lead.owner?.id ?? lead.ownerId;
+    final name = ownerName ??
+        users?.where((u) => u.id == uid).firstOrNull?.name ??
+        '未指定';
+    final color = userColor(uid);
     return Row(
       children: [
-        const Icon(Icons.person_outline, size: 14, color: Color(0xFFA6A6A6)),
-        const SizedBox(width: 4),
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
         Text(
-          '归属: ${lead.owner?.name ?? "--"}',
-          style: const TextStyle(
+          name,
+          style: TextStyle(
             fontSize: 12,
-            color: Color(0xFFA6A6A6),
+            fontWeight: FontWeight.w500,
+            color: color,
           ),
         ),
       ],

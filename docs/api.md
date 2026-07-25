@@ -322,6 +322,197 @@ curl 'https://tm-api-test.kao9.com/api/platform/stats?dateFrom=2026-07-18&dateTo
   -H 'Authorization: Bearer <psa_token>'
 ```
 
+```json
+{
+    "success": true,
+    "data": {
+        "total": 1125,
+        "byStatus": {
+            "pool": 186,
+            "assigned": 535,
+            "following": 220,
+            "converted": 103,
+            "invalid": 81
+        },
+        "byCategory": {
+            "c000100a-0000-0000-0000-000000000001": 179,
+            "c000100b-0000-0000-0000-000000000001": 182,
+            "c000100c-0000-0000-0000-000000000001": 186,
+            "c000100d-0000-0000-0000-000000000001": 170,
+            "__null__": 397
+        },
+        "byProject": {
+            "p0010a-0000-0000-0000-000000000001": {
+                "count": 220,
+                "converted": 17
+            },
+            "p0010b-0000-0000-0000-000000000001": {
+                "count": 216,
+                "converted": 9
+            },
+            "p0010c-0000-0000-0000-000000000001": {
+                "count": 210,
+                "converted": 13
+            },
+            "uncategorized-t1000001-0000-0000-0000-000000000001": {
+                "count": 470,
+                "converted": 2
+            }
+        },
+        "addedCount": 229,
+        "followupCount": 70,
+        "convertedCount": 7,
+        "answeredCount": 32,
+        "noAnswerCount": 27,
+        "callCount": 66,
+        "agentPerf": [
+            {
+                "userId": "u00000003-0000-0000-0000-000000000003",
+                "name": "销售经理",
+                "ownedLeads": 4,
+                "followedCount": 27,
+                "answeredCount": 14,
+                "noAnswerCount": 1,
+                "convertedCount": 3,
+                "avgDuration": 0,
+                "lastFollowupAt": 1784707340
+            },
+            {
+                "userId": "u00000004-0000-0000-0000-000000000004",
+                "name": "张伟",
+                "ownedLeads": 120,
+                "followedCount": 19,
+                "answeredCount": 15,
+                "noAnswerCount": 2,
+                "convertedCount": 2,
+                "avgDuration": 0,
+                "lastFollowupAt": 1784716324
+            },
+            {
+                "userId": "u00000005-0000-0000-0000-000000000005",
+                "name": "李娜",
+                "ownedLeads": 111,
+                "followedCount": 26,
+                "answeredCount": 16,
+                "noAnswerCount": 0,
+                "convertedCount": 4,
+                "avgDuration": 0,
+                "lastFollowupAt": 1784815515
+            },
+            {
+                "userId": "u00000006-0000-0000-0000-000000000006",
+                "name": "赵磊",
+                "ownedLeads": 3,
+                "followedCount": 1,
+                "answeredCount": 0,
+                "noAnswerCount": 0,
+                "convertedCount": 0,
+                "avgDuration": 0,
+                "lastFollowupAt": 1784712462
+            },
+            {
+                "userId": "u00000007-0000-0000-0000-000000000007",
+                "name": "刘艳",
+                "ownedLeads": 7,
+                "followedCount": 3,
+                "answeredCount": 0,
+                "noAnswerCount": 2,
+                "convertedCount": 0,
+                "avgDuration": 0,
+                "lastFollowupAt": 1784708012
+            }
+        ],
+        "funnel": {
+            "pool": 0,
+            "assigned": 755,
+            "following": 220,
+            "converted": 103
+        },
+        "poolTotal": 0,
+        "staleInPool": 0,
+        "byAnswerType": {
+            "answered": 32,
+            "no_answer": 27,
+            "rejected": 0,
+            "empty_number": 0,
+            "suspended": 0
+        },
+        "dailyTrend": [
+            {
+                "date": "2026-07-16",
+                "added": 4,
+                "followup": 12,
+                "converted": 1,
+                "answered": 3,
+                "total": 86
+            },
+            {
+                "date": "2026-07-17",
+                "added": 3,
+                "followup": 12,
+                "converted": 2,
+                "answered": 6,
+                "total": 94
+            },
+            {
+                "date": "2026-07-18",
+                "added": 7,
+                "followup": 10,
+                "converted": 2,
+                "answered": 7,
+                "total": 91
+            },
+            {
+                "date": "2026-07-19",
+                "added": 2,
+                "followup": 8,
+                "converted": 2,
+                "answered": 3,
+                "total": 100
+            },
+            {
+                "date": "2026-07-20",
+                "added": 5,
+                "followup": 8,
+                "converted": 0,
+                "answered": 5,
+                "total": 119
+            },
+            {
+                "date": "2026-07-21",
+                "added": 3,
+                "followup": 4,
+                "converted": 0,
+                "answered": 6,
+                "total": 137
+            },
+            {
+                "date": "2026-07-22",
+                "added": 205,
+                "followup": 10,
+                "converted": 0,
+                "answered": 0,
+                "total": 249
+            },
+            {
+                "date": "2026-07-23",
+                "added": 0,
+                "followup": 6,
+                "converted": 0,
+                "answered": 2,
+                "total": 249
+            }
+        ],
+        "compareYesterday": {
+            "addedDiff": -205,
+            "followupDiff": -4,
+            "convertedDiff": 0
+        }
+    },
+    "error": null
+}
+```
+
 ### PATCH /api/platform/tenants/:id
 
 编辑租户（名称、状态、配额等）。

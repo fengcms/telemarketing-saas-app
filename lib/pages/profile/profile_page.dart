@@ -29,8 +29,10 @@ import 'package:telemarketing_app/pages/profile/widgets/profile_user_card.dart';
 import 'package:telemarketing_app/pages/schedules/widgets/schedule_skeleton.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/home_provider.dart';
+import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'package:telemarketing_app/core/dev_tools.dart';
+import 'package:telemarketing_app/widgets/app_toast.dart';
 
 // ── 颜色常量（对齐 TDesign 设计规范）──
 const Color _brandColor = Color(0xFF0052D9);
@@ -144,6 +146,23 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     );
   }
 
+  /// 手动刷新公司基础数据（options + 租户信息）
+  Future<void> _refreshCompanyData() async {
+    if (!mounted) return;
+    AppToast.show(context, '正在更新公司数据…');
+    try {
+      await Future.wait([
+        ref.read(optionsCacheProvider).refresh(),
+        ref.read(tenantServiceProvider).refresh(),
+      ]);
+      if (!mounted) return;
+      AppToast.show(context, '公司数据已更新');
+    } catch (_) {
+      if (!mounted) return;
+      AppToast.show(context, '更新失败，请重试');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
@@ -214,6 +233,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                     icon: Icons.settings,
                     title: '设置',
                     onTap: () => _push(const SettingsPage()),
+                  ),
+                  ProfileMenuRow(
+                    icon: Icons.cloud_sync,
+                    title: '更新公司数据',
+                    onTap: _refreshCompanyData,
                   ),
                   // 开发版：主题预览入口
                   if (enableDevTools)

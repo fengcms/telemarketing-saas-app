@@ -17,10 +17,10 @@ class ApiConstants {
   static const int receiveTimeout = 15000;
 
   /// 下拉选项缓存有效期（秒）
-  /// 选项数据（分类/项目等）变更不频繁，
-  /// 设置 30 分钟（1800 秒）缓存减少重复请求。
-  /// 可根据实际需求调整此值。
-  static const int optionsCacheTTL = 1800;
+  /// 选项数据（分类/项目/用户等）变更不频繁，
+  /// 缓存 10 小时（36000 秒）减少重复请求。
+  /// 个人中心「更新公司数据」按钮可手动清空缓存重新拉取。
+  static const int optionsCacheTTL = 36000;
 
   // ── 认证相关 ──
 
@@ -48,6 +48,8 @@ class ApiConstants {
   static const String schedules = '/api/tenant/schedules';
   static const String schedulesStatsMine = '/api/tenant/schedules/stats/mine';
   static const String schedulesStats = '/api/tenant/schedules/stats';
+  // 首页日程聚合（今日待办 + 即将到期 + 预览列表），无参
+  static const String homeSummary = '/api/tenant/schedules/home-summary';
 
   // ── 线索 ──
 

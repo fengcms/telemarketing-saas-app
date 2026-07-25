@@ -1,10 +1,8 @@
 /// 首页看板数据服务
 ///
-/// 封装首页所需的 4 个接口调用：
-/// 1. [fetchMyStats] - GET /api/tenant/stats/mine
-/// 2. [fetchPendingSchedules] - GET /api/tenant/schedules?status=pending&page=1&size=5
-/// 3. [fetchMyScheduleStats] - GET /api/tenant/schedules/stats/mine
-/// 4. [fetchDueSoonCount] - GET /api/tenant/schedules?status=pending&scheduledAt__gte=...&page=1&size=1
+/// 封装首页所需的 2 个接口调用：
+/// 1. [fetchMyStats] - GET /api/tenant/stats/mine（今日跟进/接通/线索总数）
+/// 2. [fetchHomeSummary] - GET /api/tenant/schedules/home-summary（待办数/即将到期/预览列表）
 library;
 
 import 'package:dio/dio.dart';
@@ -12,15 +10,9 @@ import 'package:telemarketing_app/services/api_client.dart';
 import 'package:telemarketing_app/services/api_constants.dart';
 import 'package:telemarketing_app/services/api_exception.dart';
 import 'package:telemarketing_app/models/home_stats.dart';
-import 'package:telemarketing_app/models/schedule.dart';
+import 'package:telemarketing_app/models/home_summary.dart';
 
 /// 首页看板数据服务
-///
-/// 封装首页所需的 4 个接口调用：
-/// 1. [fetchMyStats] - GET /api/tenant/stats/mine
-/// 2. [fetchPendingSchedules] - GET /api/tenant/schedules?status=pending&page=1&size=5
-/// 3. [fetchMyScheduleStats] - GET /api/tenant/schedules/stats/mine
-/// 4. [fetchDueSoonCount] - GET /api/tenant/schedules?status=pending&scheduledAt__gte=...&page=1&size=1
 class HomeService {
   final ApiClient _apiClient;
 
@@ -52,80 +44,31 @@ class HomeService {
     }
   }
 
-  /// 获取待办日程预览（最多 5 条）
+  /// 获取首页日程聚合（今日待办 + 即将到期 + 预览列表）
   ///
-  /// 返回 [schedules] 列表 + [total] 总数。
-  Future<({List<Schedule> schedules, int total})> fetchPendingSchedules() async {
+  /// 调 GET /api/tenant/schedules/home-summary，一次性返回
+  /// [HomeSummary]（todayPending / dueSoonCount / pendingTotal / schedules）。
+  /// 替代原先的待办列表查询、日程统计查询、即将到期时间窗查询三个请求。
+  Future<HomeSummary> fetchHomeSummary() async {
     try {
-      final response = await _apiClient.dio.get(
-        ApiConstants.schedules,
-        queryParameters: {
-          'status': 'pending',
-          'page': 1,
-          'size': 5,
-          'sort': 'scheduledAt',
-        },
-      );
+      final response = await _apiClient.dio.get(ApiConstants.homeSummary);
       final data = response.data;
       if (data is Map && data['success'] == true) {
-        final body = data['data'] as Map? ?? {};
-        final List<Schedule> items = (body['items'] as List<dynamic>?)
-                ?.map((e) => Schedule.fromJson(e as Map<String, dynamic>))
-                .toList() ??
-            [];
-        return (schedules: items, total: _toInt(body['total']));
+        return HomeSummary.fromJson(data as Map<String, dynamic>);
       }
-      return (schedules: <Schedule>[], total: 0);
+      throw const ApiException(
+        statusCode: 200,
+        code: 'UNKNOWN',
+        message: '获取首页日程失败',
+      );
     } on DioException catch (e) {
       throw ApiClient.parseError(e);
-    }
-  }
-
-  /// 获取我的日程统计
-  ///
-  /// 返回 [HomeStats]（仅 dueToday 字段有效）。
-  Future<HomeStats> fetchMyScheduleStats() async {
-    try {
-      final response =
-          await _apiClient.dio.get(ApiConstants.schedulesStatsMine);
-      final data = response.data;
-      if (data is Map && data['success'] == true) {
-        return HomeStats.fromScheduleStats(data as Map<String, dynamic>);
-      }
-      return const HomeStats();
-    } on DioException catch (e) {
-      throw ApiClient.parseError(e);
-    }
-  }
-
-  /// 获取即将到期日程数（未来 30 分钟内）
-  ///
-  /// [serverTime] 为服务端时间 Unix 秒。
-  /// 返回到期日程总数 N（N ≥ 1 时显示提醒条）。
-  Future<int> fetchDueSoonCount(int serverTime) async {
-    try {
-      final response = await _apiClient.dio.get(
-        ApiConstants.schedules,
-        queryParameters: {
-          'status': 'pending',
-          'scheduledAt__gte': serverTime,
-          'scheduledAt__lte': serverTime + 1800,
-          'page': 1,
-          'size': 1,
-        },
-      );
-      final data = response.data;
-      if (data is Map && data['success'] == true) {
-        final body = data['data'] as Map? ?? {};
-        return _toInt(body['total']);
-      }
-      return 0;
-    } on DioException {
-      return 0; // 静默失败
     }
   }
 
   /// 获取服务端时间（从 HTTP 响应头 Date 解析）
+  ///
+  /// 供 [schedule_service.dart] 复用，避免额外请求。
   static int getServerTime(Response response) {
     try {
       final dateStr = response.headers.value('Date');
@@ -134,13 +77,5 @@ class HomeService {
       }
     } catch (_) {}
     return DateTime.now().millisecondsSinceEpoch ~/ 1000;
-  }
-
-  static int _toInt(dynamic v) {
-    if (v == null) return 0;
-    if (v is int) return v;
-    if (v is double) return v.toInt();
-    if (v is String) return int.tryParse(v) ?? 0;
-    return 0;
   }
 }

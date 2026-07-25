@@ -101,7 +101,7 @@ class HomeStatsSection extends ConsumerWidget {
                 child: _statCard('线索总数', '${stats.myLeadsTotal}')),
             const SizedBox(width: 12),
             Expanded(
-                child: _statCard('今日到期', '${stats.dueToday}')),
+                child: _statCard('今日到期', '${state.todayPending}')),
           ],
         ),
       ],

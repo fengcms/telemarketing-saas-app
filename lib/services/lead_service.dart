@@ -302,6 +302,7 @@ class LeadService {
     String? projectId,
     int? dateFrom,
     int? dateTo,
+    String? ownerId,
     String sort = '-updatedAt',
   }) async {
     try {
@@ -318,6 +319,7 @@ class LeadService {
       if (projectId != null && projectId.isNotEmpty) params['projectId'] = projectId;
       if (dateFrom != null) params['updatedAt__gte'] = dateFrom;
       if (dateTo != null) params['updatedAt__lte'] = dateTo;
+      if (ownerId != null && ownerId.isNotEmpty) params['ownerId'] = ownerId;
 
       final response = await _apiClient.dio.get(
         ApiConstants.leads,

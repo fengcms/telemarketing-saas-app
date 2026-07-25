@@ -32,6 +32,7 @@ class OptionsCacheService {
   static const _keyProjects = 'cache_options_projects';
   static const _keyUsers = 'cache_options_users';
   static const _keyQuickNotes = 'cache_options_quick_notes';
+  static const _keyTime = 'cache_options_time';
 
   OptionsCacheService({required this._apiClient});
 
@@ -67,6 +68,10 @@ class OptionsCacheService {
   Future<void> _loadFromLocal() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final timeStr = prefs.getString(_keyTime);
+      if (timeStr != null) {
+        _lastFetchTime = DateTime.tryParse(timeStr);
+      }
       final cats = prefs.getString(_keyCategories);
       final projs = prefs.getString(_keyProjects);
       final users = prefs.getString(_keyUsers);
@@ -82,6 +87,9 @@ class OptionsCacheService {
   Future<void> _saveToLocal() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      if (_lastFetchTime != null) {
+        await prefs.setString(_keyTime, _lastFetchTime!.toIso8601String());
+      }
       await prefs.setString(_keyCategories, _encodeList(_categories));
       await prefs.setString(_keyProjects, _encodeList(_projects));
       await prefs.setString(_keyUsers, _encodeList(_users));

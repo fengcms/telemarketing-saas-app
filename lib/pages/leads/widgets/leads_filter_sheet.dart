@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/option_item.dart';
 import 'package:telemarketing_app/providers/lead_list_provider.dart';
+import 'package:telemarketing_app/theme/user_color.dart';
 import 'package:telemarketing_app/widgets/tag_chip.dart';
 
 /// 排序面板
@@ -79,6 +80,7 @@ class _LeadsFilterSheetState extends ConsumerState<LeadsFilterSheet> {
   String? _tempStatus;
   String? _tempCategoryId;
   String? _tempProjectId;
+  String? _tempOwnerId;
   int? _tempDateFrom;
   int? _tempDateTo;
 
@@ -88,6 +90,7 @@ class _LeadsFilterSheetState extends ConsumerState<LeadsFilterSheet> {
     _tempStatus = widget.state.statusFilter;
     _tempCategoryId = widget.state.categoryId;
     _tempProjectId = widget.state.projectId;
+    _tempOwnerId = widget.state.ownerId;
     _tempDateFrom = widget.state.dateFrom;
     _tempDateTo = widget.state.dateTo;
   }
@@ -101,6 +104,8 @@ class _LeadsFilterSheetState extends ConsumerState<LeadsFilterSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildTitle(),
+          const SizedBox(height: 16),
+          _buildOwnerSection(),
           const SizedBox(height: 16),
           _buildStatusSection(),
           if (widget.state.categories.isNotEmpty) ...[
@@ -130,6 +135,7 @@ class _LeadsFilterSheetState extends ConsumerState<LeadsFilterSheet> {
             _tempStatus = null;
             _tempCategoryId = null;
             _tempProjectId = null;
+            _tempOwnerId = null;
             _tempDateFrom = null;
             _tempDateTo = null;
           }),
@@ -144,6 +150,7 @@ class _LeadsFilterSheetState extends ConsumerState<LeadsFilterSheet> {
                   statusFilter: _tempStatus,
                   categoryId: _tempCategoryId,
                   projectId: _tempProjectId,
+                  ownerId: _tempOwnerId,
                   dateFrom: _tempDateFrom,
                   dateTo: _tempDateTo,
                 );
@@ -155,6 +162,69 @@ class _LeadsFilterSheetState extends ConsumerState<LeadsFilterSheet> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildOwnerSection() {
+    final users = widget.state.users;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('归属人',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _ownerChip(null, '全部'),
+              const SizedBox(width: 8),
+              ...users.map((u) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _ownerChip(u.id, u.name, userId: u.id),
+              )),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _ownerChip(String? value, String label, {String? userId}) {
+    final selected = _tempOwnerId == value;
+    return GestureDetector(
+      onTap: () => setState(() => _tempOwnerId = value),
+      child: Container(
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFD9E1FF) : const Color(0xFFF3F3F3),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (userId != null)
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: userColor(userId),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            if (userId != null) const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color: selected ? const Color(0xFF0052D9) : const Color(0xFF4E5969),
+                fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
