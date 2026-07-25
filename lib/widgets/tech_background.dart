@@ -27,7 +27,7 @@ class _TechBackgroundState extends State<TechBackground>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 12),
+      duration: const Duration(seconds: 24),
     )..repeat();
 
     final rand = Random(42);

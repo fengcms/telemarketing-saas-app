@@ -366,6 +366,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       keyboardType: TextInputType.emailAddress,
       style: const TextStyle(fontSize: 15, color: Colors.white),
       decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white.withValues(alpha: 0.08),
         prefixIcon: const Padding(
           padding: EdgeInsets.only(left: 12, right: 8),
           child: Icon(Icons.mail_outline, size: 20, color: Color(0xFF8A9BB5)),
@@ -470,6 +472,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       obscureText: _obscurePassword,
       style: const TextStyle(fontSize: 15, color: Colors.white),
       decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white.withValues(alpha: 0.08),
         prefixIcon: const Padding(
           padding: EdgeInsets.only(left: 12, right: 8),
           child: Icon(Icons.lock, size: 20, color: Color(0xFF8A9BB5)),
