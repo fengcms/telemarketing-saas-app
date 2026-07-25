@@ -4,6 +4,7 @@ library;
 import 'package:dio/dio.dart';
 import 'package:telemarketing_app/services/api_client.dart';
 import 'package:telemarketing_app/services/api_constants.dart';
+import 'package:telemarketing_app/services/api_exception.dart';
 import 'package:telemarketing_app/models/lead.dart';
 import 'package:telemarketing_app/models/lead_detail_bundle.dart';
 import 'package:telemarketing_app/models/follow_up_record.dart';
@@ -364,6 +365,29 @@ class LeadService {
             .toList();
       }
       return [];
+    } on DioException catch (e) {
+      throw ApiClient.parseError(e);
+    }
+  }
+
+  /// 领取公海线索
+  ///
+  /// POST /api/tenant/leads/:id/claim。成功返回 claim 响应 data。
+  /// 抛出 [ApiException]（400 已被领 / 422 禁拨名单等）。
+  Future<Map<String, dynamic>> claimLead(String leadId) async {
+    try {
+      final response = await _apiClient.dio.post(
+        '${ApiConstants.leads}/$leadId/claim',
+      );
+      final data = response.data;
+      if (data is Map && data['success'] == true) {
+        return (data['data'] as Map<String, dynamic>?) ?? {};
+      }
+      throw const ApiException(
+        statusCode: 200,
+        code: 'UNKNOWN',
+        message: '领取失败，请稍后再试',
+      );
     } on DioException catch (e) {
       throw ApiClient.parseError(e);
     }

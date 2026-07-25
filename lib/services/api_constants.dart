@@ -52,6 +52,7 @@ class ApiConstants {
   // ── 线索 ──
 
   static const String leads = '/api/tenant/leads';
+  static const String leadClaim = '/api/tenant/leads/{id}/claim';
 
   // ── 通话记录 ──
 

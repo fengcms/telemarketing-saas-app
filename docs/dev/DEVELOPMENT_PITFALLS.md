@@ -975,6 +975,42 @@ fetchSchedules(q: query, statusIn: 'pending,completed,cancelled', page: 1)
 
 **教训**：后端接口的默认行为不一定是"不传参=不限"——很多接口不传参其实是传了服务端的默认值（如 `pending`）。涉及"查询全部状态"的场景，务必与后端确认是否需要显式传多值参数（如 `status__in`、`status[]`），而不能假设"不传 = 不限"。
 
+### 11.10 `TenantService.fetchProfile()` 直接返回 `settings` 对象，非完整 profile 嵌套
+
+**严重级别**：🟠 **功能性（P1，表现=allowSelfClaim 永远为 false）**
+
+**现象**：TE 角色用户已开启 `allowSelfClaim=true`，但公海 Tab 始终不显示。
+
+**原因**：代码写的是：
+```dart
+final profile = await tenantService.fetchProfile();
+final settings = profile['settings'] as Map<String, dynamic>? ?? {};
+final allowSelfClaim = settings['allowSelfClaim'] == true;
+```
+但实际上 `fetchProfile()` 返回的就是 `settings` 对象本身，不是完整的 profile 响应（即没有外层 `data` 或 `settings` 嵌套）。上述代码在 profile 上取 `settings` 键取不到（已是扁平对象），`allowSelfClaim` 永远是默认值 `false`。
+
+**解决方案**：直接取：
+```dart
+final settings = await tenantService.fetchProfile();
+final allowSelfClaim = settings['allowSelfClaim'] == true;
+```
+
+**教训**：调用已有 Service 层方法前，必须确认其返回结构——不能仅凭方法名和领域推断返回格式。最可靠的做法：真机抓包看实际返回 JSON，或者看一眼 Service 实现的 parse 逻辑。
+
+### 11.11 独立 Tab 行改为顶部栏内嵌 Tab 的布局重构
+
+**严重级别**：🟡 **可维护（P2）**
+
+**背景**：用户要求将线索列表的 Tab 切换（我的线索/公海线索）合并到顶部蓝色导航栏内，代替原有的独立 Tab 行。
+
+**关键决策**：
+1. **Tab 颜色**：蓝色背景下选中态用白色下划线 + 白色加粗文字；非选中态用白色 70% 透明度。不能用 `BrandColors.primary`（蓝色背景上蓝色文字不可见）。
+2. **布局**：两个 Tab 用 `Expanded` 均分左侧空间 + `Spacer` 将筛选/排序按钮推到右侧。不能用 `IntrinsicWidth` 或固定 padding，否则按钮位置会随屏幕宽度偏移。
+3. **双搜索控制器**：原架构用单 `_searchCtrl` + 手动清空策略，切换 Tab 时丢失搜索词。重构为 `_mineSearchCtrl` + `_publicSearchCtrl` 分别持有状态，`AppSearchBar.controller` 根据 `_activeTab` 动态切换。
+4. **筛选按钮公海禁用**：公海 Tab 下筛选按钮 `onTap: null` + `Colors.white30`，不做隐藏/移除，避免图标闪烁。红点角标同时隐藏。
+
+**教训**：将 UI 元素从独立行合并到导航栏内时，不仅要考虑布局代码合并，还需同步更新所有交互状态（Tab 切换、搜索控制器、按钮禁用条件）。一次性把四件事想全再改，避免多次迭代。
+
 ### 12.1 首屏 `_isLoading=true` 同时作骨架标志与请求守卫致首屏不拉取
 
 **严重级别**：🔴 **阻断性（P0，表现=骨架屏转圈但无请求/无数据）**
