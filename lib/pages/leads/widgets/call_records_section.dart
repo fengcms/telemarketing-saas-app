@@ -6,7 +6,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/constants/lead_constants.dart';
 import 'package:telemarketing_app/models/call_record.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
@@ -137,7 +136,7 @@ class CallRecordsSection extends ConsumerWidget {
       child: const Column(
         children: [
           Icon(
-            TDIcons.call,
+            Icons.call,
             size: 40,
             color: Color(0xFFDCDCDC),
           ),
@@ -179,7 +178,7 @@ class CallRecordsSection extends ConsumerWidget {
         children: [
           // 电话图标
           Icon(
-            TDIcons.call,
+            Icons.call,
             size: 18,
             color: const Color(0xFFA6A6A6),
           ),

@@ -13,7 +13,6 @@ library;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:telemarketing_app/widgets/app_dialog.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
@@ -204,7 +203,7 @@ class _HomePageState extends ConsumerState<HomePage>
 
   Widget _buildOfflineBanner() {
     return _buildNoticeBar(
-      icon: TDIcons.error_circle,
+      icon: Icons.error_outline,
       iconColor: const Color(0xFFE37318),
       bgColor: const Color(0xFFFFF3E0),
       textColor: const Color(0xFFE37318),
@@ -264,7 +263,7 @@ class _HomePageState extends ConsumerState<HomePage>
                   height: 32,
                   alignment: Alignment.center,
                   child:
-                      const Icon(TDIcons.close, size: 16, color: Color(0xFF0052D9)),
+                      const Icon(Icons.close, size: 16, color: Color(0xFF0052D9)),
                 ),
               ),
           ],

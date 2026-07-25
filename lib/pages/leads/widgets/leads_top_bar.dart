@@ -2,7 +2,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/providers/lead_list_provider.dart';
 
 /// 线索列表顶部导航栏：标题 + 排序按钮 + 筛选按钮
@@ -75,7 +74,7 @@ class LeadsTopBar extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   Icon(
-                    TDIcons.filter,
+                    Icons.filter_list,
                     size: 22,
                     color: state.hasActiveFilters
                         ? Colors.white70

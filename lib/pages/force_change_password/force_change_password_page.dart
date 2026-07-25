@@ -279,7 +279,7 @@ class _ForceChangePasswordPageState
           child: Row(
             children: [
               const SizedBox(width: 12),
-              const Icon(TDIcons.key, size: 20, color: Color(0xFFA6A6A6)),
+              const Icon(Icons.vpn_key, size: 20, color: Color(0xFFA6A6A6)),
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
@@ -323,7 +323,7 @@ class _ForceChangePasswordPageState
             padding: const EdgeInsets.only(top: 4),
             child: Row(
               children: [
-                const Icon(TDIcons.info_circle,
+                const Icon(Icons.info_outline,
                     size: 14, color: Color(0xFFD54941)),
                 const SizedBox(width: 4),
                 Text(
@@ -406,7 +406,7 @@ class _ForceChangePasswordPageState
           child: Row(
             children: [
               const SizedBox(width: 12),
-              const Icon(TDIcons.key, size: 20, color: Color(0xFFA6A6A6)),
+              const Icon(Icons.vpn_key, size: 20, color: Color(0xFFA6A6A6)),
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
@@ -450,7 +450,7 @@ class _ForceChangePasswordPageState
             padding: const EdgeInsets.only(top: 4),
             child: Row(
               children: [
-                const Icon(TDIcons.info_circle,
+                const Icon(Icons.info_outline,
                     size: 14, color: Color(0xFFD54941)),
                 const SizedBox(width: 4),
                 Text(
@@ -482,7 +482,7 @@ class _ForceChangePasswordPageState
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(TDIcons.error_circle,
+          const Icon(Icons.error_outline,
               size: 16, color: Color(0xFFD54941)),
           const SizedBox(width: 6),
           Flexible(

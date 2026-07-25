@@ -362,12 +362,12 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           actionButton(
-            icon: TDIcons.rollback,
+            icon: Icons.undo,
             label: '跟进',
             onTap: () => showFollowUpPanel(context, leadId: d.leadId),
           ),
           actionButton(
-            icon: TDIcons.calendar,
+            icon: Icons.event,
             label: '日程',
             onTap: () async {
               final changed = await showScheduleFormSheet(
@@ -384,7 +384,7 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
             },
           ),
           actionButton(
-            icon: TDIcons.edit,
+            icon: Icons.edit,
             label: '编辑',
             onTap: _canEdit ? () => _onEdit() : null,
           ),

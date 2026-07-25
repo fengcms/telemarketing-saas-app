@@ -2,7 +2,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 /// 设置新密码页面顶部导航栏（返回按钮 + 标题）
 class PasswordNavBar extends StatelessWidget {
@@ -30,7 +29,7 @@ class PasswordNavBar extends StatelessWidget {
             onTap: onBack,
             child: const Padding(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-              child: Icon(TDIcons.chevron_left,
+              child: Icon(Icons.chevron_left,
                   size: 24, color: Color(0xFF181818)),
             ),
           ),

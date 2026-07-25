@@ -321,7 +321,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         color: const Color(0xFF0052D9).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Icon(TDIcons.call, size: 36, color: Color(0xFF0052D9)),
+      child: const Icon(Icons.call, size: 36, color: Color(0xFF0052D9)),
     );
   }
 
@@ -343,7 +343,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           child: Row(
             children: [
               const SizedBox(width: 12),
-              const Icon(TDIcons.mail, size: 20, color: Color(0xFFA6A6A6)),
+              const Icon(Icons.mail_outline, size: 20, color: Color(0xFFA6A6A6)),
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
@@ -399,7 +399,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             AnimatedRotation(
               turns: _isDomainDropdownOpen ? 0.5 : 0,
               duration: const Duration(milliseconds: 200),
-              child: const Icon(TDIcons.chevron_down, size: 16, color: Color(0xFFA6A6A6)),
+              child: const Icon(Icons.keyboard_arrow_down, size: 16, color: Color(0xFFA6A6A6)),
             ),
           ],
         ),
@@ -477,7 +477,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       child: Row(
         children: [
           const SizedBox(width: 12),
-          const Icon(TDIcons.lock_on,
+          const Icon(Icons.lock,
               size: 20, color: Color(0xFFA6A6A6)),
           const SizedBox(width: 8),
           Expanded(
@@ -595,7 +595,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(TDIcons.error_circle,
+        const Icon(Icons.error_outline,
             size: 16, color: Color(0xFFD54941)),
         const SizedBox(width: 6),
         Flexible(

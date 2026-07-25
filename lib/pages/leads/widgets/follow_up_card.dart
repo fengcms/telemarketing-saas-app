@@ -6,7 +6,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 import 'package:telemarketing_app/constants/lead_constants.dart';
 import 'package:telemarketing_app/models/follow_up_record.dart';
 import 'package:telemarketing_app/models/user.dart';
@@ -145,7 +144,7 @@ class FollowUpCard extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(TDIcons.edit, size: 14,
+                  Icon(Icons.edit, size: 14,
                       color: Color(0xFF0052D9)),
                   SizedBox(width: 2),
                   Text(

@@ -167,7 +167,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
       ],
       leftBarItems: [
         TDNavBarItem(
-          icon: TDIcons.chevron_left,
+          icon: Icons.chevron_left,
           action: () => Navigator.of(context).pop(),
         ),
       ],
@@ -181,7 +181,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(
-            TDIcons.info_circle_filled,
+            Icons.info,
             size: 64,
             color: Color(0xFFA6A6A6),
           ),

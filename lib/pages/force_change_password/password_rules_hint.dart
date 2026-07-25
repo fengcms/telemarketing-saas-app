@@ -2,7 +2,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:tdesign_flutter/tdesign_flutter.dart';
 
 /// 安全提示卡片（零状态）
 class SecurityHint extends StatelessWidget {
@@ -66,7 +65,7 @@ class PasswordRuleHint extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(TDIcons.info_circle,
+        const Icon(Icons.info_outline,
             size: 14, color: Color(0xFFA6A6A6)),
         const SizedBox(width: 4),
         const Expanded(

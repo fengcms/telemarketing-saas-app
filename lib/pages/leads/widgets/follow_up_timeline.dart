@@ -156,7 +156,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
       child: Column(
         children: [
           Icon(
-            TDIcons.rollback,
+            Icons.undo,
             size: 40,
             color: const Color(0xFFDCDCDC),
           ),
