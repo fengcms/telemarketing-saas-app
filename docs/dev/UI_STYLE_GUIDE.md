@@ -1,598 +1,517 @@
 # 电销工作台 APP — UI/UX 风格指南
 
 > 本文档记录项目中已落地并验证的**视觉与交互模式**，供后续页面开发时参考。
-> 新页面应遵循本指南中的风格约定，确保全应用视觉一致。
-> 版本：v1.0（2026-07-24）
+> **新页面应遵循本指南中的组件和约定，确保全应用视觉一致。**
+> 版本：v2.0（2026-07-25）— TDesign 全量迁移到 Material 3 后重写。
 
 ---
 
 ## 目录
 
-1. [色板](#1-色板)
-2. [页面布局](#2-页面布局)
-3. [详情页卡片风格](#3-详情页卡片风格)
-4. [底部抽屉（BottomSheet）](#4-底部抽屉bottomsheet)
-5. [表单输入控件](#5-表单输入控件)
-6. [标签选择器（TagChip）](#6-标签选择器tagchip)
-7. [骨架屏（Skeleton）](#7-骨架屏skeleton)
-8. [按钮](#8-按钮)
-9. [顶栏（TopBar）](#9-顶栏topbar)
-10. [列表样式](#10-列表样式)
+1. [主题系统](#1-主题系统)
+2. [色板与 BrandColors](#2-色板与-brandcolors)
+3. [公共组件速查](#3-公共组件速查)
+4. [页面布局](#4-页面布局)
+5. [白卡片容器](#5-白卡片容器)
+6. [表单与输入](#6-表单与输入)
+7. [底部抽屉（AppBottomSheet）](#7-底部抽屉appbottomsheet)
+8. [弹窗（AppDialog）](#8-弹窗appdialog)
+9. [按钮](#9-按钮)
+10. [底部操作栏（AppActionBar）](#10-底部操作栏appactionbar)
+11. [标签选择器（TagChip）](#11-标签选择器tagchip)
+12. [列表样式](#12-列表样式)
+13. [设置页风格规范](#13-设置页风格规范)
+14. [常用模式速记](#14-常用模式速记)
 
 ---
 
-## 1. 色板
+## 1. 主题系统
 
-### 1.1 品牌色
+主题配置位于 `lib/theme/` 目录，入口函数 `buildBrandTheme()`。
 
-| 用途 | 色值 | 示例 |
-|------|------|------|
-| 品牌色 / 主色 | `#0052D9` | 顶栏、主按钮、选中态 |
-| 选中态浅底 | `#F2F3FF` | TagChip 选中背景（旧 ChoiceChip） |
-| 错误 / 危险 | `#D54941` | 删除操作、逾期标签 |
-| 成功 | `#00A870` | 已完成态（待定） |
-
-### 1.2 中性色
-
-| 用途 | 色值 | 示例 |
-|------|------|------|
-| 页面背景 | `#F3F3F3` | 所有列表/详情页灰底 |
-| 卡片背景 | `#FFFFFF` | 详情页白卡片、白色抽屉 |
-| 主文字 | `#181818` | 标题、正文 |
-| 副文字 | `#A6A6A6` | 标签标题、提示文字、占位符 |
-| 输入框边框 | `#E7E7E7` | 输入框、分隔线 |
-| 不可用 / 极浅 | `#DCDCDC` | 禁用文字、占位图标 |
-| 分割线 | `#EEEEEE` | Divider |
-
-### 1.3 骨架屏
-
-| 用途 | 色值 | 说明 |
-|------|------|------|
-| 扫光底色 | `#E7E7E7` | shimmer 渐变起点/终点 |
-| 扫光高亮 | `#F4F4F4` | shimmer 渐变中间（高亮带） |
-
----
-
-## 2. 页面布局
-
-### 2.1 页面背景
-
-所有列表页 / 详情页的背景统一为灰色 `#F3F3F3`。
+### 1.1 使用方式
 
 ```dart
-Scaffold(
-  backgroundColor: const Color(0xFFF3F3F3),
+MaterialApp(
+  theme: buildBrandTheme(),        // ← lib/theme/app_theme.dart
+  locale: const Locale('zh'),      // ← showDatePicker 中文化
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
 )
 ```
 
-### 2.2 区块间距
-
-区块之间用 8px（紧凑）或 16px（宽松）的 `SizedBox` 分隔：
+### 1.2 文件结构
 
 ```dart
-const SizedBox(height: 8)   // 卡片间
-const SizedBox(height: 16)  // 章节间
+lib/theme/
+├── color_scheme.dart       // BrandColors 常量 + M3 ColorScheme
+├── text_theme.dart         // 自定义字号/字重
+├── component_tokens.dart   // FilledButton / Input / SnackBar / Card 等主题覆写
+└── app_theme.dart          // 三部合一入口
 ```
 
-### 2.3 标准化边距
+> **规则**：任何页面**禁止**在文件顶部定义自己的颜色常量。使用 `BrandColors.*` 或 `Theme.of(context).colorScheme.*`。
+
+---
+
+## 2. 色板与 BrandColors
+
+### 2.1 BrandColors 常量
+
+`lib/theme/color_scheme.dart` 中定义的只读常量，全项目所有页面共用：
+
+| 常量 | 色值 | 用途 | 替代旧硬编码 |
+|------|:----:|------|:-----------:|
+| `BrandColors.primary` | `#0052D9` | 品牌蓝：主按钮/链接/选中态 | `Color(0xFF0052D9)` |
+| `BrandColors.surface` | `#F3F3F3` | 页面背景灰 | `Color(0xFFF3F3F3)` |
+| `BrandColors.surfaceContainer` | `#FFFFFF` | 卡片/抽屉/输入框底白 | `Colors.white` |
+| `BrandColors.textPrimary` | `#181818` | 主文字：标题、正文 | `Color(0xFF181818)` |
+| `BrandColors.textSecondary` | `#A6A6A6` | 副文字：标签标题、占位符、提示 | `Color(0xFFA6A6A6)` |
+| `BrandColors.textDisabled` | `#C5C5C5` | 禁用文字/图标 | `Color(0xFFC5C5C5)` |
+| `BrandColors.border` | `#E7E7E7` | 输入框边框、分隔线 | `Color(0xFFE7E7E7)` |
+| `BrandColors.error` | `#D54941` | 错误/删除/危险操作 | `Color(0xFFD54941)` |
+| `BrandColors.line` | `#EEEEEE` | Divider 分割线 | `Color(0xFFEEEEEE)` |
+| `BrandColors.success` | `#00A870` | 成功/已完成态 | — |
+| `BrandColors.surfaceLight` | `#F2F3FF` | 选中态浅底、tonal 按钮底 | `Color(0xFFF2F3FF)` |
+
+### 2.2 页面背景
+
+所有列表页/详情页/设置页的背景统一：
+```dart
+Scaffold(
+  backgroundColor: BrandColors.surface,   // #F3F3F3
+)
+```
+
+### 2.3 文字色阶
+
+| 层级 | 色值 | 使用场景 |
+|:----:|:----:|----------|
+| 主文字 | `BrandColors.textPrimary`（`#181818`） | 标题、正文内容 |
+| 次要文字 | `BrandColors.textSecondary`（`#A6A6A6`） | 标签标题、提示文字、占位符、**分区标题** |
+| 禁用文字 | `BrandColors.textDisabled`（`#C5C5C5`） | 禁用状态、版本信息等弱化文字 |
+
+> **注意**：**分区标题（Section Title）必须用 `BrandColors.textSecondary`，不得使用品牌色。** 品牌色会给用户"可点击"的暗示，而分区标题只是装饰性标签。
+
+---
+
+## 3. 公共组件速查
+
+所有组件位于 `lib/widgets/`，详细用法见文件顶部 `///` 注释和 `docs/dev/COMPONENT_GUIDE.md`。
+
+| 组件 | 文件 | 一句话用法 |
+|------|------|-----------|
+| `AppSearchBar` | `app_search_bar.dart` | 搜索栏，`controller` + `onSearch` |
+| `AppFormSection` | `app_form_section.dart` | 表单标签块，`label` + `required` + `child` |
+| `AppActionBar` | `app_action_bar.dart` | 底部操作栏，`.submit()` 单按钮 / `bar()` 多按钮 |
+| `AppDialog` | `app_dialog.dart` | 弹窗，`.confirm()` / `.alert()` 静态方法 |
+| `AppBottomSheet` | `app_bottom_sheet.dart` | 底部抽屉，`.show(title, child)` |
+| `AppTextarea` | `app_textarea.dart` | 多行文本域，`controller` + `hintText` + `quickNotes?` |
+| `AppToast` | `app_toast.dart` | 提示，`.show(context, msg)` |
+
+> **规则**：凡上述组件对应的场景，必须使用公共组件，不得手动拼装替代品。
+
+---
+
+## 4. 页面布局
+
+### 4.1 边距
 
 | 场景 | 边距值 |
 |------|--------|
 | 列表页左右 | 16px |
-| 详情页卡片左右 | 16px |
-| 底部抽屉左右 | 24px |
-| 底部抽屉底部 | 32px |
-| 卡片 padding | 16px |
+| 卡片内 padding | 16px |
+| 底部抽屉左右 | 24px（由 AppBottomSheet 自动处理） |
+| 底部抽屉底部 | 16px + bottomInset（由 AppBottomSheet 自动处理） |
+
+### 4.2 区块间距
+
+| 间距 | 场景 |
+|:----:|------|
+| 16px | 不同区块/卡片之间 |
+| 24px | 提交按钮前 |
+| 8px | 标签与内容之间（AppFormSection 默认处理） |
 
 ---
 
-## 3. 详情页卡片风格
+## 5. 白卡片容器
 
-### 3.1 白卡片容器
-
-详情页的每个区块用**白底卡片**浮在灰底上，圆角 12px：
+### 5.1 内容详情卡（圆角 12px，阴影）
 
 ```dart
-/// 通用卡片容器（白底 + 圆角 + 可选点击）
-Widget _card({required Widget child, VoidCallback? onTap}) {
-  final inner = Container(
-    margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+Card(
+  margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+  child: Padding(
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: child,
-  );
-  if (onTap == null) return inner;
-  return GestureDetector(onTap: onTap, child: inner);
-}
-```
-
-**参考页面**：`lead_detail_page.dart`（线索详情）、`schedule_detail_page.dart`（日程详情）的 `_card()` 方法。
-
-### 3.2 区块标题
-
-每张白卡片的标题位于左上角，灰色小字 12px：
-
-```dart
-const Text(
-  '区块标题',
-  style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-),
-const SizedBox(height: 8),
-// 内容区域...
-```
-
-### 3.3 点击卡片跳转
-
-当卡片可点击跳转时，用 `_card(onTap: …)` 包裹：
-
-```dart
-_card(
-  onTap: () => Navigator.of(context).push(
-    MaterialPageRoute(builder: (_) => TargetPage(id: x)),
-  ),
-  child: Column(…),
-)
-```
-
----
-
-## 4. 底部抽屉（BottomSheet）
-
-### 4.1 基础结构
-
-底部抽屉用于创建 / 编辑表单，参考 `edit_lead_dialog.dart` 和 `follow_up_panel.dart`：
-
-```dart
-void showMySheet(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,  // 透明，让内层容器处理白底圆角
-    builder: (_) => _MySheetContent(),
-  );
-}
-```
-
-内层容器（在 `_MySheetContent` 的 `build()` 中）：
-
-```dart
-final bottom = MediaQuery.of(context).viewInsets.bottom;
-
-return Container(
-  padding: EdgeInsets.only(bottom: bottom),  // 键盘抬起不挡内容
-  decoration: const BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-  ),
-  child: SingleChildScrollView(
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,  // 高度自适应
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SheetHeader(title: '弹窗标题'),
-          const SizedBox(height: 20),
-          // ...表单内容...
-          const SizedBox(height: 24),
-          _buildSubmitButton(),  // 全宽按钮
-        ],
-      ),
-    ),
-  ),
-);
-```
-
-### 4.2 SheetHeader
-
-顶部标题行使用统一的 `SheetHeader` 组件（`lib/widgets/sheet_header.dart`）：
-
-```
-┌─────────────────────────────┐
-│  ━━      标题         ✕    │
-└─────────────────────────────┘
-```
-
-- 手柄条（32×4px，`#DCDCDC`）居左
-- 标题居中，16px，`FontWeight.w500`，`#181818`
-- 关闭图标在右侧，18px，`#A6A6A6`，点击 `Navigator.pop()`
-- 如果关闭前需要**脏检查确认弹窗**，需内联自定义标题行，关闭接脏检查方法
-
-### 4.3 表单区块
-
-抽屉内表单每区块直接 `Padding`（无卡片背景/圆角）：
-
-```dart
-Padding(
-  padding: const EdgeInsets.only(bottom: 16),  // 块间距
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      _sectionTitle('字段名'),
-      const SizedBox(height: 8),
-      // 控件...
-    ],
+    child: Column(children: [...]),
   ),
 )
 ```
 
-区块标题辅助方法：
+主题已配置 `CardTheme`（`component_tokens.dart`）：白底 `Colors.white` + 圆角 12px + 微阴影。直接用 `Card` 组件即可。
 
-```dart
-Text(
-  text,
-  style: const TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-)
-```
-
-### 4.4 全宽提交按钮
-
-底部按钮为通栏 `SizedBox(width: double.infinity)`，参考 `follow_up_panel.dart`：
-
-```dart
-Widget _buildSubmitButton() {
-  return SizedBox(
-    width: double.infinity,
-    height: 48,
-    child: TDButton(
-      text: _isSubmitting ? '' : '提交',
-      theme: TDButtonTheme.primary,
-      shape: TDButtonShape.round,
-      disabled: _isSubmitting || !_isValid,
-      onTap: _submit,
-      iconWidget: _isSubmitting
-          ? const SizedBox(
-              width: 20, height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
-          : null,
-    ),
-  );
-}
-```
-
----
-
-## 5. 表单输入控件
-
-### 5.1 单行输入框
-
-参照登录页输入框风格：白底 + 灰边框 + 圆角，TextField 内无边框：
+### 5.2 设置页卡片（列表式，6px 圆角，灰边框）
 
 ```dart
 Container(
-  height: 44,  // 常规 56，紧凑 44
-  padding: const EdgeInsets.symmetric(horizontal: 12),
+  margin: const EdgeInsets.symmetric(horizontal: 16),
   decoration: BoxDecoration(
     color: Colors.white,
-    border: Border.all(color: const Color(0xFFE7E7E7), width: 1),
-    borderRadius: BorderRadius.circular(12),
+    borderRadius: BorderRadius.circular(6),
+    border: Border.all(color: BrandColors.border, width: 0.5),
   ),
-  child: Row(
-    children: [
-      Expanded(
-        child: TextField(
-          decoration: const InputDecoration(
-            border: InputBorder.none,
-            isDense: true,
-            contentPadding: EdgeInsets.symmetric(vertical: 16),
-          ),
-        ),
-      ),
-      // 可选：右侧图标
-    ],
-  ),
+  child: Column(children: [...]),
 )
-```
-
-高度规格：
-- **标准**：56px（登录页、列表页搜索）
-- **紧凑**：44px（底部抽屉内日期/时间选择器）
-
-### 5.2 多行文本域（备注 / 内容）
-
-使用 TDesign 的 `TDTextarea`，参照 `follow_up_panel.dart` 的跟进内容输入：
-
-```dart
-TDTextarea(
-  controller: _controller,
-  hintText: '补充说明...',
-  minLines: 2,
-  maxLength: 200,
-  showBottomDivider: false,
-  indicator: true,
-  margin: EdgeInsets.zero,
-  padding: EdgeInsets.zero,
-  inputDecoration: const InputDecoration(
-    contentPadding: EdgeInsets.fromLTRB(12, 10, 12, 10),
-    border: InputBorder.none,
-  ),
-  textareaDecoration: BoxDecoration(
-    border: Border.all(color: Color(0xFFE7E7E7), width: 1),
-    borderRadius: BorderRadius.circular(8),
-  ),
-  onChanged: (_) => setState(() => _dirty = true),
-);
-```
-
-- 灰边框 `#E7E7E7`，圆角 8px
-- `indicator: true` 显示字数指示器
-- `showBottomDivider: false` 不显示底线
-
-### 5.3 日期/时间选择器
-
-用 TDPicker，注意 `onConfirm` 回调参数是 `Map<String,int>` 而非 `DateTime`，且需手动 `Navigator.pop()`：
-
-```dart
-TDPicker.showDatePicker(
-  context,
-  title: '选择日期',
-  dateStart: [today.year, today.month, today.day],
-  dateEnd: [today.year + 1, today.month, today.day],
-  initialDate: [year, month, day],
-  onConfirm: (selected) {
-    final map = selected as Map<String, int>;
-    setState(() {
-      _date = DateTime(map['year']!, map['month']!, map['day']!);
-    });
-    Navigator.of(context).pop();  // 必须手动 pop
-  },
-);
 ```
 
 ---
 
-## 6. 标签选择器（TagChip）
+## 6. 表单与输入
 
-胶囊式选择标签，用于快捷选项、分类、状态选择等场景。
+### 6.1 表单区块（AppFormSection）
 
-### 6.1 组件
-
-`lib/widgets/tag_chip.dart` 提供 `TagChipRow` + `TagChipData`：
+表单抽屉中的每区块使用 `AppFormSection`，自带标签 + 可选红色 * + 8px 间距：
 
 ```dart
-TagChipRow(
-  scrollable: true,  // true=横向滚动，false=Wrap自动换行
-  chips: [
-    TagChipData(
-      label: '选项A',
-      selected: _selected == 'A',
-      onTap: () => setState(() => _selected = 'A'),
-    ),
-    TagChipData(
-      label: '选项B',
-      selected: _selected == 'B',
-      onTap: () => setState(() => _selected = 'B'),
-    ),
+AppFormSection(
+  label: '跟进内容',
+  required: true,          // 可选，显示红色 *
+  child: TextField(...),
+)
+```
+
+> **规则**：禁止手动拼装 `Text('标签') + SizedBox(height: 8) + 控件` 模式。
+
+### 6.2 单行输入框
+
+样式由主题 `InputDecorationTheme` 统一控制（白底 + 灰边框 + 6px 圆角）。
+直接用 `TextField` 即可获得统一样式，不需额外 Container 包装：
+
+```dart
+TextField(
+  decoration: InputDecoration(
+    hintText: '占位文字',
+  ),
+)
+```
+
+### 6.3 多行文本域（AppTextarea）
+
+带字数指示器 + 快捷备注，不可用手动 TextField：
+
+```dart
+// 纯文本域
+AppTextarea(
+  controller: _ctrl,
+  hintText: '补充说明...',
+  maxLength: 200,          // 默认 200，可调
+)
+
+// 带快捷备注（跟进面板风格）
+AppTextarea(
+  controller: _ctrl,
+  hintText: '请输入跟进内容...',
+  maxLength: 100,
+  quickNotes: ['有意向', '需跟进', '已加微信'],
+)
+```
+
+字数指示器浮在文本框内部右下角，超限变红且不可继续输入。
+
+### 6.4 日期/时间选择器
+
+使用 Material 原生 picker，**不允许**使用已移除的 TDPicker：
+
+```dart
+// 日期
+final picked = await showDatePicker(
+  context: context,
+  initialDate: _selectedDate,
+  firstDate: today,
+  lastDate: today.add(const Duration(days: 365)),
+);
+if (picked != null) setState(() => _selectedDate = picked);
+
+// 时间
+final picked = await showTimePicker(
+  context: context,
+  initialTime: _selectedTime,
+);
+if (picked != null) setState(() => _selectedTime = picked);
+```
+
+---
+
+## 7. 底部抽屉（AppBottomSheet）
+
+### 7.1 基础用法
+
+```dart
+final result = await AppBottomSheet.show<bool>(
+  context: context,
+  title: '新增跟进记录',
+  onClose: onCloseCallback,   // 可选：脏检查等自定义关闭行为
+  child: Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      AppFormSection(label: '内容', child: TextField(...)),
+      const SizedBox(height: 24),
+      AppActionBar.submit(text: '提交', onPressed: _submit),
+    ],
+  ),
+);
+```
+
+AppBottomSheet 自动提供：
+- 拖拽手柄（左侧）
+- 居中标题
+- 关闭按钮（右侧）
+- 可滚动内容
+- 键盘适配（`viewInsets.bottom`）
+- 白底 + 顶部 16px 圆角
+
+### 7.2 带脏检查的关闭
+
+在 `onClose` 回调中处理：
+
+```dart
+AppBottomSheet.show<bool>(
+  context: context,
+  title: '编辑日程',
+  onClose: () {
+    // 在 state 中定义 _onBack 进行脏检查
+    state._onBack();
+  },
+  child: MyFormContent(),
+);
+```
+
+> **规则**：禁止使用 `showModalBottomSheet` + 手动拼装 Container/标题栏/关闭按钮。
+
+---
+
+## 8. 弹窗（AppDialog）
+
+### 8.1 确认弹窗
+
+```dart
+final ok = await AppDialog.confirm(
+  context: context,
+  title: '确认删除',
+  content: '确定要删除吗？此操作不可恢复。',
+  confirmText: '删除',
+  confirmColor: BrandColors.error,   // 可选，默认品牌色
+  cancelText: '取消',
+  onConfirm: () => delete(id),
+);
+```
+
+### 8.2 提示弹窗
+
+```dart
+AppDialog.alert(
+  context: context,
+  title: '密码修改成功',
+  content: '请使用新密码重新登录。',
+);
+```
+
+> **规则**：禁止使用 `showDialog` + `AlertDialog`。所有弹窗走 `AppDialog`。
+
+---
+
+## 9. 按钮
+
+样式由主题统一控制（大圆角药丸形），组件名即用法：
+
+| 旧 TDesign | 新 M3 | 使用场景 |
+|------------|-------|----------|
+| `TDButton(theme: primary)` | **`FilledButton`** | 主操作：提交、保存 |
+| `TDButton(theme: light)` | **`FilledButton.tonal()`** | 次要操作：取消、返回 |
+| `TDButton(type: text)` | **`TextButton`** | 文字按钮：编辑、查看全部 |
+
+```dart
+FilledButton(
+  onPressed: _submit,
+  child: const Text('提交'),
+)
+
+FilledButton.tonal(
+  onPressed: _cancel,
+  child: const Text('取消'),
+)
+
+TextButton(
+  onPressed: _edit,
+  child: const Text('编辑'),
+)
+```
+
+> **规则**：禁止使用 `TDButton`（已移除）。
+
+---
+
+## 10. 底部操作栏（AppActionBar）
+
+```dart
+// 单提交按钮模式（最常用）
+AppActionBar.submit(
+  text: '保存',
+  loading: _isSubmitting,
+  onPressed: _isSubmitting ? null : _submit,
+)
+
+// 多按钮模式
+AppActionBar(
+  actions: [
+    ActionItem(text: '取消', type: ActionType.light, onTap: _cancel),
+    ActionItem(text: '确认', type: ActionType.primary, onTap: _confirm),
   ],
 )
 ```
 
-### 6.2 视觉规格
+> **规则**：底部通栏按钮必须用 `AppActionBar`，禁止手动 `SizedBox(width: double.infinity) + FilledButton`。
+
+---
+
+## 11. 标签选择器（TagChip）
+
+`lib/widgets/tag_chip.dart` 提供 `TagChipRow` + `TagChipData`：
+
+| 属性 | scrollable: true | scrollable: false |
+|------|:----------------:|:-----------------:|
+| 布局 | 横向滚动 `SingleChildScrollView+Row` | 自动换行 `Wrap` |
+| 场景 | 快捷日期/时间/分类 | 快捷备注 |
+
+```dart
+TagChipRow(
+  scrollable: false,
+  chips: quickNotes.map((n) => TagChipData(
+    label: n.name,
+    selected: false,
+    onTap: () { /* 追加到文本域 */ },
+  )).toList(),
+)
+```
+
+**视觉规格**：
 
 | 状态 | 背景 | 文字 | 圆角 |
-|------|------|------|------|
-| 未选中 | `#F3F3F3` | `#181818` | 14px（胶囊） |
-| 选中 | `#0052D9` | `#FFFFFF` | 14px（胶囊） |
-
-- 字体大小：12px
-- 内边距：`horizontal: 10, vertical: 5`
-- 高度约 28px
-
-### 6.3 使用场景
-
-| 场景 | 模式 | 参考文件 |
-|------|------|---------|
-| 快捷日期/时间 | `scrollable: true` | `schedule_form_sheet.dart` |
-| 接听类型选择 | `scrollable: true` | `follow_up_panel.dart` |
-| 线索分类选择 | `scrollable: true` | `edit_lead_dialog.dart`、`follow_up_panel.dart` |
-| 快捷备注 | `scrollable: false` (Wrap) | `follow_up_panel.dart` |
+|------|------|------|:----:|
+| 未选中 | `#F3F3F3` | `#181818` | 14px |
+| 选中 | `#0052D9` | `#FFFFFF` | 14px |
 
 ---
 
-## 7. 骨架屏（Skeleton）
+## 12. 列表样式
 
-### 7.1 列表骨架屏
-
-使用 `ScheduleSkeleton` 组件（`lib/pages/schedules/widgets/schedule_skeleton.dart`）：
+### 12.1 列表项卡片
 
 ```dart
-ScheduleSkeleton(count: 4)  // 4 张骨架卡片
-```
-
-白卡片（`Colors.white`）圆角 10px，带微阴影。内部灰块有 shimmer 扫光动画（1200ms、reverse repeat）。
-
-### 7.2 详情骨架屏
-
-使用 `ShimmerBlock` 搭配 `AnimationController` 构建自定义布局：
-
-```dart
-// 在 State 类中添加：
-late final AnimationController _skeletonCtrl;
-
-@override
-void initState() {
-  super.initState();
-  _skeletonCtrl = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1200),
-  )..repeat(reverse: true);
-}
-
-@override
-void dispose() {
-  _skeletonCtrl.dispose();
-  super.dispose();
-}
-
-// 骨架卡片容器
-Widget _skeletonCard({required Widget child}) {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(10),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x0D000000),
-          blurRadius: 6,
-          offset: Offset(0, 2),
-        ),
-      ],
-    ),
-    child: child,
-  );
-}
-
-// 用法
-_skeletonCard(
-  child: Column(
-    children: [
-      ShimmerBlock(ctrl: _skeletonCtrl, width: 120, height: 14),
-      const SizedBox(height: 8),
-      ShimmerBlock(ctrl: _skeletonCtrl, width: 200, height: 18),
-    ],
-  ),
-)
-```
-
-`ShimmerBlock` 参数：
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `ctrl` | `AnimationController` | shimmer 动画驱动 |
-| `width` | `double` | 灰块宽度（默认 `infinity`） |
-| `height` | `double` | 灰块高度（默认 14px） |
-
----
-
-## 8. 按钮
-
-### 8.1 主按钮
-
-```dart
-TDButton(
-  text: '提交',
-  theme: TDButtonTheme.primary,
-  shape: TDButtonShape.round,  // 圆角
-  disabled: _isLoading,
-  onTap: _submit,
-)
-```
-
-### 8.2 次要（浅色）按钮
-
-```dart
-TDButton(
-  text: '取消',
-  theme: TDButtonTheme.light,
-  shape: TDButtonShape.round,
-  onTap: _onCancel,
-)
-```
-
-> ⚠️ **注意**：tdesign_flutter 0.2.7 的 `TDButtonTheme` 枚举**仅四个值**：`defaultTheme`、`primary`、`danger`、`light`。没有 `secondary`、`text`。从其他组件库迁移时务必先 grep 确认实际枚举值。
-
-### 8.3 全宽按钮
-
-底部提交按钮统一使用 `SizedBox(width: double.infinity)`：
-
-```dart
-SizedBox(
-  width: double.infinity,
-  height: 48,
-  child: TDButton(...),
-)
-```
-
----
-
-## 9. 顶栏（TopBar）
-
-### 9.1 页面级顶栏
-
-```dart
-Container(
-  height: 56,
-  decoration: const BoxDecoration(
-    color: Color(0xFF0052D9),
-    boxShadow: [
-      BoxShadow(
-        color: Color(0x1A000000),
-        blurRadius: 4,
-      ),
-    ],
-  ),
-  child: Row(
-    children: [
-      IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      const Spacer(),
-      const Text(
-        '页面标题',
-        style: TextStyle(
-          fontSize: 17,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-      ),
-      const Spacer(),
-      // 可选：⋮ 菜单按钮
-    ],
-  ),
-)
-```
-
-- 背景：品牌蓝 `#0052D9`
-- 高度：56px
-- 标题：17px bold 白色居中
-- 返回按钮：白色箭头在左
-- 右上角可放 `PopupMenuButton` 或留空以保持对称
-
-### 9.2 抽屉顶栏
-
-参见 §4.2 SheetHeader。
-
----
-
-## 10. 列表样式
-
-### 10.1 列表卡片
-
-每项用白底圆角卡片（10px），微阴影：
-
-```dart
-Container(
+Card(
   margin: const EdgeInsets.only(bottom: 8),
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(children: [...]),
+  ),
+)
+```
+
+主题已配置 `CardTheme`，无需手动设置圆角和阴影。
+
+### 12.2 设置页 ListTile
+
+设置页通常用 `ListTile` + 白卡片容器，图标统一大小 20-22px：
+
+```dart
+Container(
+  margin: const EdgeInsets.symmetric(horizontal: 16),
   decoration: BoxDecoration(
     color: Colors.white,
-    borderRadius: BorderRadius.circular(10),
-    boxShadow: const [
-      BoxShadow(
-        color: Color(0x0D000000),
-        blurRadius: 6,
-        offset: Offset(0, 2),
-      ),
-    ],
+    borderRadius: BorderRadius.circular(6),
+    border: Border.all(color: BrandColors.border, width: 0.5),
   ),
-  child: // 卡片内容
+  child: Column(children: [
+    ListTile(
+      leading: const Icon(Icons.lock, size: 20),
+      title: const Text('修改密码'),
+      trailing: const Icon(Icons.chevron_right, size: 20),
+      onTap: () => navigateTo(),
+    ),
+    const Divider(height: 0, indent: 52),
+    ListTile(
+      leading: Icon(Icons.logout, size: 20, color: BrandColors.error),
+      title: Text('退出登录', style: TextStyle(color: BrandColors.error)),
+      onTap: _onLogout,
+    ),
+  ]),
 )
 ```
 
-### 10.2 列表骨架屏
-
-参见 §7.1 使用 `ScheduleSkeleton`。
+**规则**：
+- 分区标题用灰色 `BrandColors.textSecondary`，**不用品牌蓝**
+- 退出/删除操作图标和文字用 `BrandColors.error`
+- 加载中时在 `trailing` 显示 `CircularProgressIndicator`
 
 ---
 
-> 本文档应与 `docs/dev/STYLE_GUIDE.md`（代码风格规范）配合阅读。
-> 版本：v1.0 | 最后更新：2026-07-24
+## 13. 设置页风格规范
+
+### 13.1 分区标题
+
+```dart
+Padding(
+  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+  child: Text(
+    '账户安全',          // 灰色，非蓝色
+    style: const TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      color: BrandColors.textSecondary,
+    ),
+  ),
+)
+```
+
+### 13.2 关于弹窗
+
+使用 `AppDialog` 而非原始 `showDialog` + `AlertDialog`。如需自定义内容布局，在弹窗内放 Column：
+
+```dart
+// 推荐：用 AppDialog 的 content 扩展
+// 或自定义 showDialog 但至少按钮要走 FilledButton
+```
+
+### 13.3 底部版本信息
+
+```dart
+Text(
+  '电销工作台 v1.0.0',
+  style: const TextStyle(
+    fontSize: 12,
+    color: BrandColors.textDisabled,     // #C5C5C5
+  ),
+)
+```
+
+---
+
+## 14. 常用模式速记
+
+| 场景 | 代码 | 禁止写法 |
+|------|------|----------|
+| 表单标签 | `AppFormSection(label: '标题', child: ...)` | `Text('标题') + SizedBox + 控件` |
+| 提交按钮 | `AppActionBar.submit(text: '保存', ...)` | `SizedBox + FilledButton` |
+| 底部抽屉 | `AppBottomSheet.show(title: '标题', child: ...)` | `showModalBottomSheet + 手动包装` |
+| 确认弹窗 | `AppDialog.confirm(...)` | `showDialog + AlertDialog` |
+| 提示文字 | `ScaffoldMessenger.showSnackBar` 或 `AppToast.show()` | `TDToast.showText()` |
+| 品牌色 | `BrandColors.primary` | `Color(0xFF0052D9)` |
+| 页面背景 | `BrandColors.surface` | `Color(0xFFF3F3F3)` |
+| 提示灰色 | `BrandColors.textSecondary` | `Color(0xFFA6A6A6)` |
+| 多行文本 | `AppTextarea(controller: _, hintText: _)` | `TextField + 手动计数器` |
+| 日期选择 | `showDatePicker(...)` | `TDPicker.showDatePicker(...)` |
+
+---
+
+> **版本**：v2.0 | **最后更新**：2026-07-25（TDesign→M3 全量迁移后）
+> **相关文档**：`docs/dev/COMPONENT_GUIDE.md`（组件使用说明）、`docs/dev/UI_MIGRATION_HANDOVER-2026-07-25.md`（交接文档）
