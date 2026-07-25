@@ -8,11 +8,12 @@ import 'package:telemarketing_app/providers/lead_list_provider.dart';
 import 'package:telemarketing_app/models/lead.dart';
 import 'package:telemarketing_app/models/lead_list_context.dart';
 import 'package:telemarketing_app/models/option_item.dart';
+import 'package:telemarketing_app/constants/lead_constants.dart';
+import 'package:telemarketing_app/widgets/app_search_bar.dart';
 import 'package:telemarketing_app/widgets/lead_card.dart';
 import 'package:telemarketing_app/widgets/tag_chip.dart';
 import 'lead_detail_page.dart';
 import 'widgets/leads_skeletons.dart';
-import 'widgets/leads_search_bar.dart';
 import 'widgets/leads_top_bar.dart';
 
 /// 线索列表页
@@ -60,6 +61,98 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
     ref.read(leadListProvider.notifier).search(keyword);
   }
 
+  /// 筛选标签栏
+  Widget _buildFilterTags(LeadListState state) {
+    return Container(
+      width: double.infinity,
+      height: 48,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x1A000000),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            if (state.statusFilter != null && state.statusFilter!.isNotEmpty)
+              _buildTag(
+                '状态',
+                LeadConstants.displayName(state.statusFilter),
+                () => ref.read(leadListProvider.notifier).clearFilter('status'),
+              ),
+            if (state.categoryId != null && state.categoryId!.isNotEmpty)
+              _buildTag(
+                '分类',
+                _findOptionName(state.categories, state.categoryId),
+                () => ref.read(leadListProvider.notifier).clearFilter('category'),
+              ),
+            if (state.projectId != null && state.projectId!.isNotEmpty)
+              _buildTag(
+                '项目',
+                _findOptionName(state.projects, state.projectId),
+                () => ref.read(leadListProvider.notifier).clearFilter('project'),
+              ),
+            if (state.dateFrom != null || state.dateTo != null)
+              _buildTag(
+                '时间',
+                '已选',
+                () => ref.read(leadListProvider.notifier).clearFilter('date'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTag(String label, String value, VoidCallback onRemove) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Container(
+        height: 32,
+        padding: const EdgeInsets.only(left: 12, right: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2F3FF),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 120),
+              child: Text(
+                '$label: $value',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF0052D9)),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 4),
+            GestureDetector(
+              onTap: onRemove,
+              child: const Icon(
+                Icons.close,
+                size: 16,
+                color: Color(0xFF0052D9),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _findOptionName(List<OptionItem> options, String? id) {
+    if (id == null) return '';
+    final found = options.where((o) => o.id == id);
+    return found.isNotEmpty ? found.first.name : id;
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(leadListProvider);
@@ -77,12 +170,14 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
               onShowSort: () => _showSortSheet(state),
               onShowFilter: _showFilterSheet,
             ),
-            LeadsSearchBar(
-              searchCtrl: _searchCtrl,
+            AppSearchBar(
+              controller: _searchCtrl,
               onSearch: _doSearch,
-              onShowFilter: _showFilterSheet,
-              onShowSort: () => _showSortSheet(state),
+              hintText: '搜索线索姓名/电话/公司',
             ),
+            // ── 筛选标签栏 ──
+            if (state.hasActiveFilters)
+              _buildFilterTags(state),
             Expanded(child: _buildBody(state, isManager)),
           ],
         ),

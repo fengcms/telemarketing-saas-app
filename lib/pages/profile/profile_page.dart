@@ -21,6 +21,7 @@ import 'package:telemarketing_app/pages/coming_soon_page.dart';
 import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 import 'package:telemarketing_app/pages/customers/customer_list_page.dart';
 import 'package:telemarketing_app/pages/theme_preview_page.dart';
+import 'package:telemarketing_app/widgets/app_dialog.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_menu_row.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_stats_card.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_user_card.dart';
@@ -290,25 +291,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
   /// 退出登录确认弹窗，确认后清空登录态跳登录页
   void _onLogout() {
-    showDialog(
+    AppDialog.confirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('确认退出'),
-        content: const Text('确定要退出登录吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ref.read(authProvider.notifier).logout();
-            },
-            child: const Text('退出', style: TextStyle(color: _errorColor)),
-          ),
-        ],
-      ),
+      title: '确认退出',
+      content: '确定要退出登录吗？',
+      confirmText: '退出',
+      confirmColor: _errorColor,
+      onConfirm: () => ref.read(authProvider.notifier).logout(),
     );
   }
 }

@@ -22,6 +22,7 @@ import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/providers/schedule_list_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
+import 'package:telemarketing_app/widgets/app_dialog.dart';
 import 'package:telemarketing_app/services/api_exception.dart';
 import 'widgets/schedule_form_sheet.dart';
 import 'widgets/schedule_detail_cards.dart';
@@ -453,22 +454,13 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
   /// 取消（确认弹窗 → 接口 → 刷新）
   Future<void> _onCancel() async {
     if (_actionLoading || _detail == null) return;
-    final confirm = await showDialog<bool>(
+    final confirm = await AppDialog.confirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('取消日程'),
-        content: const Text('确定要取消该日程吗？取消后可重新打开。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消操作', style: TextStyle(color: Color(0xFF181818))),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('确定取消', style: TextStyle(color: Color(0xFF0052D9))),
-          ),
-        ],
-      ),
+      title: '取消日程',
+      content: '确定要取消该日程吗？取消后可重新打开。',
+      cancelText: '取消操作',
+      confirmText: '确定取消',
+      onConfirm: () {},
     );
     if (confirm != true) return;
     await _runStatusAction(
@@ -488,22 +480,14 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
   /// 删除（确认弹窗 → 全屏 loading → 返回列表并刷新）
   Future<void> _onDelete() async {
     if (_detail == null) return;
-    final confirm = await showDialog<bool>(
+    final confirm = await AppDialog.confirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('删除日程'),
-        content: const Text('确定删除该日程？删除后不可恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消', style: TextStyle(color: Color(0xFF181818))),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('删除', style: TextStyle(color: Color(0xFFD54941))),
-          ),
-        ],
-      ),
+      title: '删除日程',
+      content: '确定删除该日程？删除后不可恢复。',
+      cancelText: '取消',
+      confirmText: '删除',
+      confirmColor: const Color(0xFFD54941),
+      onConfirm: () {},
     );
     if (confirm != true) return;
     setState(() => _isDeleting = true);

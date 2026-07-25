@@ -17,6 +17,7 @@ import 'package:telemarketing_app/models/option_item.dart';
 import 'package:telemarketing_app/models/schedule_detail.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
+import 'package:telemarketing_app/widgets/app_dialog.dart';
 import 'package:telemarketing_app/providers/schedule_list_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'package:telemarketing_app/services/api_exception.dart';
@@ -257,24 +258,13 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
   Future<void> _onBack() async {
     if (_isSubmitting) return;
     if (_dirty) {
-      final discard = await showDialog<bool>(
+      final discard = await AppDialog.confirm(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('放弃编辑'),
-          content: const Text('当前内容尚未保存，确定要离开吗？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('继续编辑',
-                  style: TextStyle(color: Color(0xFF181818))),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('确定离开',
-                  style: TextStyle(color: Color(0xFF0052D9))),
-            ),
-          ],
-        ),
+        title: '放弃编辑',
+        content: '当前内容尚未保存，确定要离开吗？',
+        cancelText: '继续编辑',
+        confirmText: '确定离开',
+        onConfirm: () {},
       );
       if (discard != true) return;
     }
