@@ -233,7 +233,48 @@ final result = await AppBottomSheet.show<bool>(
 
 ---
 
-## 6. 替换优先级建议
+## 6. AppTextarea — 带字数指示器的多行文本域
+
+**文件**：`lib/widgets/app_textarea.dart`
+
+**用途**：多行文本输入框，右下角浮层显示 "当前字数/最大字数" 计数器，超限变红且不可继续输入。可选传入 `quickNotes` 快捷备注数组，在文本域下方多行换行展示 TagChipRow，点击后追加到文本域末尾（空格分隔）。
+
+**参数一览**：
+
+| 参数 | 类型 | 必需 | 默认 | 说明 |
+|------|------|:----:|:----:|------|
+| `controller` | `TextEditingController` | ✅ | — | 输入控制器 |
+| `hintText` | `String` | ✅ | — | 占位提示 |
+| `maxLength` | `int` | ❌ | `200` | 最大字数 |
+| `minLines` | `int` | ❌ | `2` | 最小行数 |
+| `maxLines` | `int` | ❌ | `5` | 最大行数 |
+| `onChanged` | `ValueChanged<String>?` | ❌ | `null` | 内容变化回调 |
+| `quickNotes` | `List<String>?` | ❌ | `null` | 快捷备注文字数组 |
+
+**使用示例**：
+
+```dart
+// 纯文本域（200 字）
+AppTextarea(
+  controller: _ctrl,
+  hintText: '补充说明...',
+)
+
+// 文本域 + 快捷备注（跟进记录风格）
+AppTextarea(
+  controller: _ctrl,
+  hintText: '请输入跟进内容...',
+  maxLength: 100,
+  maxLines: 4,
+  quickNotes: ['有意向', '需跟进', '已加微信'],
+)
+```
+
+**替代旧组件**：各处手动 `TextField + counterText + TagChipRow` 组合
+
+---
+
+## 7. 替换优先级建议
 
 | 优先级 | 组件 | 影响文件数 | 替换难度 |
 |:------:|------|:----------:|:--------:|
