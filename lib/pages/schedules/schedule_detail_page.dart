@@ -157,15 +157,15 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
     final user = ref.read(authProvider).user;
     if (user == null || _detail == null) return false;
     return _detail!.userId == user.id ||
-        user.role == 'TM' ||
-        user.role == 'TA';
+        user.role == 'tenant_manager' ||
+        user.role == 'tenant_admin';
   }
 
   /// 当前用户是否可删除（归属人 / TA）
   bool get _canDelete {
     final user = ref.read(authProvider).user;
     if (user == null || _detail == null) return false;
-    return _detail!.userId == user.id || user.role == 'TA';
+    return _detail!.userId == user.id || user.role == 'tenant_admin';
   }
 
   /// ⋮ 菜单是否显示（无删除权限则隐藏）

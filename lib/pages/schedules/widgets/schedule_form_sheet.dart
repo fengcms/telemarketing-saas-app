@@ -169,7 +169,7 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
   /// TM/TA 才加载归属人列表，默认当前用户
   Future<void> _loadOwnersIfNeeded() async {
     final user = ref.read(authProvider).user;
-    final isManager = user?.role == 'TM' || user?.role == 'TA';
+    final isManager = user?.role == 'tenant_manager' || user?.role == 'tenant_admin';
     if (!isManager) return;
     try {
       final users = await ref.read(optionsCacheProvider).getUsers();

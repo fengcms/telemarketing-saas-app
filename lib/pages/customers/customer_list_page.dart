@@ -46,7 +46,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
   /// 是否可切换 scope（TE 不可，TM/TA 可）
   bool get _canSwitchScope {
     final role = ref.read(authProvider).user?.role;
-    return role != null && role != 'TE';
+    return role != null && role != 'tenant_employee';
   }
 
   @override
@@ -87,12 +87,9 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
       _error = null;
     });
     try {
-      final res = await ref.read(customerServiceProvider).fetchCustomers(
-            scope: _scope,
-            q: _query,
-            level: _level,
-            page: 1,
-          );
+      final res = await ref
+          .read(customerServiceProvider)
+          .fetchCustomers(scope: _scope, q: _query, level: _level, page: 1);
       if (!mounted) return;
       setState(() {
         _items
@@ -119,12 +116,9 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
     setState(() => _isLoadingMore = true);
     try {
       final next = _page + 1;
-      final res = await ref.read(customerServiceProvider).fetchCustomers(
-            scope: _scope,
-            q: _query,
-            level: _level,
-            page: next,
-          );
+      final res = await ref
+          .read(customerServiceProvider)
+          .fetchCustomers(scope: _scope, q: _query, level: _level, page: next);
       if (!mounted) return;
       setState(() {
         _items.addAll(res.items);
@@ -176,9 +170,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
   void _openCustomer(Customer c) {
     if (c.leadId == null || c.leadId!.isEmpty) return;
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => LeadDetailPage(leadId: c.leadId!),
-      ),
+      MaterialPageRoute(builder: (_) => LeadDetailPage(leadId: c.leadId!)),
     );
   }
 
@@ -198,7 +190,10 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
                     children: [
                       Text(
                         _scope == 'all' ? '全部' : '我的',
-                        style: const TextStyle(fontSize: 14, color: Colors.white),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
                       ),
                       const Icon(Icons.arrow_drop_down, color: Colors.white),
                     ],
@@ -230,10 +225,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
           const SizedBox(height: 8),
           // 列表区
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: _onRefresh,
-              child: _buildList(),
-            ),
+            child: RefreshIndicator(onRefresh: _onRefresh, child: _buildList()),
           ),
         ],
       ),
@@ -256,10 +248,9 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
       children: [
-        ..._items.map((c) => CustomerCard(
-              customer: c,
-              onTap: () => _openCustomer(c),
-            )),
+        ..._items.map(
+          (c) => CustomerCard(customer: c, onTap: () => _openCustomer(c)),
+        ),
         if (_isLoadingMore)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
@@ -300,7 +291,10 @@ class _ErrorState extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, size: 40, color: Color(0xFFDCDCDC)),
           const SizedBox(height: 8),
-          const Text('加载失败', style: TextStyle(fontSize: 14, color: Color(0xFF181818))),
+          const Text(
+            '加载失败',
+            style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
+          ),
           const SizedBox(height: 12),
           TextButton(onPressed: onRetry, child: const Text('重试')),
         ],
@@ -321,8 +315,11 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(isSearch ? Icons.search_off : Icons.people,
-              size: 40, color: const Color(0xFFDCDCDC)),
+          Icon(
+            isSearch ? Icons.search_off : Icons.people,
+            size: 40,
+            color: const Color(0xFFDCDCDC),
+          ),
           const SizedBox(height: 8),
           Text(
             isSearch ? '未找到匹配的客户' : '暂无客户',

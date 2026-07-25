@@ -89,7 +89,7 @@ class ScheduleStatsNotifier extends StateNotifier<ScheduleStatsState> {
     try {
       final service = _ref.read(scheduleServiceProvider);
       final user = _ref.read(authProvider).user;
-      final isManager = user?.role == 'TA' || user?.role == 'TM';
+      final isManager = user?.role == 'tenant_admin' || user?.role == 'tenant_manager';
 
       ScheduleStats stats;
       if (isManager) {

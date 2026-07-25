@@ -128,12 +128,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   /// 角色中文标签；非 TE/TM/TA 返回空串（按 TE 处理，隐藏团队入口）
   String _roleLabel(String role) {
     switch (role) {
-      case 'TE':
+      case 'tenant_employee':
         return '电销专员';
-      case 'TM':
+      case 'tenant_manager':
         return '团队经理';
-      case 'TA':
-        return '团队助理';
+      case 'tenant_admin':
+        return '管理员';
       default:
         return '';
     }
@@ -141,9 +141,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
   /// 跳转子页（本轮统一占位）
   void _push(Widget page) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => page),
-    );
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
 
   /// 手动刷新公司基础数据（options + 租户信息）
@@ -168,7 +166,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     final user = ref.watch(authProvider).user;
     final role = user?.role ?? '';
     final roleLabel = _roleLabel(role);
-    final isManager = role == 'TM' || role == 'TA';
+    final isManager = role == 'tenant_manager' || role == 'tenant_admin';
     final todayPending = ref.watch(scheduleStatsProvider).todayPending;
 
     return Scaffold(
@@ -204,15 +202,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
               _isLoading
                   ? _StatsCardSkeleton(ctrl: _skeletonCtrl)
                   : _statsError
-                      ? _statsErrorWidget()
-                      : ProfileStatsCard(
-                          leadsTotal: _stats?.myLeadsTotal ?? 0,
-                          followupCount: _stats?.followupCount ?? 0,
-                          answeredCount: _stats?.answeredCount ?? 0,
-                          todayPending: todayPending,
-                          onTap: () =>
-                              _push(const ComingSoonPage(featureName: '个人统计')),
-                        ),
+                  ? _statsErrorWidget()
+                  : ProfileStatsCard(
+                      leadsTotal: _stats?.myLeadsTotal ?? 0,
+                      followupCount: _stats?.followupCount ?? 0,
+                      answeredCount: _stats?.answeredCount ?? 0,
+                      todayPending: todayPending,
+                      onTap: () =>
+                          _push(const ComingSoonPage(featureName: '个人统计')),
+                    ),
               const SizedBox(height: 24),
 
               // 功能入口（标题按需求隐藏）
@@ -275,13 +273,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
   /// 分组标题（gray-6，14px Medium，用于"我的业绩"等次级标题）
   Widget _sectionTitle(String t) => Text(
-        t,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: _textSecondary,
-        ),
-      );
+    t,
+    style: TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      color: _textSecondary,
+    ),
+  );
 
   /// 业绩加载失败提示（可点击重试）
   Widget _statsErrorWidget() {
