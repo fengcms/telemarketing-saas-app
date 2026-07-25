@@ -261,15 +261,9 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
   Widget _buildNoteSection() {
     return AppFormSection(
       label: '备注',
-      child: TextField(
+      child: AppTextarea(
         controller: _contentCtrl,
-        maxLines: 5,
-        minLines: 2,
-        maxLength: 200,
-        decoration: const InputDecoration(
-          hintText: '补充说明...',
-          counterText: '',
-        ),
+        hintText: '补充说明...',
         onChanged: (_) => setState(() => _dirty = true),
       ),
     );

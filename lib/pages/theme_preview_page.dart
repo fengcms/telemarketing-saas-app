@@ -13,6 +13,7 @@ import '../widgets/app_form_section.dart';
 import '../widgets/app_action_bar.dart';
 import '../widgets/app_dialog.dart';
 import '../widgets/app_bottom_sheet.dart';
+import '../widgets/app_textarea.dart';
 
 /// 组件预览页
 class ThemePreviewPage extends StatefulWidget {
@@ -30,12 +31,18 @@ class _ThemePreviewPageState extends State<ThemePreviewPage> {
   final TextEditingController _textCtrl = TextEditingController();
   final TextEditingController _multiCtrl = TextEditingController();
   final TextEditingController _searchCtrl = TextEditingController();
+  final TextEditingController _textareaCtrl = TextEditingController();
+  final TextEditingController _shortTextareaCtrl = TextEditingController();
+  final TextEditingController _quickTextareaCtrl = TextEditingController();
 
   @override
   void dispose() {
     _textCtrl.dispose();
     _multiCtrl.dispose();
     _searchCtrl.dispose();
+    _textareaCtrl.dispose();
+    _shortTextareaCtrl.dispose();
+    _quickTextareaCtrl.dispose();
     super.dispose();
   }
 
@@ -103,6 +110,11 @@ class _ThemePreviewPageState extends State<ThemePreviewPage> {
           _PreviewCard(
             title: '表单区块组件（AppFormSection）',
             child: _buildFormSectionShowcase(),
+          ),
+          const SizedBox(height: 16),
+          _PreviewCard(
+            title: '文本域组件（AppTextarea）',
+            child: _buildTextareaShowcase(),
           ),
           const SizedBox(height: 16),
           _PreviewCard(
@@ -424,6 +436,43 @@ class _ThemePreviewPageState extends State<ThemePreviewPage> {
               ),
             ],
           ),
+        ),
+      ],
+    );
+  }
+
+  /// 文本域组件展示
+  Widget _buildTextareaShowcase() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('默认（200 字上限）',
+            style: TextStyle(fontSize: 14, color: Color(0xFF181818))),
+        const SizedBox(height: 8),
+        AppTextarea(
+          controller: _textareaCtrl,
+          hintText: '补充说明...',
+        ),
+        const SizedBox(height: 24),
+        const Text('简短文本域（100 字）',
+            style: TextStyle(fontSize: 14, color: Color(0xFF181818))),
+        const SizedBox(height: 8),
+        AppTextarea(
+          controller: _shortTextareaCtrl,
+          hintText: '输入简短内容...',
+          maxLength: 100,
+          maxLines: 3,
+        ),
+        const SizedBox(height: 24),
+        const Text('带快捷备注（100 字）',
+            style: TextStyle(fontSize: 14, color: Color(0xFF181818))),
+        const SizedBox(height: 8),
+        AppTextarea(
+          controller: _quickTextareaCtrl,
+          hintText: '请输入跟进内容...',
+          maxLength: 100,
+          maxLines: 4,
+          quickNotes: ['有意向', '需跟进', '已加微信', '改天联系', '无需跟进'],
         ),
       ],
     );

@@ -21,6 +21,7 @@ import 'package:telemarketing_app/widgets/app_bottom_sheet.dart';
 import 'package:telemarketing_app/widgets/app_dialog.dart';
 import 'package:telemarketing_app/widgets/app_action_bar.dart';
 import 'package:telemarketing_app/widgets/app_form_section.dart';
+import 'package:telemarketing_app/widgets/app_textarea.dart';
 import 'package:telemarketing_app/providers/schedule_list_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'package:telemarketing_app/services/api_exception.dart';

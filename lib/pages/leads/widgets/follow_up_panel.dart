@@ -16,6 +16,7 @@ import 'package:telemarketing_app/utils/duration_format.dart';
 import 'package:telemarketing_app/widgets/app_action_bar.dart';
 import 'package:telemarketing_app/widgets/app_form_section.dart';
 import 'package:telemarketing_app/widgets/app_bottom_sheet.dart';
+import 'package:telemarketing_app/widgets/app_textarea.dart';
 import 'package:telemarketing_app/widgets/tag_chip.dart';
 
 /// 跟进面板接入点：显示底部弹出面板
@@ -149,15 +150,11 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
     return AppFormSection(
       label: '跟进内容',
       required: true,
-      child: TextField(
+      child: AppTextarea(
         controller: _contentController,
-        maxLines: 4,
-        minLines: 2,
+        hintText: '请输入跟进内容...',
         maxLength: 100,
-        decoration: const InputDecoration(
-          hintText: '请输入跟进内容...',
-          counterText: '',
-        ),
+        maxLines: 4,
         onChanged: (_) => setState(() {}),
       ),
     );
