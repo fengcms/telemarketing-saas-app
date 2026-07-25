@@ -1,55 +1,35 @@
 /// 统一底部抽屉
 ///
 /// 封装 [showModalBottomSheet] 的重复样板，提供标准布局：
-/// 拖拽手柄（居中） + 标题行 + 关闭按钮 + 可滚动内容区 + 键盘适配。
+/// 拖拽手柄（左侧） + 标题（居中） + 关闭按钮（右侧） + 可滚动内容 + 键盘适配。
 ///
-/// 样式对齐跟进面板/日程表单等现有底部抽屉。
+/// 样式跟随 M3 主题（[BrandColors]/[TdRadius]），不硬编码色值。
 ///
 /// ── 使用示例 ──
 /// ```dart
-/// // 基本用法
 /// final result = await AppBottomSheet.show<bool>(
 ///   context: context,
 ///   title: '新增跟进记录',
 ///   child: Column(
 ///     mainAxisSize: MainAxisSize.min,
 ///     children: [
-///       AppFormSection(
-///         label: '跟进内容',
-///         required: true,
-///         child: TextField(maxLines: 4, ...),
-///       ),
+///       AppFormSection(label: '跟进内容', required: true, child: TextField(...)),
 ///       const SizedBox(height: 24),
-///       AppActionBar.submit(
-///         text: '提交跟进',
-///         onPressed: _submit,
-///       ),
+///       AppActionBar.submit(text: '提交跟进', onPressed: _submit),
 ///     ],
 ///   ),
 /// );
-///
-/// // 返回结果
-/// if (result == true) {
-///   ScaffoldMessenger.of(context).showSnackBar(...);
-/// }
 /// ```
-///
-/// ── 布局结构 ──
-/// showModalBottomSheet(backgroundColor: transparent)
-///   └── Container(white, rounded top)
-///       └── Column(mainAxisSize: min)
-///           ├── SizedBox(height: 12)
-///           ├── ━━━━━ 拖拽手柄（居中，32x4, 圆角2）
-///           ├── SizedBox(height: 16)
-///           ├── Row
-///           │   ├── Text(title, 18px, w600)
-///           │   └── ✕ 关闭按钮
-///           ├── Divider (浅灰)
-///           └── Flexible → SingleChildScrollView
-///               └── child + 键盘底部间距
 library;
 
 import 'package:flutter/material.dart';
+import '../theme/color_scheme.dart';
+import '../theme/component_tokens.dart';
+
+/// 拖拽手柄尺寸常数
+const double _kDragHandleWidth = 32;
+const double _kDragHandleHeight = 4;
+const double _kDragHandleRadius = 2;
 
 /// 统一底部抽屉
 abstract final class AppBottomSheet {
@@ -79,7 +59,7 @@ abstract final class AppBottomSheet {
   }
 }
 
-/// 抽屉内部内容（分离为 StatefulWidget 以获取底部安全区）
+/// 抽屉内部内容
 class _AppBottomSheetContent<T> extends StatelessWidget {
   final String title;
   final Widget child;
@@ -93,9 +73,9 @@ class _AppBottomSheetContent<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      decoration: BoxDecoration(
+        color: BrandColors.surfaceContainer,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(TdRadius.sheet)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -108,11 +88,11 @@ class _AppBottomSheetContent<T> extends StatelessWidget {
               children: [
                 // 拖拽手柄（左侧）
                 Container(
-                  width: 32,
-                  height: 4,
+                  width: _kDragHandleWidth,
+                  height: _kDragHandleHeight,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFDCDCDC),
-                    borderRadius: BorderRadius.circular(2),
+                    color: BrandColors.textDisabled,
+                    borderRadius: BorderRadius.circular(_kDragHandleRadius),
                   ),
                 ),
                 const Spacer(),
@@ -122,7 +102,7 @@ class _AppBottomSheetContent<T> extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF181818),
+                    color: BrandColors.textPrimary,
                   ),
                 ),
                 const Spacer(),
@@ -134,7 +114,7 @@ class _AppBottomSheetContent<T> extends StatelessWidget {
                     child: Icon(
                       Icons.close,
                       size: 20,
-                      color: Color(0xFFA6A6A6),
+                      color: BrandColors.textSecondary,
                     ),
                   ),
                 ),
@@ -150,7 +130,6 @@ class _AppBottomSheetContent<T> extends StatelessWidget {
                 16,
                 0,
                 16,
-                // 键盘弹起时自动增加底部间距，避免被键盘遮挡
                 bottomInset + 16,
               ),
               child: child,

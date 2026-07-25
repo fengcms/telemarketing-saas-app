@@ -209,50 +209,28 @@ class _ThemePreviewPageState extends State<ThemePreviewPage> {
           child: const Text('SnackBar'),
         ),
         FilledButton(
-          onPressed: () => showDialog(
+          onPressed: () => AppDialog.confirm(
             context: context,
-            builder: (_) => AlertDialog(
-              title: const Text('确认操作'),
-              content: const Text('这是一个对话框消息。'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('取消'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('确认'),
-                ),
-              ],
-            ),
+            title: '确认操作',
+            content: '这是一个对话框消息。',
+            onConfirm: () {},
           ),
           child: const Text('Dialog'),
         ),
         FilledButton(
-          onPressed: () => showModalBottomSheet(
+          onPressed: () => AppBottomSheet.show(
             context: context,
-            builder: (_) => Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: BrandColors.textSecondary,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text('底部抽屉内容（全宽）'),
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('关闭'),
-                  ),
-                ],
-              ),
+            title: '底部抽屉',
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('底部抽屉内容'),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('关闭'),
+                ),
+              ],
             ),
           ),
           child: const Text('BottomSheet'),

@@ -27,7 +27,11 @@ abstract final class BrandColors {
   /// 页面背景（gray-1）
   static const Color surface = Color(0xFFF3F3F3);
 
-  /// 卡片/容器底色（gray-0）
+  /// 卡片/容器底色（gray-0，白色）
+  ///
+  /// 注意：本项目约定与 M3 默认命名相反——
+  /// M3 中 `surface` 为主背景、`surfaceContainer` 为容器背景。
+  /// 本项目：surface=灰底(F3F3F3)、surfaceContainer=白底(FFFFFF)。
   static const Color surfaceContainer = Color(0xFFFFFFFF);
 
   /// 边框（gray-4）

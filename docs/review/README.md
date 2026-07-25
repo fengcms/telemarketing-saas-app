@@ -3,6 +3,15 @@
 > 审查人：Mobile App Builder（移动端小组组长）
 > 机制：**一次提交，一次审核**；阶段/批次结果汇总为 `PHASE-REVIEW-*` / `SPRINT-REVIEW-*`
 
+## 已完成：第五轮 UI 组件质量审计 + 整改闭环（2026-07-25，分支 `feat/m3-theme-migration-preview`）
+| 文档 | 说明 |
+|------|------|
+| [SPRINT-REVIEW-4-UI-COMPONENTS-2026-07-25.md](SPRINT-REVIEW-4-UI-COMPONENTS-2026-07-25.md) | 第五轮审阅：UI 组件质量审计（聚焦质量门禁，非替换落地率） |
+| [SPRINT-REVIEW-4-RESPONSE-2026-07-25.md](SPRINT-REVIEW-4-RESPONSE-2026-07-25.md) | 开发团队修复报告 + **组长复审确认**（逐条代码核验，6 项全部真修） |
+| [SIGN-OFF-UI-COMPONENTS-2026-07-25.md](SIGN-OFF-UI-COMPONENTS-2026-07-25.md) | **组长放行确认** — 5 个组件全部通过，审计闭环 |
+
+**第五轮审计 → 复审：A− 条件通过 → ✅ 全部通过** — 初审判定 AppBottomSheet "暂不通过"（颜色硬编码）已修复为全部引用 `BrandColors.*` + `TdRadius.sheet`；app_action_bar text 禁用色改为 `BrandColors.textDisabled`；预览页反馈展示改用 `AppDialog`/`AppBottomSheet`。7 轮 flutter analyze 守住 0 issue。**5 个组件全部达到「可以替换」放行标准。**
+
 ## 已完成：第四轮 Sprint 复审（2026-07-24，日程模块整改闭环）
 | 文档 | 说明 |
 |------|------|

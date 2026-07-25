@@ -231,7 +231,7 @@ class AppActionBar extends StatelessWidget {
                     item.icon,
                     size: 18,
                     color: isDisabled
-                        ? const Color(0xFFDCDCDC)
+                        ? BrandColors.textDisabled
                         : BrandColors.primary,
                   ),
                 if (item.icon != null) const SizedBox(width: 6),
@@ -240,7 +240,7 @@ class AppActionBar extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     color: isDisabled
-                        ? const Color(0xFFDCDCDC)
+                        ? BrandColors.textDisabled
                         : BrandColors.textPrimary,
                   ),
                 ),
