@@ -3,6 +3,14 @@
 > 审查人：Mobile App Builder（移动端小组组长）
 > 机制：**一次提交，一次审核**；阶段/批次结果汇总为 `PHASE-REVIEW-*` / `SPRINT-REVIEW-*`
 
+## 当前进行中：第六轮 TDesign→M3 全量替换审阅（2026-07-25）
+| 文档 | 说明 |
+|------|------|
+| [SPRINT-REVIEW-5-MIGRATION-2026-07-25.md](SPRINT-REVIEW-5-MIGRATION-2026-07-25.md) | 第六轮审阅：TDesign 全量替换（零残留） |
+| [TDESIGN_MIGRATION_REPORT-2026-07-25.md](TDESIGN_MIGRATION_REPORT-2026-07-25.md) | 开发团队交付报告 |
+
+**第六轮评级：A−（替换出色，红线有回摆）** — TDesign 运行时零残留、5 个旧文件全删、7 个新组件被 19 个业务页面引用、8 轮 flutter analyze 0 issue。仅 `leads_list_page.dart` 619 行（524→619）新超 560 红线；`app_textarea` 计数器颜色硬编码（P3 建议修）。替换完成度高，建议修复红线回归后合并。
+
 ## 已完成：第五轮 UI 组件质量审计 + 整改闭环（2026-07-25，分支 `feat/m3-theme-migration-preview`）
 | 文档 | 说明 |
 |------|------|

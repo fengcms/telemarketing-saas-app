@@ -38,6 +38,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../theme/color_scheme.dart';
 import 'tag_chip.dart';
 
 /// 带字数指示器的多行文本域，可选快捷备注
@@ -124,8 +125,8 @@ class AppTextarea extends StatelessWidget {
                   fontSize: 12,
                   height: 1.2,
                   color: isOver
-                      ? const Color(0xFFD54941)
-                      : const Color(0xFFA6A6A6),
+                      ? BrandColors.error
+                      : BrandColors.textSecondary,
                 ),
               );
             },
