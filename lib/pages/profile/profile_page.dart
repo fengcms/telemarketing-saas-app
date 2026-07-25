@@ -23,7 +23,6 @@ import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 import 'package:telemarketing_app/pages/customers/customer_list_page.dart';
 import 'package:telemarketing_app/pages/settings/settings_page.dart';
 import 'package:telemarketing_app/pages/theme_preview_page.dart';
-import 'package:telemarketing_app/widgets/app_dialog.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_menu_row.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_stats_card.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_user_card.dart';
@@ -42,7 +41,7 @@ const Color _errorColor = Color(0xFFD54941);
 /// 个人中心页
 ///
 /// 组合用户信息卡、业绩概览卡、功能入口与团队入口（TM/TA 可见），
-/// 支持下拉刷新与首屏骨架屏；退出登录沿用原 _ProfileTab 的确认弹窗逻辑。
+/// 支持下拉刷新与首屏骨架屏。
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
 
@@ -223,12 +222,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                       title: '主题预览',
                       onTap: () => _push(const ThemePreviewPage()),
                     ),
-                  ProfileMenuRow(
-                    icon: Icons.logout,
-                    title: '退出登录',
-                    color: _errorColor,
-                    onTap: _onLogout,
-                  ),
                 ],
               ),
 
@@ -287,18 +280,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
           ),
         ),
       ),
-    );
-  }
-
-  /// 退出登录确认弹窗，确认后清空登录态跳登录页
-  void _onLogout() {
-    AppDialog.confirm(
-      context: context,
-      title: '确认退出',
-      content: '确定要退出登录吗？',
-      confirmText: '退出',
-      confirmColor: _errorColor,
-      onConfirm: () => ref.read(authProvider.notifier).logout(),
     );
   }
 }

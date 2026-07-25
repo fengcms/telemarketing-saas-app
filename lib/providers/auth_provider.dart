@@ -209,6 +209,44 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return ok;
   }
 
+  /// 修改密码（用户主动修改，需旧密码复核）
+  ///
+  /// 调 POST /api/auth/change-password。成功时清除本地 Token 并返回 null；
+  /// **不在本方法内切换为未登录态**——否则 [AuthGate] 会立即跳转登录页，
+  /// 导致修改密码页来不及展示成功 Toast（设计文档 §4.4 / §5.5）。
+  /// 页面应先展示 Toast（约 2s），再调用 [notifyPasswordChanged] 触发跳转。
+  /// 失败时返回错误消息字符串，由调用方显示到对应输入框下方。
+  /// 返回 null 表示成功。
+  Future<String?> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    state = state.copyWith(errorMessage: null);
+
+    try {
+      final authService = _ref.read(authServiceProvider);
+      await authService.changePassword(
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+      // 改密成功 → 清空 Token（不在此切换登录态，详见方法注释）
+      final tokenStorage = _ref.read(tokenStorageProvider);
+      await tokenStorage.clearAll();
+      return null;
+    } on ApiException catch (e) {
+      return e.message;
+    } catch (e) {
+      return '网络错误，请重试';
+    }
+  }
+
+  /// 改密成功 Toast 展示完毕后，由修改密码页调用以触发登录页跳转（清除任务栈）。
+  ///
+  /// 仅切换为未登录态；Token 已在 [changePassword] 中清空。
+  void notifyPasswordChanged() {
+    state = const AuthState(status: AuthStatus.unauthenticated);
+  }
+
   /// 清除错误信息
   void clearError() {
     state = state.copyWith(errorMessage: null);

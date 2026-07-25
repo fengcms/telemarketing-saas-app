@@ -14,6 +14,7 @@ import '../widgets/app_action_bar.dart';
 import '../widgets/app_dialog.dart';
 import '../widgets/app_bottom_sheet.dart';
 import '../widgets/app_textarea.dart';
+import '../widgets/app_toast.dart';
 
 /// 组件预览页
 class ThemePreviewPage extends StatefulWidget {
@@ -115,6 +116,11 @@ class _ThemePreviewPageState extends State<ThemePreviewPage> {
           _PreviewCard(
             title: '文本域组件（AppTextarea）',
             child: _buildTextareaShowcase(),
+          ),
+          const SizedBox(height: 16),
+          _PreviewCard(
+            title: 'Toast 提示（AppToast）',
+            child: _buildToastShowcase(),
           ),
           const SizedBox(height: 16),
           _PreviewCard(
@@ -473,6 +479,29 @@ class _ThemePreviewPageState extends State<ThemePreviewPage> {
           maxLength: 100,
           maxLines: 4,
           quickNotes: ['有意向', '需跟进', '已加微信', '改天联系', '无需跟进'],
+        ),
+      ],
+    );
+  }
+
+  /// Toast 演示
+  Widget _buildToastShowcase() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '点击下方按钮触发顶部 Toast',
+          style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
+        ),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: () => AppToast.show(context, '跟进记录已添加'),
+          child: const Text('普通提示'),
+        ),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: () => AppToast.show(context, '密码修改成功，请使用新密码重新登录。系统将在下次登录时验证新密码，请务必牢记您设置的新密码。'),
+          child: const Text('长文本提示（多行）'),
         ),
       ],
     );

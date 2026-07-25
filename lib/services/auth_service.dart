@@ -69,10 +69,17 @@ class AuthService {
 
   /// 登出
   ///
-  /// 调用 POST /api/auth/logout，清除本地 Token。
+  /// 调用 POST /api/auth/logout（携带 refreshToken 用于单设备吊销），
+  /// 无论接口成功/失败均清除本地 Token。
+  /// 参考文档：docs/design/LOGOUT_GUIDE.md
   Future<void> logout() async {
+    // 在 try 之前读取 refreshToken，避免被 finally 的 clearAll 清除
+    final refreshToken = await _tokenStorage.getRefreshToken();
     try {
-      await _apiClient.dio.post(ApiConstants.logout);
+      await _apiClient.dio.post(
+        ApiConstants.logout,
+        data: {'refreshToken': refreshToken ?? ''},
+      );
     } catch (_) {
       // 登出失败也要清除本地 Token
     } finally {

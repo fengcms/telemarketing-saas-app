@@ -8,17 +8,12 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:telemarketing_app/pages/coming_soon_page.dart';
+import 'package:telemarketing_app/pages/change_password/change_password_page.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/health_service_provider.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/widgets/app_dialog.dart';
 import 'package:telemarketing_app/widgets/app_toast.dart';
-
-// ── 样式常量 ──
-const Color _brandColor = Color(0xFF0052D9);
-const Color _textSecondary = Color(0xFFA6A6A6);
-const Color _errorColor = Color(0xFFD54941);
-const Color _pageBg = Color(0xFFF3F3F3);
 
 /// 设置页
 class SettingsPage extends ConsumerStatefulWidget {
@@ -82,15 +77,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       title: '退出登录',
       content: '确定退出登录？',
       confirmText: '确定',
-      confirmColor: _errorColor,
+      confirmColor: BrandColors.error,
       onConfirm: () {},
     );
     if (confirmed != true || !mounted) return;
 
     setState(() => _logouting = true);
     await ref.read(authProvider.notifier).logout();
-    // logout 本身会跳转登录页（通过 AuthState.unauthenticated 触发 AuthGate）
-    // 此处无需额外跳转
+    // logout 已将状态设为 unauthenticated 并清除本地 Token
+    // 显式关闭 spinner + 弹出导航栈，确保回到登录页
+    if (mounted) {
+      setState(() => _logouting = false);
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
 
   /// 全设备退出登录
@@ -101,7 +100,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       content: '确定在所有设备上退出登录？此操作将使您的账号在所有设备上退出。',
       cancelText: '取消',
       confirmText: '全部退出',
-      confirmColor: _errorColor,
+      confirmColor: BrandColors.error,
       onConfirm: () {},
     );
     if (confirmed != true || !mounted) return;
@@ -112,7 +111,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     setState(() => _logoutingAll = false);
     if (ok) {
       AppToast.show(context, '已在所有设备上退出登录');
-      // logoutAll 成功 AuthNotifier 已设 unauthenticated，AuthGate 自动跳转登录页
     } else {
       AppToast.show(context, '操作失败，请重试');
     }
@@ -134,7 +132,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: _brandColor,
+                color: BrandColors.primary,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(
@@ -149,7 +147,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF181818),
+                color: BrandColors.textPrimary,
               ),
             ),
             const SizedBox(height: 16),
@@ -183,7 +181,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             label,
             style: const TextStyle(
               fontSize: 14,
-              color: _textSecondary,
+              color: BrandColors.textSecondary,
             ),
           ),
         ),
@@ -192,7 +190,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             value,
             style: const TextStyle(
               fontSize: 14,
-              color: Color(0xFF181818),
+              color: BrandColors.textPrimary,
             ),
           ),
         ),
@@ -205,23 +203,23 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: BrandColors.surface,
       appBar: AppBar(title: const Text('设置')),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── 账户安全 ──
-            _sectionTitle('账户安全'),
+            _buildSectionTitle('账户安全'),
             _buildCard(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.lock, size: 20),
+                  leading: const Icon(Icons.lock, size: 22),
                   title: const Text('修改密码'),
-                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  trailing: const Icon(Icons.chevron_right, size: 22),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const ComingSoonPage(featureName: '修改密码'),
+                      builder: (_) => const ChangePasswordPage(),
                     ),
                   ),
                 ),
@@ -231,24 +229,38 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const SizedBox(height: 24),
 
             // ── 账户操作 ──
-            _sectionTitle('账户操作'),
+            _buildSectionTitle('账户操作'),
             _buildCard(
               children: [
                 ListTile(
-                  leading: Icon(Icons.logout, size: 20, color: _errorColor),
+                  leading: Icon(Icons.logout, size: 22, color: BrandColors.error),
                   title: Text(
                     '退出登录',
-                    style: TextStyle(color: _errorColor),
+                    style: TextStyle(color: BrandColors.error),
                   ),
                   enabled: !_logouting,
                   onTap: _logouting ? null : _onLogout,
+                  trailing: _logouting
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        )
+                      : null,
                 ),
                 const Divider(height: 0, indent: 52),
                 ListTile(
-                  leading: const Icon(Icons.devices, size: 20),
+                  leading: const Icon(Icons.devices, size: 22),
                   title: const Text('全设备退出登录'),
                   enabled: !_logoutingAll,
                   onTap: _logoutingAll ? null : _onLogoutAll,
+                  trailing: _logoutingAll
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        )
+                      : null,
                 ),
               ],
             ),
@@ -256,13 +268,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const SizedBox(height: 24),
 
             // ── 关于 ──
-            _sectionTitle('关于'),
+            _buildSectionTitle('关于'),
             _buildCard(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.info_outline, size: 20),
+                  leading: const Icon(Icons.info_outline, size: 22),
                   title: const Text('关于'),
-                  trailing: const Icon(Icons.chevron_right, size: 20),
+                  trailing: const Icon(Icons.chevron_right, size: 22),
                   onTap: _onAbout,
                 ),
               ],
@@ -277,7 +289,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     '电销工作台 v$_appVersion',
                     style: const TextStyle(
                       fontSize: 12,
-                      color: Color(0x99A6A6A6),
+                      color: BrandColors.textDisabled,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -289,7 +301,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                             : '后端版本: 获取失败'),
                     style: const TextStyle(
                       fontSize: 12,
-                      color: Color(0x99A6A6A6),
+                      color: BrandColors.textDisabled,
                     ),
                   ),
                 ],
@@ -304,7 +316,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   /// 区域标题
-  Widget _sectionTitle(String title) {
+  Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Text(
@@ -312,7 +324,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: _brandColor,
+          color: BrandColors.textSecondary,
         ),
       ),
     );
@@ -325,7 +337,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFFE7E7E7), width: 0.5),
+        border: Border.all(color: BrandColors.border, width: 0.5),
       ),
       child: Column(children: children),
     );

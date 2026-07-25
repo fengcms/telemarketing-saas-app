@@ -95,41 +95,49 @@ class _ToastWidgetState extends State<_ToastWidget>
 
     return Positioned(
       top: 0,
-      left: 16,
-      right: 16,
-      child: FadeTransition(
-        opacity: _fadeAnim,
-        child: SlideTransition(
-          position: _slideAnim,
-          child: GestureDetector(
-            onTap: _dismiss,
-            child: Container(
-              margin: EdgeInsets.only(top: top),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF333333),
-                borderRadius: BorderRadius.circular(6),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x1A000000),
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
+      left: 0,
+      right: 0,
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: SlideTransition(
+            position: _slideAnim,
+            child: GestureDetector(
+              onTap: _dismiss,
+              child: Container(
+                padding: EdgeInsets.only(top: top),
+                alignment: Alignment.topCenter,
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 360),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF333333),
+                      borderRadius: BorderRadius.circular(6),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x1A000000),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      widget.message,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white,
+                        decoration: TextDecoration.none,
+                      ),
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                    ),
                   ),
-                ],
-              ),
-              child: Text(
-                widget.message,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.white,
-                  height: 1.4,
                 ),
-                textAlign: TextAlign.center,
               ),
             ),
           ),
         ),
-      ),
     );
   }
 }

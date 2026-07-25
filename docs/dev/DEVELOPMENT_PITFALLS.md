@@ -337,6 +337,29 @@ Scaffold(
 
 ---
 
+### 9.2 POST /api/auth/logout 需携带 refreshToken（否则返回 400）
+
+**严重级别**：🔴 **功能性（P0）**
+
+**现象**：退出登录时 API 返回 400，Alice 面板显示请求正常但响应错误。
+
+**原因**：`POST /api/auth/logout` 接口要求请求体携带 `{"refreshToken": "..."}`（单设备吊销语义），旧代码无 body 直接 POST，后端校验失败返回 400。
+具体规范见 `docs/design/LOGOUT_GUIDE.md`。
+
+**解决方案**：在 `AuthService.logout()` 发起请求前从 `TokenStorage.getRefreshToken()` 读取 refreshToken，塞入请求体：
+
+```dart
+final refreshToken = await _tokenStorage.getRefreshToken();
+await _apiClient.dio.post(
+  ApiConstants.logout,
+  data: {'refreshToken': refreshToken ?? ''},
+);
+```
+
+读取操作必须在 `try` 之前，否则 `finally` 中的 `clearAll()` 会先清除掉存储。
+
+**教训**：接口变更时需同步更新文档（`docs/api.md`/`docs/design/`），并核对请求体/响应体的实际要求。依赖"旧文档示例"可能会导致 body 缺失。
+
 ---
 
 ### 5.3 下拉选项文字溢出
