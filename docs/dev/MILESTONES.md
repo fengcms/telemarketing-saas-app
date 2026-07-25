@@ -755,6 +755,72 @@ ApiClient 拦截器链：
 
 ---
 
+## 节点 v0.28 — 通话记录列表优化（2026-07-25）
+
+> 计划：`docs/dev/PLAN_26_CALL_RECORDS_OPT.md`
+
+### 完成内容
+
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 列表 5 分钟缓存 | ✅ | `CallService.fetchMyCalls` 服务层单例缓存（page==1 写、TTL=300s），进入页面命中直接套用，下拉刷新透传 `force:true` 绕过 |
+| TM/TA 卡片拨打人 | ✅ | `call_record_row` 时间行追加「· 拨打人：xx」，姓名经 `OptionsCacheService.getUserName(userId)` 映射 |
+| 角色判定修正 | ✅ | 见 v0.29 关联（后端真实值为 `tenant_manager`/`tenant_admin`，非 TM/TA 简称） |
+
+### 关键决策
+
+| 决策 | 选择 | 原因 |
+|------|------|------|
+| 缓存层级 | 服务层单例（非 provider） | 跨页面/重进共享，避免每次进入都请求 |
+| 下拉刷新 | 绕过缓存（`force:true`） | 用户明确要求 |
+| 彩色圆点 | 不加 | 用户明确要求 |
+
+---
+
+## 节点 v0.29 — 全端待办角标口径统一 + 角色短写 Bug 修复（2026-07-25）
+
+> 后端对接指引：`docs/dev/HOME_SCHEDULE_MERGE_FRONTEND_GUIDE.md` 第八节
+
+### 完成内容
+
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 角标字段统一 | ✅ | 弃 `dueToday`（含逾期），四位置（首页四宫格/待办 Badge/Tab 角标/个人中心今日待办）统一读 `todayPending`（严格今日、与 home-summary 同源） |
+| `ScheduleStats` 模型 | ✅ | 字段 `dueToday→todayPending`；`fromJson` 改从顶层 `data['todayPending']` 解析（旧 `byStatus.dueToday` 弃用） |
+| 角色短写 Bug 修复 | ✅ | 6 处 `'TM'`/`'TA'` 判定修正为 `tenant_manager`/`tenant_admin`，TM/TA 现正确请求团队 `stats`、加载归属人、显示角色标签与团队入口、放开详情编辑/删除权限 |
+
+---
+
+## 节点 v0.30 — 登录/全端报错中文映射（2026-07-25）
+
+> 方案：`docs/dev/PLAN_27_ERROR_MSG_CN.md`
+
+### 完成内容
+
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 错误码中文映射表 | ✅ | 新增 `lib/services/error_messages.dart`，`ErrorMessages` 类含 12 条 `error.code → 中文`（取自后端对照表原样），`resolve(code, fallback)` 命中返中文、未命中回退后端 message |
+| 全端统一替换 | ✅ | `lib/services/api_client.dart` 的 `parseError()` 构造 `ApiException` 时 `message` 改走 `ErrorMessages.resolve(code, 后端message)`，UI 层零改动 |
+| 拼写核对 | ✅ | 后端真实 code=`AUTH_FORBIDDEN`，复核 `api_exception.dart:23` 现有值一致，无需修正 |
+
+### 关键决策
+
+| 决策 | 选择 | 原因 |
+|------|------|------|
+| 配置位置 | 新增 `error_messages.dart` 映射表（唯一配置点） | 集中维护，新增 code 只改一处 |
+| 接入点 | 改 `parseError` 一处 | 它是全端唯一错误解析入口，改一处覆盖登录/改密/线索/日程/通话记录等所有展示 |
+| 替换范围 | 全局统一（非仅登录页） | 用户拍板；避免其它接口仍显示英文 |
+| 未命中映射 | 回退后端 message | 不掩盖未录入 code 的真实错误 |
+
+### 踩坑
+
+详见 `docs/dev/DEVELOPMENT_PITFALLS.md §11.16`：
+1. 映射表 key 必须与后端 `error.code` 逐字符一致（`AUTH_FORBIDDEN` 曾被误写为少 I 版本）。
+2. `resolve` 的 fallback 必须传后端 message，否则未录入 code 变成「未知错误」掩盖问题。
+3. 不要只改登录页 catch，否则其它接口仍英文；改 `parseError` 一处即全端统一。
+
+---
+
 ## 下一步节点规划
 
 > ⚠️ 下方 P0 核心流程**实际已完成**，见 v0.1~v0.11。剩余工作均为 P1 及以后。
@@ -792,4 +858,4 @@ ApiClient 拦截器链：
 
 > 本文档与 `docs/dev/HANDOVER.md`（交接文档）配套使用。
 > ⚠️ 旧 `HANDOVER_05_LEAD_DETAIL.md` 中"3 个并行请求""拨号后弹面板未做"等描述已过时，以本表与代码现状为准。
-> 节点版本：v0.29 | 更新日期：2026-07-25
+> 节点版本：v0.30 | 更新日期：2026-07-25

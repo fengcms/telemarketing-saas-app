@@ -1086,6 +1086,28 @@ AppBar(
 
 **教训**：跨端「同一数字」必须来自**同一个接口字段、同一个计算函数**；口径不一致的根因往往是「同一个 API 返回了多个语义相近的字段（pending/dueToday/todayPending），前端在不同位置选了不同字段」。统一前先确认后端是否已提供等价字段，避免前端硬换算时区/窗口造成漂移。
 
+### 11.16 全端报错英文：`parseError` 原样透传后端 `error.message`，未做 `error.code → 中文` 映射
+
+**严重级别**：🟡 **体验（P1，表现=登录/各接口报错显示英文文案）**
+
+**背景**：登录失败时界面提示为英文（如账号密码错误显示 `Invalid account or password`），其它接口报错同理。产品要求全部改为中文。
+
+**根因**：后端错误响应结构为 `{success:false, error:{code, message}}`，其中 `message` 是**英文**。前端 `ApiClient.parseError()`（`lib/services/api_client.dart`）解析时直接把 `err['message']` 透传为 `ApiException.message`；`auth_provider.login` 把它塞进 `errorMessage`，登录页 `Text(errorMessage)` 原样展示。**前端从未按 `error.code` 做中文映射**。`parseError` 是全端唯一的结构化错误解析入口，所以这是全局性问题，不止登录页。
+
+**改法（全局统一）**：
+- **新增唯一配置点** `lib/services/error_messages.dart`：`ErrorMessages` 类，内含 `const Map<String,String> _map`（12 条 `error.code → 中文`，key 用后端真实值，如 `AUTH_FORBIDDEN`、`STATUS_ROLLBACK_FORBIDDEN`、`TENANT_EXPIRED` 等），及 `static String resolve(String code, [String? fallback])`——命中返回中文，未命中回退 `fallback`（后端原始 message）。
+- **唯一接入点** `lib/services/api_client.dart` 的 `parseError()`：构造 `ApiException` 时 `message` 改为 `ErrorMessages.resolve(code, 后端message)`。
+- UI 层（`login_page` / `auth_provider` / `api_exception`）**零改动**。
+
+**坑点**：
+1. **映射表 key 必须与后端 `error.code` 逐字符一致**。本项目曾出现 `AUTH_FORBIDDEN` 被误写成少一个 I 的版本差，一旦拼写对不上，`resolve` 永远命中不了、回退英文。落地前务必与后端确认真实 code 拼写（本节点已确认后端为 `AUTH_FORBIDDEN`）。
+2. **`resolve` 的 fallback 参数要传后端 message**：`ErrorMessages.resolve(code, err['message']?.toString())`——这样未列入映射的新 code 仍展示后端原 message，不会变成「未知错误」掩盖问题。
+3. **不要只改登录页**：若仅在 `auth_provider.login` 的 catch 里做映射，其它接口的 `ApiException` 仍显示英文。改 `parseError` 一处即可全端统一。
+
+**教训**：**凡是「展示给用户的后端文案」，前端都应假设它是英文/不可控，必须由 `error.code`（稳定、语义明确）驱动本地化映射，而非信任后端 `message`**。映射表集中放在 service 层一个文件，新增 code 只改一处。
+
+---
+
 ### 12.1 首屏 `_isLoading=true` 同时作骨架标志与请求守卫致首屏不拉取
 
 **严重级别**：🔴 **阻断性（P0，表现=骨架屏转圈但无请求/无数据）**

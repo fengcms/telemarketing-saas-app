@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'api_constants.dart';
 import 'api_exception.dart';
+import 'error_messages.dart';
 import 'token_storage.dart';
 import 'package:telemarketing_app/core/alice_manager.dart';
 import 'package:telemarketing_app/core/dev_tools.dart';
@@ -155,7 +156,10 @@ class ApiClient {
       return ApiException(
         statusCode: statusCode,
         code: err['code']?.toString() ?? 'UNKNOWN',
-        message: err['message']?.toString() ?? '未知错误',
+        message: ErrorMessages.resolve(
+          err['code']?.toString() ?? 'UNKNOWN',
+          err['message']?.toString(),
+        ),
       );
     }
 
