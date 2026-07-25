@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 import '../theme/color_scheme.dart';
 import '../widgets/tag_chip.dart';
+import '../widgets/app_search_bar.dart';
 
 /// 组件预览页
 class ThemePreviewPage extends StatefulWidget {
@@ -24,11 +25,13 @@ class _ThemePreviewPageState extends State<ThemePreviewPage> {
   int _tagChipIndex = 0;
   final TextEditingController _textCtrl = TextEditingController();
   final TextEditingController _multiCtrl = TextEditingController();
+  final TextEditingController _searchCtrl = TextEditingController();
 
   @override
   void dispose() {
     _textCtrl.dispose();
     _multiCtrl.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -86,6 +89,11 @@ class _ThemePreviewPageState extends State<ThemePreviewPage> {
           _PreviewCard(
             title: '容器组件',
             child: _buildContainerShowcase(),
+          ),
+          const SizedBox(height: 16),
+          _PreviewCard(
+            title: '搜索栏组件（AppSearchBar）',
+            child: _buildSearchBarShowcase(),
           ),
           const SizedBox(height: 32),
         ],
@@ -302,6 +310,64 @@ class _ThemePreviewPageState extends State<ThemePreviewPage> {
               ),
             ],
           ),
+        ),
+      ],
+    );
+  }
+
+  /// 搜索栏组件展示：演示 AppSearchBar 三种典型用法
+  Widget _buildSearchBarShowcase() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('默认搜索（姓名/电话/公司）',
+            style: TextStyle(fontSize: 14, color: BrandColors.textPrimary)),
+        const SizedBox(height: 8),
+        AppSearchBar(
+          controller: _searchCtrl,
+          onSearch: (text) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(text.isEmpty ? '已清除搜索' : '搜索: $text'),
+              ),
+            );
+          },
+          hintText: '搜索线索姓名/电话/公司',
+        ),
+        const SizedBox(height: 16),
+        const Text('手机号搜索（keyboardType: phone）',
+            style: TextStyle(fontSize: 14, color: BrandColors.textPrimary)),
+        const SizedBox(height: 8),
+        AppSearchBar(
+          controller: TextEditingController(),
+          onSearch: (text) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(text.isEmpty ? '已清除搜索' : '搜索手机号: $text'),
+              ),
+            );
+          },
+          hintText: '搜索手机号',
+          keyboardType: TextInputType.phone,
+        ),
+        const SizedBox(height: 16),
+        const Text('自定义按钮文字',
+            style: TextStyle(fontSize: 14, color: BrandColors.textPrimary)),
+        const SizedBox(height: 8),
+        AppSearchBar(
+          controller: TextEditingController(),
+          onSearch: (text) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(text.isEmpty ? '已清除搜索' : '查找: $text'),
+              ),
+            );
+          },
+          hintText: '搜索客户',
+          searchButtonText: '查找',
         ),
       ],
     );
