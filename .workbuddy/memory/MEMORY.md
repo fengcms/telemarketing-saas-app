@@ -1,17 +1,40 @@
 # 项目级记忆 — 电销工作台 APP
 
-## 项目约定（2026-07-22）
+## 项目约定（2026-07-25 更新）
 
-### 开发风格规范
-- 参考 `docs/dev/STYLE_GUIDE.md`
-- 每个 Dart 文件顶部必须加 `///` 文件说明注释
-- 每个公开方法和重要私有方法必须加 `///` Dart Doc 注释
-- 注释用中文
+### UI 框架：Material 3（已替换 TDesign）
+- **2026-07-25**：TDesign Flutter 0.2.7 已全面替换为 Material 3，`tdesign_flutter` 依赖已从 `pubspec.yaml` 移除。
+- 主题系统位于 `lib/theme/`：`color_scheme.dart`（品牌色 #0052D9 + BrandColors 常量）、`text_theme.dart`、`component_tokens.dart`（组件主题覆写）、`app_theme.dart`（入口 `buildBrandTheme()`）。
+- 公共组件位于 `lib/widgets/`（7 个）：`AppSearchBar` / `AppFormSection` / `AppActionBar` / `AppDialog` / `AppBottomSheet` / `AppTextarea` / `AppToast`。
+- **所有新页面必须使用 M3 组件 + 公共组件**，不得再引入 TDesign。
+- `image_picker_android` 仍有 D8 嵌套类问题，`dependency_overrides` 锁定 0.8.13+13。
 
-### TDesign 兼容性
-- `tdesign_flutter 0.2.7` 有 Dart 3.12 兼容问题（`extends IconData`），已本地 patch pub cache
-- `TDCheckbox` 在 Android 上会导致白屏，用 Material 复选框替代
-- `image_picker_android` 有 D8 嵌套类问题，`dependency_overrides` 锁定 0.8.13+13
+#### M3 组件快速参考
+| 场景 | 使用方式 |
+|------|---------|
+| 主要按钮 | `FilledButton(onPressed: _, child: Text('确定'))` |
+| 浅色按钮 | `FilledButton.tonal(onPressed: _, child: Text('取消'))` |
+| 文字按钮 | `TextButton(onPressed: _, child: Text('编辑'))` |
+| 提示 | `AppToast.show(context, '保存成功')` |
+| 搜索栏 | `AppSearchBar(controller: _, hintText: '搜索...', onSearch: _)` |
+| 表单区块 | `AppFormSection(label: '姓名', child: TextField(...))` |
+| 底部操作栏 | `AppActionBar.submit(text: '保存', onPressed: _)` 或 `AppActionBar(actions: [...])` |
+| 确认弹窗 | `final ok = await AppDialog.confirm(context: _, title: '确认', content: '内容?')` |
+| 底部抽屉 | `final r = await AppBottomSheet.show(context: _, title: '标题', child: ...)` |
+| 多行文本 | `AppTextarea(controller: _, hintText: '输入...', maxLength: 200)` |
+| 日期选择 | `showDatePicker(context: _, initialDate: _, firstDate: _, lastDate: _)`（Material 原生） |
+| 图标 | `Icons.xxx`（映射表见交接文档 §四） |
+| 页面背景 | `BrandColors.surface`（#F3F3F3），白色卡片用 `Colors.white` |
+| 文字色 | `BrandColors.textPrimary`（#181818）/ `textSecondary`（#A6A6A6） |
+
+#### 主题应用方式
+```dart
+MaterialApp(
+  theme: buildBrandTheme(),       // lib/theme/app_theme.dart
+  locale: const Locale('zh'),
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+)
+```
 
 ### 调试工具（Alice 网络浮窗，2026-07-24）
 - 用途：dev-only 在真机抓全部接口请求/响应，点浮标看详情。
@@ -33,6 +56,7 @@
 - 文件名：`snake_case`
 - 类名：`PascalCase`
 - 变量/方法：`camelCase`，私有加 `_` 前缀
+- 页面背景：`Scaffold` 会自动应用 `BrandColors.surface`（灰底），无需手动设置
 
 ### 开发流程（2026-07-22 确立）
 1. 每次最多开发一个页面
@@ -42,8 +66,3 @@
 5. 开发完成要求用户真机实测并反馈
 6. 确认没问题后写进度文档、踩坑文档
 7. git commit & push
-
-### 仓库与 .gitignore 约定（2026-07-23）
-- 本项目为**私有项目、仅单人维护**
-- `.workbuddy/` 目录**有意纳入 git 仓库**（用户为自身方便），审查时**不得**将其作为"仓库整洁度/误提交"问题提出
-- 即：`.gitignore` 无需忽略 `.workbuddy/`，相关文件随业务代码一起提交属正常做法

@@ -80,6 +80,19 @@ class AuthService {
     }
   }
 
+  /// 全设备退出登录
+  ///
+  /// 调用 POST /api/auth/logout-all，使该账号所有设备 Token 失效。
+  /// 返回 true 表示后端确认成功；false 表示请求失败（前端不执行本地退出）。
+  Future<bool> logoutAll() async {
+    try {
+      await _apiClient.dio.post(ApiConstants.logoutAll);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// 检查本地是否已有有效登录态
   ///
   /// 用于 APP 启动时自动登录。

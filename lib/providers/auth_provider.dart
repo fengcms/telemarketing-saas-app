@@ -194,6 +194,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
+  /// 全设备退出登录
+  ///
+  /// 调 POST /api/auth/logout-all。成功时清除 Token 跳转登录页；
+  /// 失败时不清除、不跳转，由调用方处理（如 Toast 提示）。
+  Future<bool> logoutAll() async {
+    final authService = _ref.read(authServiceProvider);
+    final ok = await authService.logoutAll();
+    if (ok) {
+      final tokenStorage = _ref.read(tokenStorageProvider);
+      await tokenStorage.clearAll();
+      state = const AuthState(status: AuthStatus.unauthenticated);
+    }
+    return ok;
+  }
+
   /// 清除错误信息
   void clearError() {
     state = state.copyWith(errorMessage: null);

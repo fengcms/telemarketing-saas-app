@@ -30,6 +30,10 @@ class ApiConstants {
   static const String logoutAll = '/api/auth/logout-all';
   static const String changePassword = '/api/auth/change-password';
 
+  // ── 健康检查 ──
+
+  static const String health = '/health';
+
   // ── 租户信息 ──
 
   static const String profile = '/api/tenant/profile';

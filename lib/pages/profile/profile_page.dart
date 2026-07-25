@@ -2,8 +2,9 @@
 ///
 /// 设计文档：docs/design/page-design/13-个人中心.md
 /// 展示当前登录用户的基本信息、个人业绩概览、功能入口与团队入口。
-/// 子页（设置/团队统计/个人统计）本轮未开发，
+/// 子页（团队统计/个人统计）本轮未开发，
 /// 入口统一跳转 [ComingSoonPage] 占位，后续迭代替换。
+/// 设置页已开发，入口直连 [SettingsPage]。
 /// 通话记录/客户列表已开发，入口直连对应页面。
 ///
 /// 数据来源：
@@ -20,6 +21,7 @@ import 'package:telemarketing_app/models/home_stats.dart';
 import 'package:telemarketing_app/pages/coming_soon_page.dart';
 import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 import 'package:telemarketing_app/pages/customers/customer_list_page.dart';
+import 'package:telemarketing_app/pages/settings/settings_page.dart';
 import 'package:telemarketing_app/pages/theme_preview_page.dart';
 import 'package:telemarketing_app/widgets/app_dialog.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_menu_row.dart';
@@ -212,8 +214,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                   ProfileMenuRow(
                     icon: Icons.settings,
                     title: '设置',
-                    onTap: () =>
-                        _push(const ComingSoonPage(featureName: '设置')),
+                    onTap: () => _push(const SettingsPage()),
                   ),
                   // 开发版：主题预览入口
                   if (enableDevTools)
