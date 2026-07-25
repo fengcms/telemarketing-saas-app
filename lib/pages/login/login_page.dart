@@ -8,9 +8,11 @@
 library;
 
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/widgets/app_toast.dart';
+import 'package:telemarketing_app/widgets/tech_background.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/core/dev_tools.dart';
@@ -254,156 +256,154 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // 主内容
-            SingleChildScrollView(
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height
-                    - MediaQuery.of(context).padding.top
-                    - MediaQuery.of(context).padding.bottom,
-                child: Column(
-                  children: [
-                    const Spacer(flex: 2),
-                    _buildLogo(),
-                    const SizedBox(height: 12),
-                    const Text('电销工作台',
-                        style: TextStyle(fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF181818))),
-                    const SizedBox(height: 48),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Column(
-                        children: [
-                          _buildEmailInput(),
-                          const SizedBox(height: 16),
-                      _buildPasswordInput(),
-                      const SizedBox(height: 16),
-                      _buildOptions(),
-                      const SizedBox(height: 16),
-                      _buildLoginButton(),
-                      const SizedBox(height: 16),
-                      _buildError(),
+      backgroundColor: const Color(0xFF060E1E),
+      body: TechBackground(
+        child: SafeArea(
+          child: Stack(
+            children: [
+              // 主内容
+              SingleChildScrollView(
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height
+                      - MediaQuery.of(context).padding.top
+                      - MediaQuery.of(context).padding.bottom,
+                  child: Column(
+                    children: [
+                      const Spacer(flex: 2),
+                      _buildLogo(),
+                      const SizedBox(height: 12),
+                      const Text('电销工作台',
+                          style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white)),
+                      const SizedBox(height: 36),
+                      // 磨砂玻璃卡片
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 28),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                            child: Container(
+                              padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  _buildEmailInput(),
+                                  const SizedBox(height: 16),
+                                  _buildPasswordInput(),
+                                  const SizedBox(height: 12),
+                                  _buildOptions(),
+                                  const SizedBox(height: 20),
+                                  _buildLoginButton(),
+                                  const SizedBox(height: 12),
+                                  _buildError(),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Spacer(flex: 3),
+                      Text(_version,
+                          style: const TextStyle(
+                              fontSize: 12, color: Color(0xFF5A6A8A))),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
-                const Spacer(flex: 3),
-                Text(_version,
-                    style: const TextStyle(
-                        fontSize: 12, color: Color(0xFFA6A6A6))),
-                const SizedBox(height: 24),
-              ],
-            ),
+              ),
+              // 域名下拉覆盖层
+              if (_isDomainDropdownOpen)
+                Positioned(
+                  left: 28,
+                  right: 28,
+                  top: MediaQuery.of(context).size.height * 0.28,
+                  child: _buildDomainDropdown(),
+                ),
+            ],
           ),
         ),
-        // 域名下拉覆盖层（浮动在最上层，不参与布局流）
-        if (_isDomainDropdownOpen)
-          Positioned(
-            left: 32,
-            right: 32,
-            top: MediaQuery.of(context).size.height * 0.35,
-            child: _buildDomainDropdown(),
-          ),
-      ],
-      ),
       ),
     );
   }
 
   Widget _buildLogo() {
     return Container(
-      width: 64,
-      height: 64,
+      width: 72,
+      height: 72,
       decoration: BoxDecoration(
-        color: const Color(0xFF0052D9).withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0052D9), Color(0xFF00B4D8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0052D9).withValues(alpha: 0.4),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: const Icon(Icons.call, size: 36, color: Color(0xFF0052D9)),
+      child: const Icon(Icons.phone_in_talk, size: 36, color: Colors.white),
     );
   }
 
   Widget _buildEmailInput() {
-    final borderColor =
-        _emailFocus.hasFocus
-            ? const Color(0xFF0052D9)
-            : const Color(0xFFE7E7E7);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          height: 56,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor, width: 1),
-          ),
-          child: Row(
-            children: [
-              const SizedBox(width: 12),
-              const Icon(Icons.mail_outline, size: 20, color: Color(0xFFA6A6A6)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: _emailCtrl,
-                  focusNode: _emailFocus,
-                  enabled: ref.watch(authProvider).status != AuthStatus.authenticating,
-                  keyboardType: TextInputType.emailAddress,
-                  style: const TextStyle(fontSize: 15, color: Color(0xFF181818)),
-                  decoration: InputDecoration(
-                    hintText: _isFullEmailMode ? '请输入完整邮箱地址' : '请输入邮箱前缀',
-                    hintStyle: const TextStyle(fontSize: 14, color: Color(0xFFC5C5C5)),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  textInputAction: TextInputAction.next,
-                  onSubmitted: (_) => _passwordFocus.requestFocus(),
-                ),
-              ),
-              if (!_isFullEmailMode) ...[
-                SizedBox(
-                  height: 24,
-                  child: VerticalDivider(width: 1, thickness: 1, color: const Color(0xFFE7E7E7)),
-                ),
-                _buildDomainSelector(),
-              ],
-              if (!_isFullEmailMode) const SizedBox(width: 4),
-            ],
-          ),
+    return TextField(
+      controller: _emailCtrl,
+      focusNode: _emailFocus,
+      enabled: ref.watch(authProvider).status != AuthStatus.authenticating,
+      keyboardType: TextInputType.emailAddress,
+      style: const TextStyle(fontSize: 15, color: Colors.white),
+      decoration: InputDecoration(
+        prefixIcon: const Padding(
+          padding: EdgeInsets.only(left: 12, right: 8),
+          child: Icon(Icons.mail_outline, size: 20, color: Color(0xFF8A9BB5)),
         ),
-        // 域名下拉已移至 Stack 覆盖层
-      ],
+        hintText: _isFullEmailMode ? '请输入完整邮箱地址' : '请输入邮箱前缀',
+        hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF5A6A8A)),
+        suffix: _isFullEmailMode ? null : _buildDomainSuffix(),
+      ),
+      textInputAction: TextInputAction.next,
+      onSubmitted: (_) => _passwordFocus.requestFocus(),
     );
   }
 
-  Widget _buildDomainSelector() {
-    return GestureDetector(
-      onTap: () => setState(() => _isDomainDropdownOpen = !_isDomainDropdownOpen),
-      child: Container(
-        width: 120,
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 4),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: Text('@$_selectedDomain',
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF4E5969)),
-                  overflow: TextOverflow.ellipsis),
-            ),
-            const SizedBox(width: 4),
-            AnimatedRotation(
-              turns: _isDomainDropdownOpen ? 0.5 : 0,
-              duration: const Duration(milliseconds: 200),
-              child: const Icon(Icons.keyboard_arrow_down, size: 16, color: Color(0xFFA6A6A6)),
-            ),
-          ],
+  Widget _buildDomainSuffix() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 24,
+          child: VerticalDivider(width: 1, thickness: 1, color: const Color(0xFF3A4A6A)),
         ),
-      ),
+        const SizedBox(width: 8),
+        GestureDetector(
+          onTap: () => setState(() => _isDomainDropdownOpen = !_isDomainDropdownOpen),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '@$_selectedDomain',
+                style: const TextStyle(fontSize: 14, color: Color(0xFF8A9BB5)),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF5A6A8A)),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+      ],
     );
   }
 
@@ -463,61 +463,33 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Widget _buildPasswordInput() {
-    final borderColor =
-        _passwordFocus.hasFocus
-            ? const Color(0xFF0052D9)
-            : const Color(0xFFE7E7E7);
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor, width: 1),
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 12),
-          const Icon(Icons.lock,
-              size: 20, color: Color(0xFFA6A6A6)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: _passwordCtrl,
-              focusNode: _passwordFocus,
-              enabled: ref.watch(authProvider).status != AuthStatus.authenticating,
-              obscureText: _obscurePassword,
-              style: const TextStyle(
-                  fontSize: 15, color: Color(0xFF181818)),
-              decoration: const InputDecoration(
-                hintText: '请输入密码',
-                hintStyle: TextStyle(
-                    fontSize: 14, color: Color(0xFFC5C5C5)),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 16),
-              ),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _onLogin(),
+    return TextField(
+      controller: _passwordCtrl,
+      focusNode: _passwordFocus,
+      enabled: ref.watch(authProvider).status != AuthStatus.authenticating,
+      obscureText: _obscurePassword,
+      style: const TextStyle(fontSize: 15, color: Colors.white),
+      decoration: InputDecoration(
+        prefixIcon: const Padding(
+          padding: EdgeInsets.only(left: 12, right: 8),
+          child: Icon(Icons.lock, size: 20, color: Color(0xFF8A9BB5)),
+        ),
+        hintText: '请输入密码',
+        hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF5A6A8A)),
+        suffixIcon: GestureDetector(
+          onTap: () => setState(() => _obscurePassword = !_obscurePassword),
+          child: Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Icon(
+              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+              size: 20,
+              color: const Color(0xFF8A9BB5),
             ),
           ),
-          GestureDetector(
-            onTap: () =>
-                setState(() => _obscurePassword = !_obscurePassword),
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12),
-              child: Icon(
-                _obscurePassword
-                    ? Icons.visibility_off
-                    : Icons.visibility,
-                size: 20,
-                color: const Color(0xFFA6A6A6),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) => _onLogin(),
     );
   }
 
@@ -556,7 +528,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           const SizedBox(width: 4),
           Text(label,
               style: const TextStyle(
-                  fontSize: 13, color: Color(0xFF6B7A90))),
+                  fontSize: 13, color: Color(0xFF8A9BB5))),
         ],
       ),
     );
