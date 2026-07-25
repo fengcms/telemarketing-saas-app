@@ -8,7 +8,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/call_record.dart';
+import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/call_service_provider.dart';
+import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/widgets/app_search_bar.dart';
 import 'package:telemarketing_app/pages/call_records/widgets/call_filter_bar.dart';
 import 'package:telemarketing_app/pages/call_records/widgets/call_record_row.dart';
@@ -43,6 +45,11 @@ class _CallRecordsPageState extends ConsumerState<CallRecordsPage> {
   bool _isFetching = false; // 拉第一页重入锁（首屏/刷新/筛选共用）
   String? _error;
 
+  /// 是否展示「拨打人」（仅 tenant_manager / tenant_admin，即 TM / TA）
+  bool _showCaller = false;
+  /// userId → 姓名（拨打人），仅 [_showCaller] 时填充
+  Map<String, String> _callerNames = {};
+
   @override
   void initState() {
     super.initState();
@@ -52,7 +59,29 @@ class _CallRecordsPageState extends ConsumerState<CallRecordsPage> {
       _searchCtrl.text = widget.initialQuery!;
       _phoneQuery = widget.initialQuery;
     }
+    // 角色判定：仅真实值 tenant_manager / tenant_admin（TM / TA 为用户简称）
+    final role = ref.read(authProvider).user?.role ?? '';
+    _showCaller =
+        role == 'tenant_manager' || role == 'tenant_admin';
     _loadInitial();
+  }
+
+  /// 解析当前列表中的拨打人姓名到 [_callerNames]
+  ///
+  /// 复用 OptionsCacheService.getUserName（10h 双缓存，未命中兜底回 id），
+  /// 与全站归属人映射同一套机制。
+  Future<void> _resolveCallers() async {
+    if (!_showCaller) return;
+    final svc = ref.read(optionsCacheProvider);
+    final names = <String, String>{};
+    final ids =
+        _items.map((e) => e.userId).where((id) => id.isNotEmpty).toSet();
+    for (final id in ids) {
+      final name = await svc.getUserName(id);
+      if (name != null && name.isNotEmpty) names[id] = name;
+    }
+    if (!mounted) return;
+    setState(() => _callerNames = names);
   }
 
   @override
@@ -78,7 +107,28 @@ class _CallRecordsPageState extends ConsumerState<CallRecordsPage> {
   /// 注意：守卫用 [_isFetching] 重入锁，不能用 [_isLoading]——
   /// [_isLoading] 初始值为 true（首屏骨架），若用其做守卫会让
   /// initState 里的首次调用被自己短路、永不发请求。
-  Future<void> _loadInitial() async {
+  ///
+  /// [force] 为 true 时强制绕过 5 分钟缓存（下拉刷新用），
+  /// 否则先检查缓存，命中则直接套用、不发请求、无骨架闪烁。
+  Future<void> _loadInitial({bool force = false}) async {
+    // 非强制刷新：先查首屏缓存，命中则直接套用，零网络请求
+    if (!force) {
+      final cached =
+          ref.read(callServiceProvider).peekCache(_phoneQuery, _answerType);
+      if (cached != null) {
+        setState(() {
+          _items
+            ..clear()
+            ..addAll(cached.items);
+          _page = 1;
+          _pages = cached.pages;
+          _isLoading = false;
+          _error = null;
+        });
+        _resolveCallers();
+        return;
+      }
+    }
     if (_isFetching) return;
     _isFetching = true;
     setState(() {
@@ -90,6 +140,7 @@ class _CallRecordsPageState extends ConsumerState<CallRecordsPage> {
             q: _phoneQuery,
             answerType: _answerType,
             page: 1,
+            force: force,
           );
       if (!mounted) return;
       setState(() {
@@ -100,6 +151,7 @@ class _CallRecordsPageState extends ConsumerState<CallRecordsPage> {
         _pages = res.pages;
         _isLoading = false;
       });
+      _resolveCallers();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -138,11 +190,11 @@ class _CallRecordsPageState extends ConsumerState<CallRecordsPage> {
     }
   }
 
-  /// 下拉刷新
+  /// 下拉刷新（强制绕过缓存）
   Future<void> _onRefresh() async {
     if (_isRefreshing) return;
     _isRefreshing = true;
-    await _loadInitial();
+    await _loadInitial(force: true);
     _isRefreshing = false;
   }
 
@@ -217,6 +269,8 @@ class _CallRecordsPageState extends ConsumerState<CallRecordsPage> {
         ..._items.map(
           (r) => CallRecordRow(
             record: r,
+            // TM/TA 下展示拨打人姓名（userId → options user 映射）
+            callerName: _showCaller ? _callerNames[r.userId] : null,
             // 仅当关联线索存在时跳详情；空号/停机等无 leadId 的记录不响应点击
             onTap: r.leadId.isNotEmpty
                 ? () {

@@ -1027,6 +1027,22 @@ final allowSelfClaim = settings['allowSelfClaim'] == true;
 
 **教训**：合并接口前先全局 grep 被删字段/方法的全部引用，分清「首页私有」与「共享 provider」；新建模型若复用既有模型，import 是第一道关。
 
+### 11.13 通话记录列表 5 分钟缓存 + TM/TA 拨打人显示
+
+**严重级别**：🟡 **可维护 / 功能（P2）**
+
+**背景**：通话记录列表页每次进入都调用 `CallService.fetchMyCalls()`，无本地缓存；卡片已有 `userId` 字段但从未使用。需求：① 列表加 5 分钟缓存避免每次进入都请求；② 仅 `tenant_manager` / `tenant_admin`（TM / TA）角色在卡片拨打时间行后追加「拨打人：xx」，姓名由 `userId` → `OptionsCacheService.getUserName` 映射。
+
+**关键决策与坑点**：
+1. **缓存必须放服务层（CallService 单例），不能放页面 state**：页面用 `ConsumerStatefulWidget` + 本地 `_items`，页面销毁即丢失，做不到「退出再进命中缓存」。服务单例随 App 存活，缓存 `(_cache, _cacheKey, _cacheTime)` 才稳。
+2. **`peekCache` 返回缓存对象引用，页面只复制元素、不修改缓存列表**：`_items..addAll(cached.items)` 把 `CallRecord` 元素引用加进页面自己的列表，从不写 `cached.items`，所以无需深拷贝；但务必保证页面**只对 `_items` 做 clear/add**，不动缓存的列表。
+3. **缓存命中判断要放在 `_isFetching` 重入锁之前（命中即 return，不进锁）**：首屏已在加载中时若二次进入，会被守卫吞掉请求；缓存命中是同步极快路径，放守卫前更稳，命中直接 setState 套用、无骨架闪烁。
+4. **角色判定只用后端真实枚举值 `'tenant_manager'/'tenant_admin'`**：TM / TA 是用户在对话里的简称，代码里**不要写缩写**，否则对不上 `User.role` 返回的真实值，功能直接不出现。
+5. **拨打人复用既有 options 缓存，不另造轮子**：`getUserName(id)` 已是 10h 内存+本地双缓存，未命中兜底返回原始 `userId`；卡片行 `callerName` 为 null 时不显示，TE 角色 `_showCaller=false` 直接跳过 `_resolveCallers`，零额外开销。
+6. **下拉刷新传 `force=true` 绕过缓存**：`_onRefresh` → `_loadInitial(force:true)`，服务层 `page==1 && !force` 才查缓存，强制时直接打网络并刷新 `_cacheTime`——保证下拉永远拿到最新。
+
+**教训**：列表缓存第一决策是「放哪一层」，页面级缓存因销毁必丢，服务单例才是正解；角色/枚举判定务必对齐后端真实值，别用内部简称；能复用既有缓存（options）就别重复造。
+
 ### 12.1 首屏 `_isLoading=true` 同时作骨架标志与请求守卫致首屏不拉取
 
 **严重级别**：🔴 **阻断性（P0，表现=骨架屏转圈但无请求/无数据）**

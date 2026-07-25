@@ -16,7 +16,15 @@ class CallRecordRow extends StatelessWidget {
   /// 点击整行回调（如跳对应线索详情）；为 null 时不响应点击
   final VoidCallback? onTap;
 
-  const CallRecordRow({super.key, required this.record, this.onTap});
+  /// 拨打人姓名（TM/TA 下由列表页解析后传入）；为 null 时不展示
+  final String? callerName;
+
+  const CallRecordRow({
+    super.key,
+    required this.record,
+    this.onTap,
+    this.callerName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -77,12 +85,34 @@ class CallRecordRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      record.shortDateTime,
+                    // 拨打时间；TM/TA 下同一行追加「· 拨打人：<姓名>」
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(text: record.shortDateTime),
+                          if (callerName != null && callerName!.isNotEmpty)
+                            TextSpan(
+                              text: '  ·  拨打人：',
+                              style: const TextStyle(
+                                color: Color(0xFFA6A6A6),
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: callerName,
+                                  style: const TextStyle(
+                                    color: Color(0xFF181818),
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
                       style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFFA6A6A6),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
