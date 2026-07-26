@@ -523,10 +523,13 @@ Text(
 | 信息行 | `AppInfoRow(icon: _, label: _, value: _)` | 手写 `_infoRow`（左标签右值） |
 | 错误/空态 | `AppErrorBody(...)` / `AppEmptyBody(...)` | 手写错误/空布局 |
 | 日程卡片 | `detailCard` / 列表卡（圆角 10px + 微阴影，三处一致避免加载闪跳） | 圆角 12 无阴影 |
+| 卡片行内操作按钮 | 圆形主题色图标按钮（`Ink`+`InkWell(customBorder: CircleBorder)`，固定 44×44，`BrandColors.primary` 填充，loading 仅换中心 spinner 保宽高恒定） | 文字胶囊按钮（loading 时宽度收窄导致同行信息列重排抖动） |
 
 > ⚠️ **硬规则**：全 app 图标一律用 Material `Icons.*`，**禁止任何 emoji**。emoji 仅在日程详情页历史遗留中出现过（已整改），属 M3 迁移遗漏，不允许新增。
 
+> **行内操作图标按钮规范**：列表/卡片右侧的单点操作（如公海「领取」）一律用**固定 44×44 圆形主题色图标按钮**；按钮需承载 loading 态时，仅把中心图标替换为 `CircularProgressIndicator`，**禁止改变宽高**，避免同行内容重排。图标语义优先（如"领取联系人"用 `Icons.person_add`）。
+
 ---
 
-> **版本**：v2.1 | **最后更新**：2026-07-26（补充图标禁令、组件复用与日程卡片规范）
+> **版本**：v2.1 | **最后更新**：2026-07-26（补充图标禁令、组件复用、日程卡片规范、行内操作图标按钮规范）
 > **相关文档**：`docs/dev/COMPONENT_GUIDE.md`（组件使用说明）、`docs/dev/UI_MIGRATION_HANDOVER-2026-07-25.md`（交接文档）

@@ -35,7 +35,7 @@ class LeadsTopBar extends StatelessWidget {
     return Container(
       height: 56,
       decoration: const BoxDecoration(
-        color: Color(0xFF0052D9),
+        color: BrandColors.primary,
         boxShadow: [
           BoxShadow(
             color: Color(0x1A000000),
@@ -94,7 +94,7 @@ class LeadsTopBar extends StatelessWidget {
                         padding:
                             const EdgeInsets.symmetric(horizontal: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFD54941),
+                          color: BrandColors.error,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(

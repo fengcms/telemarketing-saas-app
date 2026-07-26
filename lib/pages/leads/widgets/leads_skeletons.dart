@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 
 /// 骨架屏灰块
 class LeadSkBlock extends StatelessWidget {
@@ -15,7 +16,7 @@ class LeadSkBlock extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: const Color(0xFFEEEEEE),
+        color: BrandColors.border,
         borderRadius: BorderRadius.circular(4),
       ),
     );

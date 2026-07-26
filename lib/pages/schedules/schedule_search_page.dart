@@ -13,6 +13,7 @@ import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/pages/schedules/widgets/schedule_card.dart';
 import 'package:telemarketing_app/pages/schedules/widgets/schedule_skeleton.dart';
 import 'package:telemarketing_app/pages/schedules/schedule_detail_page.dart';
+import 'package:telemarketing_app/widgets/app_search_bar.dart';
 
 /// 日程搜索页（按手机号）
 class ScheduleSearchPage extends ConsumerStatefulWidget {
@@ -181,78 +182,13 @@ class _ScheduleSearchPageState extends ConsumerState<ScheduleSearchPage> {
     );
   }
 
-  /// 搜索栏（与线索列表/通话记录风格一致）
-  ///
-  /// 手动 Row 放图标 + TextField，避免 prefixIcon 默认 padding 导致文字偏移。
+  /// 搜索栏（复用公共 AppSearchBar，与线索列表/通话记录搜索栏表现一致）
   Widget _buildSearchBar() {
-    final hasText = _searchCtrl.text.isNotEmpty;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      decoration: const BoxDecoration(color: Colors.white),
-      child: Container(
-        height: 40,
-        decoration: BoxDecoration(
-          color: BrandColors.surface,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 10),
-              child: Icon(Icons.search, size: 20, color: BrandColors.textSecondary),
-            ),
-            const SizedBox(width: 2),
-            Expanded(
-              child: TextField(
-                controller: _searchCtrl,
-                onSubmitted: _doSearch,
-                keyboardType: TextInputType.phone,
-                textInputAction: TextInputAction.search,
-                style: const TextStyle(fontSize: 14, color: BrandColors.textPrimary),
-                decoration: const InputDecoration(
-                  hintText: '搜索手机号',
-                  hintStyle: TextStyle(fontSize: 14, color: BrandColors.textDisabled),
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
-                ),
-              ),
-            ),
-            if (hasText)
-              GestureDetector(
-                onTap: () {
-                  _searchCtrl.clear();
-                  _doSearch('');
-                },
-                child: const Padding(
-                  padding: EdgeInsets.all(6),
-                  child: Icon(Icons.close, size: 20, color: BrandColors.textSecondary),
-                ),
-              ),
-            GestureDetector(
-              onTap: () => _doSearch(_searchCtrl.text),
-              child: Container(
-                height: 34,
-                margin: const EdgeInsets.only(top: 3, right: 3, bottom: 3),
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(
-                  color: BrandColors.primary,
-                  borderRadius: BorderRadius.circular(17),
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  '搜索',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return AppSearchBar(
+      controller: _searchCtrl,
+      onSearch: _doSearch,
+      hintText: '搜索手机号',
+      keyboardType: TextInputType.phone,
     );
   }
 

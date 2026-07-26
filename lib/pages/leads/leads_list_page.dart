@@ -12,6 +12,9 @@ import 'package:telemarketing_app/constants/lead_constants.dart';
 import 'package:telemarketing_app/services/api_exception.dart';
 import 'package:telemarketing_app/widgets/app_search_bar.dart';
 import 'package:telemarketing_app/widgets/app_toast.dart';
+import 'package:telemarketing_app/widgets/app_empty_body.dart';
+import 'package:telemarketing_app/widgets/app_error_body.dart';
+import 'package:telemarketing_app/widgets/app_list_footer.dart';
 import 'package:telemarketing_app/widgets/lead_card.dart';
 import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'lead_detail_page.dart';
@@ -262,7 +265,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
         height: 32,
         padding: const EdgeInsets.only(left: 12, right: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFFF2F3FF),
+          color: BrandColors.primarySurface,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -272,7 +275,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
               constraints: const BoxConstraints(maxWidth: 120),
               child: Text(
                 '$label: $value',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF0052D9)),
+                style: const TextStyle(fontSize: 12, color: BrandColors.primary),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -282,7 +285,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
               child: const Icon(
                 Icons.close,
                 size: 16,
-                color: Color(0xFF0052D9),
+                color: BrandColors.primary,
               ),
             ),
           ],
@@ -372,7 +375,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
     return Container(
       width: double.infinity,
       height: 40,
-      color: const Color(0xFFF3F3F3),
+      color: BrandColors.surface,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.centerLeft,
       child: RichText(
@@ -384,7 +387,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
               text: _formatNum(total),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0052D9),
+                color: BrandColors.primary,
               ),
             ),
             const TextSpan(text: ' 条'),
@@ -523,13 +526,6 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
           return PublicLeadCard(
             lead: lead,
             claiming: _claimingLeadId == lead.id,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => LeadDetailPage(leadId: lead.id),
-                ),
-              );
-            },
             onClaim: () => _onClaim(lead.id),
           );
         },
@@ -543,27 +539,52 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       itemCount: 3,
       itemBuilder: (_, _) => Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        height: 160,
+        margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x12000000),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
-        padding: const EdgeInsets.all(16),
-        child: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(14),
+        // 镜像真实 PublicLeadCard 结构（信息列 + 右上角领取按钮），
+        // 不设固定高度，由内容自然撑开，避免 Column 垂直溢出黄黑横幅。
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            LeadSkBlock(width: 100, height: 16),
-            SizedBox(height: 12),
-            LeadSkBlock(width: 160, height: 14),
-            SizedBox(height: 12),
-            LeadSkBlock(width: 80, height: 14),
-            SizedBox(height: 12),
-            LeadSkBlock(width: 120, height: 14),
-            SizedBox(height: 16),
-            Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-              LeadSkBlock(width: 100, height: 36),
-            ]),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: LeadSkBlock(width: 140, height: 18)),
+                      const SizedBox(width: 8),
+                      const LeadSkBlock(width: 56, height: 22),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  LeadSkBlock(width: 160, height: 14),
+                  const SizedBox(height: 6),
+                  LeadSkBlock(width: 120, height: 16),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // 镜像真实 PublicLeadCard 的圆形领取按钮
+            Container(
+              width: 44,
+              height: 44,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: BrandColors.border,
+              ),
+            ),
           ],
         ),
       ),
@@ -572,101 +593,33 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
 
   Widget _buildPublicEmpty() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.waves, size: 80, color: Color(0xFFDCDCDC)),
-          const SizedBox(height: 16),
-          const Text(
-            '当前公海没有可领取的线索',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF181818),
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            '新线索导入后将自动出现在这里',
-            style: TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
-          ),
-        ],
+      child: AppEmptyBody(
+        icon: Icons.waves,
+        title: '当前公海没有可领取的线索',
+        desc: '新线索导入后将自动出现在这里',
       ),
     );
   }
 
   Widget _buildPublicError(String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 80, color: Color(0xFFDCDCDC)),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: const TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
-          ),
-          const SizedBox(height: 16),
-          TextButton(
-            onPressed: () => _loadPublicLeads(page: 1),
-            child: const Text(
-              '重新加载',
-              style: TextStyle(color: Color(0xFF0052D9)),
-            ),
-          ),
-        ],
-      ),
+    return AppErrorBody(
+      icon: Icons.error_outline,
+      iconSize: 80,
+      iconColor: const Color(0xFFDCDCDC),
+      message: message,
+      actionText: '重新加载',
+      onAction: () => _loadPublicLeads(page: 1),
     );
   }
 
   Widget _buildPublicFooter() {
-    if (_publicLoadingMore) {
-      return const SizedBox(
-        height: 56,
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      );
-    }
-    if (!_hasMorePublic && _publicLeads.isNotEmpty) {
-      return const SizedBox(
-        height: 48,
-        child: Center(
-          child: Text(
-            '— 已加载全部公海线索 —',
-            style: TextStyle(fontSize: 12, color: Color(0x99C5C5C5)),
-          ),
-        ),
-      );
-    }
-    return const SizedBox(height: 8);
+    return AppListFooter(isLoadingMore: _publicLoadingMore, hasMore: _hasMorePublic);
   }
 
   // ── 底部（我的线索） ──
 
   Widget _buildFooter(LeadListState state) {
-    if (state.isLoadingMore) {
-      return const SizedBox(
-        height: 56,
-        child: Center(
-          child: SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        ),
-      );
-    }
-    if (!state.hasMore && state.leads.isNotEmpty) {
-      return const SizedBox(
-        height: 48,
-        child: Center(
-          child: Text(
-            '— 已加载全部线索 —',
-            style: TextStyle(fontSize: 12, color: Color(0x99C5C5C5)),
-          ),
-        ),
-      );
-    }
-    return const SizedBox(height: 8);
+    return AppListFooter(isLoadingMore: state.isLoadingMore, hasMore: state.hasMore);
   }
 
   // ── 骨架屏（修 overflow） ──
@@ -681,7 +634,14 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
         height: 140,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x12000000),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
         padding: const EdgeInsets.all(16),
         child: const Column(
@@ -704,29 +664,10 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
 
   Widget _buildEmpty(bool isSearch) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            isSearch ? Icons.search_off : Icons.inbox,
-            size: 80,
-            color: const Color(0xFFDCDCDC),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            isSearch ? '未找到相关线索' : '暂无线索',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF181818),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isSearch ? '请尝试其他关键词或筛选条件' : '请联系管理员导入',
-            style: const TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
-          ),
-        ],
+      child: AppEmptyBody(
+        icon: isSearch ? Icons.search_off : Icons.inbox,
+        title: isSearch ? '未找到相关线索' : '暂无线索',
+        desc: isSearch ? '请尝试其他关键词或筛选条件' : '请联系管理员导入',
       ),
     );
   }
@@ -734,35 +675,15 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
   // ── 错误态 ──
 
   Widget _buildError(String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 80, color: Color(0xFFDCDCDC)),
-          const SizedBox(height: 16),
-          const Text(
-            '加载失败',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF181818),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            style: const TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
-          ),
-          const SizedBox(height: 16),
-          TextButton(
-            onPressed: () => ref.read(leadListProvider.notifier).refresh(),
-            child: const Text(
-              '重新加载',
-              style: TextStyle(color: Color(0xFF0052D9)),
-            ),
-          ),
-        ],
-      ),
+    return AppErrorBody(
+      icon: Icons.error_outline,
+      iconSize: 80,
+      iconColor: const Color(0xFFDCDCDC),
+      title: '加载失败',
+      message: message,
+      messageColor: BrandColors.textSecondary,
+      actionText: '重新加载',
+      onAction: () => ref.read(leadListProvider.notifier).refresh(),
     );
   }
 }

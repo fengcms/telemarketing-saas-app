@@ -12,6 +12,7 @@ import 'package:telemarketing_app/models/option_item.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/services/options_cache_service.dart';
 import 'package:telemarketing_app/theme/user_color.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 
 /// 线索卡片组件
 ///
@@ -44,7 +45,7 @@ class LeadCard extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           boxShadow: const [
             BoxShadow(
               color: Color(0x12000000),
@@ -85,7 +86,7 @@ class LeadCard extends ConsumerWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF181818),
+              color: BrandColors.textPrimary,
             ),
           ),
         ),
@@ -99,13 +100,13 @@ class LeadCard extends ConsumerWidget {
   Widget _buildPhoneRow() {
     return Row(
       children: [
-        const Icon(Icons.call, size: 14, color: Color(0xFFA6A6A6)),
+        const Icon(Icons.call, size: 14, color: BrandColors.textSecondary),
         const SizedBox(width: 6),
         Text(
           lead.phone,
           style: const TextStyle(
             fontSize: 14,
-            color: Color(0xFFA6A6A6),
+            color: BrandColors.textSecondary,
             letterSpacing: 0.2,
           ),
         ),
@@ -147,7 +148,7 @@ class LeadCard extends ConsumerWidget {
               Expanded(
                 child: Text(projName,
                     style: const TextStyle(
-                        fontSize: 13, color: Color(0xFFA6A6A6)),
+                        fontSize: 13, color: BrandColors.textSecondary),
                     overflow: TextOverflow.ellipsis),
               ),
             if (!hasC && !hasP) const SizedBox(height: 20),
@@ -162,13 +163,13 @@ class LeadCard extends ConsumerWidget {
   Widget _buildFollowUpRow() {
     return Row(
       children: [
-        const Icon(Icons.access_time, size: 14, color: Color(0xFFA6A6A6)),
+        const Icon(Icons.access_time, size: 14, color: BrandColors.textSecondary),
         const SizedBox(width: 4),
         Text(
           '最后跟进: ${_formatTime(lead.lastFollowupAt)}',
           style: const TextStyle(
             fontSize: 12,
-            color: Color(0xFFA6A6A6),
+            color: BrandColors.textSecondary,
           ),
         ),
         const Spacer(),
@@ -243,11 +244,11 @@ class LeadCard extends ConsumerWidget {
     String text;
     if (diffDays < 0) {
       bg = const Color(0x1AD54941);
-      fg = const Color(0xFFD54941);
+      fg = BrandColors.error;
       text = '已逾期${(-diffDays)}天';
     } else if (diffDays == 0) {
       bg = const Color(0x1A2BA471);
-      fg = const Color(0xFF2BA471);
+      fg = BrandColors.success;
       text = '今日可打';
     } else if (diffDays == 1) {
       bg = const Color(0x1AE37318);
