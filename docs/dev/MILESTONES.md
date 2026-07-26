@@ -725,6 +725,35 @@ ApiClient 拦截器链：
 
 ---
 
+## 节点 v0.24 — 团队日程视图 + 角色标签修复（2026-07-26）
+> 计划：`docs/dev/PLAN_28_TEAM_SCHEDULE_VIEW.md`；进度：`docs/dev/PROGRESS_TEAM_SCHEDULE_VIEW-2026-07-26.md`
+> 团队模块阶段二（阶段一为团队线索池 v0.22）。TM/TA 在「日程」Tab 内可切「我的/团队」；本节点补全团队日程视图与一处角色解析 bug。
+### 完成内容
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 归属人颜色圆点 | ✅ | 团队日程卡片按归属人显示固定色圆点，区分不同成员 |
+| 团队统计摘要条 | ✅ | 团队视图顶部摘要条（团队待办/逾期等聚合） |
+| 员工筛选方案② | ✅ | 选成员时 `selectOwner(id)` 重新请求 `fetchSchedules(userId:选中id)` 替换团队列表（成员维度独立缓存键），后端按 userId 过滤 |
+| Provider 改造 | ✅ | `schedule_list_provider` 支持成员维度缓存与切换 |
+| 角色标签修复 | ✅ | **根因修复**：`OptionItem.fromJson` 此前只解析 `id/name/type`，静默丢弃 `role` → 员工筛选不显示角色。补 `role` 字段并解析（nullable，避免非 user 接口无 role 时报错） |
+| 共享角色文案 | ✅ | 抽 `lib/theme/role_label.dart` 的 `roleLabel()`，个人中心与日程筛选统一复用，杜绝术语漂移 |
+| 团队日程头组件 | ✅ | 新建 `widgets/team_schedule_header.dart` 承载团队切换/摘要 |
+### 关键决策
+| 决策 | 选择 | 原因 |
+|------|------|------|
+| 员工筛选方案 | 方案② 选成员重请求后端过滤 | 后端按 userId 过滤更可靠，成员维度独立缓存键避免污染「我的」列表 |
+| 日期筛选 | 放弃本节点 | 范围控制，留待后续 |
+| 角色文案 | 抽共享 `roleLabel()` | 全端术语一致，`tenant_employee→电销专员`/`tenant_manager→团队经理`/`tenant_admin→管理员` 单一配置点 |
+### 验证
+| 验证项 | 结果 |
+|------|------|
+| `flutter analyze` | 0 issue（role 相关 4 文件 + 新建 3 文件均 0 error 0 warning） |
+| 构建装 Redmi K60 实测 | 通过（后台构建 `app-release.apk` 60.4MB，旧版自动卸载替换） |
+### 待开发
+- v0.25 团队统计独立页（需引入 `fl_chart`）
+- 团队视图日期筛选（本节点放弃）
+---
+
 ## v0.27 首页日程接口合并（2026-07-25）
 
 > 开发文档：`docs/dev/PLAN_25_HOME_SCHEDULE_MERGE.md`

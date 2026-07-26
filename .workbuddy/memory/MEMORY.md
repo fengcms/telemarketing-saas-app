@@ -66,3 +66,11 @@ MaterialApp(
 5. 开发完成要求用户真机实测并反馈
 6. 确认没问题后写进度文档、踩坑文档
 7. git commit & push
+
+### Web 字体偏好（2026-07-26 确立）
+- **用户明确拒绝 Noto Sans SC**，倾向系统苹方（PingFang SC）。
+- 事实边界（重要）：苹方是 Apple 专有字体，**禁止提取/打包/再分发**；仅能在 Apple 平台随系统使用（iOS 默认已用苹方、Mac 上 Web 走系统字体合法）。
+- Android / Web 部署到非苹果设备**不能打包苹方**，必须用语开源字体（思源黑体 / Noto 本地化）。
+- Web 调试时 Flutter 引擎(CanvasKit)会自动从 gstatic 拉 Noto 导致超时：可改用 HTML renderer
+  （`flutter run -d chrome --web-renderer html`）走浏览器系统字体（Mac=苹方）。
+- 当前决定：**暂不持久化改动** web 渲染模式，保持现状；未来若要做 web 字体方案需先确认。

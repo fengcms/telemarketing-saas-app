@@ -11,13 +11,17 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/theme/color_scheme.dart';
+import 'package:telemarketing_app/theme/user_color.dart';
+import 'package:telemarketing_app/theme/role_label.dart';
 import 'package:telemarketing_app/models/schedule.dart';
+import 'package:telemarketing_app/models/option_item.dart';
 import 'package:telemarketing_app/providers/schedule_list_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
 import 'widgets/schedule_card.dart';
 import 'widgets/schedule_sticky_header.dart';
 import 'widgets/schedule_skeleton.dart';
+import 'widgets/team_schedule_header.dart';
 import 'schedule_detail_page.dart';
 import 'package:telemarketing_app/widgets/app_error_body.dart';
 import 'package:telemarketing_app/widgets/app_empty_body.dart';
@@ -25,6 +29,7 @@ import 'package:telemarketing_app/widgets/app_segmented_tab.dart';
 import 'package:telemarketing_app/widgets/app_scope_toggle.dart';
 import 'package:telemarketing_app/widgets/app_sticky_header.dart';
 import 'package:telemarketing_app/widgets/app_list_footer.dart';
+import 'package:telemarketing_app/widgets/app_bottom_sheet.dart';
 import 'schedule_grouping.dart';
 
 /// 日程列表页
@@ -93,6 +98,7 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
       ),
       body: Column(
         children: [
+          if (listState.scope == 'team') _buildTeamHeader(listState),
           _buildTabBar(listState, statsState),
           Expanded(child: _buildBody(listState)),
         ],
@@ -129,12 +135,14 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
 
     final groups = groupSchedules(state.items, state.serverTime, state.activeTab);
 
-    // 归属人姓名统一解析（按 userId 去重 watch，保留 id 兜底，避免每卡独立订阅）
+    // 归属人姓名 + 颜色统一解析（按 userId 去重 watch，保留 id 兜底，避免每卡独立订阅）
     final ownerNames = <String, String>{};
+    final ownerColors = <String, Color>{};
     for (final item in state.items) {
       final id = item.userId;
       if (id != null && id.isNotEmpty) {
         ownerNames[id] = ref.watch(userNameProvider(id)).value ?? id;
+        ownerColors[id] = userColor(id);
       }
     }
 
@@ -143,15 +151,63 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
       child: CustomScrollView(
         controller: _scrollCtrl,
         physics: const AlwaysScrollableScrollPhysics(),
-        slivers: _buildSlivers(state, groups, ownerNames),
+        slivers: _buildSlivers(state, groups, ownerNames, ownerColors),
       ),
     );
+  }
+
+  /// 团队视图头部（仅 scope==team 渲染）：统计摘要条 + 员工筛选
+  Widget _buildTeamHeader(ScheduleListState state) {
+    final selectedId = state.selectedOwnerId;
+    final int todayPending;
+    final int overdue;
+    final String ownerLabel;
+    final Color? ownerColor;
+    if (selectedId != null) {
+      // 成员筛选中：本地从已加载成员列表计算（后端 userId 过滤后 items 即该成员）
+      todayPending = _countTodayPending(state.items, state.serverTime);
+      overdue = _countOverdue(state.items, state.serverTime);
+      ownerLabel = ref.read(userNameProvider(selectedId)).value ?? selectedId;
+      ownerColor = userColor(selectedId);
+    } else {
+      // 全团队：读团队统计接口（与首页/home-summary 同源）
+      todayPending = state.teamStats?.todayPending ?? 0;
+      overdue = state.teamStats?.overdue ?? 0;
+      ownerLabel = '全部成员';
+      ownerColor = null;
+    }
+    return TeamScheduleHeader(
+      todayPending: todayPending,
+      overdue: overdue,
+      ownerLabel: ownerLabel,
+      ownerColor: ownerColor,
+      onPickOwner: _pickOwner,
+    );
+  }
+
+  /// 打开员工筛选底部抽屉（成员列表来自 options 缓存）
+  Future<void> _pickOwner() async {
+    final users = await ref.read(optionsCacheProvider).getUsers();
+    if (!mounted) return;
+    final selected = ref.read(scheduleListProvider).selectedOwnerId;
+    final result = await AppBottomSheet.show<String?>(
+      context: context,
+      title: '选择员工',
+      child: _OwnerSheetContent(
+        users: users,
+        selectedId: selected,
+        onSelect: (id) => Navigator.of(context).pop(id),
+      ),
+    );
+    if (!mounted) return;
+    ref.read(scheduleListProvider.notifier).selectOwner(result);
   }
 
   List<Widget> _buildSlivers(
     ScheduleListState state,
     List<ScheduleGroup> groups,
     Map<String, String> ownerNames,
+    Map<String, Color> ownerColors,
   ) {
     final slivers = <Widget>[];
     for (final g in groups) {
@@ -183,6 +239,7 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
               schedule: g.items[i],
               serverTime: state.serverTime,
               ownerName: ownerNames[g.items[i].userId],
+              ownerColor: ownerColors[g.items[i].userId],
               onTap: () => _onTapSchedule(g.items[i]),
             ),
             childCount: g.items.length,
@@ -276,4 +333,121 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
     );
   }
 
+  /// 本地统计：今日待办数（严格今日窗口、不含逾期，与后端 todayPending 同源）
+  int _countTodayPending(List<Schedule> items, int serverTime) {
+    final base = DateTime.fromMillisecondsSinceEpoch(serverTime * 1000);
+    var n = 0;
+    for (final s in items) {
+      if (s.status != 'pending') continue;
+      if (s.scheduledAt < serverTime) continue; // 已逾期不计入今日待办
+      final dt = DateTime.fromMillisecondsSinceEpoch(s.scheduledAt * 1000);
+      if (dt.year == base.year && dt.month == base.month && dt.day == base.day) {
+        n++;
+      }
+    }
+    return n;
+  }
+
+  /// 本地统计：逾期数（pending 且 scheduledAt < 服务端时间）
+  int _countOverdue(List<Schedule> items, int serverTime) {
+    var n = 0;
+    for (final s in items) {
+      if (s.status == 'pending' && s.scheduledAt < serverTime) n++;
+    }
+    return n;
+  }
+}
+
+/// 员工筛选抽屉内容
+class _OwnerSheetContent extends StatelessWidget {
+  final List<OptionItem> users;
+  final String? selectedId;
+  final ValueChanged<String?> onSelect;
+
+  const _OwnerSheetContent({
+    required this.users,
+    this.selectedId,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _MemberTile(
+          label: '全部成员',
+          color: const Color(0xFF9E9E9E),
+          selected: selectedId == null,
+          onTap: () => onSelect(null),
+        ),
+        ...users.map(
+          (u) => _MemberTile(
+            label: u.name,
+            color: userColor(u.id),
+            role: roleLabel(u.role),
+            selected: selectedId == u.id,
+            onTap: () => onSelect(u.id),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 成员列表项（颜色圆点 + 姓名 + 选中勾）
+class _MemberTile extends StatelessWidget {
+  final String label;
+  final Color color;
+  final String? role;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _MemberTile({
+    required this.label,
+    required this.color,
+    this.role,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final showRole = role != null && role!.isNotEmpty;
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Row(
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(fontSize: 16, color: BrandColors.textPrimary),
+                  ),
+                  if (showRole) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      role!,
+                      style: const TextStyle(fontSize: 12, color: BrandColors.textSecondary),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (selected)
+              const Icon(Icons.check, size: 18, color: BrandColors.primary),
+          ],
+        ),
+      ),
+    );
+  }
 }

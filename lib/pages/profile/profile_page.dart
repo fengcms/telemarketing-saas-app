@@ -18,6 +18,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/home_stats.dart';
+import 'package:telemarketing_app/theme/role_label.dart';
 import 'package:telemarketing_app/pages/coming_soon_page.dart';
 import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 import 'package:telemarketing_app/pages/customers/customer_list_page.dart';
@@ -125,20 +126,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         '-${now.day.toString().padLeft(2, '0')}';
   }
 
-  /// 角色中文标签；非 TE/TM/TA 返回空串（按 TE 处理，隐藏团队入口）
-  String _roleLabel(String role) {
-    switch (role) {
-      case 'tenant_employee':
-        return '电销专员';
-      case 'tenant_manager':
-        return '团队经理';
-      case 'tenant_admin':
-        return '管理员';
-      default:
-        return '';
-    }
-  }
-
   /// 跳转子页（本轮统一占位）
   void _push(Widget page) {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
@@ -165,7 +152,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
     final role = user?.role ?? '';
-    final roleLabel = _roleLabel(role);
+    final roleText = roleLabel(role);
     final isManager = role == 'tenant_manager' || role == 'tenant_admin';
     final todayPending = ref.watch(scheduleStatsProvider).todayPending;
 
@@ -190,7 +177,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                   ? _UserCardSkeleton(ctrl: _skeletonCtrl)
                   : ProfileUserCard(
                       name: user?.name ?? '',
-                      roleLabel: roleLabel,
+                      roleLabel: roleText,
                       email: user?.email ?? '',
                       tenantName: _tenantName,
                     ),

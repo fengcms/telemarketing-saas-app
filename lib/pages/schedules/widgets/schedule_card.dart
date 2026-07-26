@@ -23,6 +23,9 @@ class ScheduleCard extends StatelessWidget {
   /// 归属人姓名（列表页统一解析；为空时回退显示 userId）
   final String? ownerName;
 
+  /// 归属人颜色（由 userId 哈希生成；团队视图与线索池跨页一致）
+  final Color? ownerColor;
+
   /// 点击回调（跳转详情，v0.13）
   final VoidCallback? onTap;
 
@@ -31,6 +34,7 @@ class ScheduleCard extends StatelessWidget {
     required this.schedule,
     required this.serverTime,
     this.ownerName,
+    this.ownerColor,
     this.onTap,
   });
 
@@ -131,7 +135,11 @@ class ScheduleCard extends StatelessWidget {
                         ),
                       ],
                       const SizedBox(height: 6),
-                      _OwnerRow(ownerName: ownerName, userId: s.userId),
+                      _OwnerRow(
+                        ownerName: ownerName,
+                        userId: s.userId,
+                        ownerColor: ownerColor,
+                      ),
                     ],
                   ),
                 ),
@@ -171,11 +179,19 @@ Color _statusColor(String status, bool isOverdue) {
 }
 
 /// 归属人（姓名由列表页解析后下发；无姓名时回退显示 userId）
+///
+/// [ownerColor] 为归属人颜色圆点（团队视图按 userId 哈希生成，
+/// 与线索池跨页一致）；为 null 时仅显示文字。
 class _OwnerRow extends StatelessWidget {
   final String? ownerName;
   final String? userId;
+  final Color? ownerColor;
 
-  const _OwnerRow({this.ownerName, this.userId});
+  const _OwnerRow({
+    this.ownerName,
+    this.userId,
+    this.ownerColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -183,8 +199,19 @@ class _OwnerRow extends StatelessWidget {
     if (display == null || display.isEmpty) return const SizedBox();
     return Row(
       children: [
-        const Icon(Icons.badge_outlined,
-            size: 14, color: BrandColors.textSecondary),
+        if (ownerColor != null)
+          Container(
+            width: 10,
+            height: 10,
+            margin: const EdgeInsets.only(right: 6),
+            decoration: BoxDecoration(
+              color: ownerColor,
+              shape: BoxShape.circle,
+            ),
+          )
+        else
+          const Icon(Icons.badge_outlined,
+              size: 14, color: BrandColors.textSecondary),
         const SizedBox(width: 4),
         Expanded(
           child: Text(

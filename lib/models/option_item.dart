@@ -7,13 +7,18 @@ class OptionItem {
   final String name;
   final String? type;
 
-  const OptionItem({required this.id, required this.name, this.type});
+  /// 成员角色（仅 /options/users 返回：tenant_admin / tenant_manager / tenant_employee）
+  /// 其余接口（分类 / 项目 / 快捷备注等）不返回，为 null。
+  final String? role;
+
+  const OptionItem({required this.id, required this.name, this.type, this.role});
 
   factory OptionItem.fromJson(Map<String, dynamic> json) {
     return OptionItem(
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? json['content']?.toString() ?? '',
       type: json['type']?.toString(),
+      role: json['role']?.toString(),
     );
   }
 }

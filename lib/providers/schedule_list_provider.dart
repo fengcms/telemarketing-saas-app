@@ -7,6 +7,7 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/schedule.dart';
+import 'package:telemarketing_app/models/schedule_stats.dart';
 import 'package:telemarketing_app/services/schedule_service.dart';
 import 'auth_provider.dart';
 import 'schedule_stats_provider.dart';
@@ -16,6 +17,18 @@ class _Unset {
   const _Unset();
 }
 const _unset = _Unset();
+
+/// 同上：teamStats 为可空对象，区分"未传"与"显式置 null"
+class _UnsetStats {
+  const _UnsetStats();
+}
+const _unsetStats = _UnsetStats();
+
+/// 同上：selectedOwnerId 为可空字符串，区分"未传"与"显式置 null"
+class _UnsetOwner {
+  const _UnsetOwner();
+}
+const _unsetOwner = _UnsetOwner();
 
 /// 日程列表状态
 class ScheduleListState {
@@ -49,6 +62,12 @@ class ScheduleListState {
   /// 范围：mine / team
   final String scope;
 
+  /// 团队统计（仅 scope==team 时拉取；mine 视图为 null）
+  final ScheduleStats? teamStats;
+
+  /// 团队视图成员筛选（null = 全部成员；仅 team 视图有效）
+  final String? selectedOwnerId;
+
   /// 服务端时间（逾期判定用）
   final int serverTime;
 
@@ -63,6 +82,8 @@ class ScheduleListState {
     this.errorMessage,
     this.activeTab = 'pending',
     this.scope = 'mine',
+    this.teamStats,
+    this.selectedOwnerId,
     this.serverTime = 0,
   });
 
@@ -77,6 +98,8 @@ class ScheduleListState {
     Object? errorMessage = _unset,
     String? activeTab,
     String? scope,
+    Object? teamStats = _unsetStats,
+    Object? selectedOwnerId = _unsetOwner,
     int? serverTime,
   }) {
     return ScheduleListState(
@@ -91,6 +114,12 @@ class ScheduleListState {
           errorMessage is _Unset ? this.errorMessage : errorMessage as String?,
       activeTab: activeTab ?? this.activeTab,
       scope: scope ?? this.scope,
+      teamStats: teamStats is _UnsetStats
+          ? this.teamStats
+          : teamStats as ScheduleStats?,
+      selectedOwnerId: selectedOwnerId is _UnsetOwner
+          ? this.selectedOwnerId
+          : selectedOwnerId as String?,
       serverTime: serverTime ?? this.serverTime,
     );
   }
@@ -111,8 +140,9 @@ class ScheduleListNotifier extends StateNotifier<ScheduleListState> {
   /// 各 Tab 数据缓存：key = "$scope:$tab"，命中则切换不重新请求
   final Map<String, _TabCache> _cache = {};
 
-  /// 当前 scope:tab 缓存 key
-  String get _cacheKey => '${state.scope}:${state.activeTab}';
+  /// 当前 scope:tab:owner 缓存 key
+  /// （成员筛选单独成键，避免与全团队数据互相污染）
+  String get _cacheKey => '${state.scope}:${state.activeTab}:${state.selectedOwnerId ?? ''}';
 
   ScheduleListNotifier(this._ref) : super(const ScheduleListState()) {
     _loadInitial();
@@ -126,11 +156,14 @@ class ScheduleListNotifier extends StateNotifier<ScheduleListState> {
   /// 是否可切换团队视图（仅 TM/TA）
   bool get canSwitchScope => _isManager;
 
-  /// 当前用户 ID；团队视图返回 null（不传 userId，由后端按角色返回团队）
+  /// 当前用户 ID（用于日程列表请求）：
+  /// - mine 视图：本人 ID（仅看自己）
+  /// - team 视图：selectedOwnerId（成员筛选，null = 全团队由后端按角色返回）
   String? get _userId {
     final user = _ref.read(authProvider).user;
     if (user == null) return null;
-    return state.scope == 'team' ? null : user.id;
+    if (state.scope == 'mine') return user.id;
+    return state.selectedOwnerId;
   }
 
   /// 将结果写入缓存（[append] 为 true 时追加到已有分页数据）
@@ -181,6 +214,7 @@ class ScheduleListNotifier extends StateNotifier<ScheduleListState> {
       if (!mounted || gen != _generation) return;
       _writeCache(_cacheKey, result);
       _restoreFromCache(_cacheKey);
+      if (state.scope == 'team') _loadTeamStats();
     } catch (_) {
       if (!mounted || gen != _generation) return;
       state = state.copyWith(
@@ -189,6 +223,20 @@ class ScheduleListNotifier extends StateNotifier<ScheduleListState> {
         errorMessage: '加载失败，请重试',
       );
     }
+  }
+
+  /// 拉取团队统计（仅 scope==team 时；mine 视图不调用）
+  ///
+  /// 失败不阻塞列表，摘要条降级显示 0/0。
+  void _loadTeamStats() {
+    if (state.scope != 'team') return;
+    final service = _ref.read(scheduleServiceProvider);
+    service.fetchTeamScheduleStats().then((stats) {
+      if (!mounted) return;
+      state = state.copyWith(teamStats: stats);
+    }).catchError((_) {
+      // 统计失败不阻塞列表，摘要条降级显示 0/0
+    });
   }
 
   // ── Tab / 范围切换 ──
@@ -216,17 +264,31 @@ class ScheduleListNotifier extends StateNotifier<ScheduleListState> {
 
   /// 切换范围（我的 / 团队，仅 TM/TA）
   ///
-  /// 已缓存则直接复用，不重新请求网络。
+  /// 切范围时重置成员筛选（成员筛选仅 team 视图内有效）；
+  /// 已缓存则直接复用，不重新请求网络。team 视图额外拉取团队统计。
   void switchScope(String scope) {
     if (scope == state.scope) return;
-    final key = '$scope:${state.activeTab}';
-    if (_cache.containsKey(key)) {
-      state = state.copyWith(scope: scope);
-      _restoreFromCache(key);
-      return;
-    }
     state = state.copyWith(
       scope: scope,
+      selectedOwnerId: null,
+      teamStats: scope == 'team' ? state.teamStats : null,
+      isInitialLoading: true,
+      isLoadingMore: false,
+      items: const [],
+      errorMessage: null,
+    );
+    _reload();
+    if (scope == 'team') _loadTeamStats();
+  }
+
+  /// 团队视图成员筛选（方案②：走后端 userId 过滤）
+  ///
+  /// [id] 为成员 ID；null 表示「全部成员」（恢复全团队）。
+  /// 切换即重新请求（成员维度单独成缓存键，不污染全团队缓存）。
+  void selectOwner(String? id) {
+    if (id == state.selectedOwnerId) return;
+    state = state.copyWith(
+      selectedOwnerId: id,
       isInitialLoading: true,
       isLoadingMore: false,
       items: const [],
@@ -269,6 +331,7 @@ class ScheduleListNotifier extends StateNotifier<ScheduleListState> {
     // 刷新期间置位，列表区改显骨架屏，避免旧数据闪现
     state = state.copyWith(isRefreshing: true);
     _reload(force: true);
+    if (state.scope == 'team') _loadTeamStats();
   }
 
   // ── 加载更多 ──
