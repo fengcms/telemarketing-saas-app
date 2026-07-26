@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/providers/home_provider.dart';
 import 'package:telemarketing_app/widgets/app_card_section.dart';
 import 'package:telemarketing_app/theme/color_scheme.dart';
-import 'package:telemarketing_app/pages/coming_soon_page.dart';
+import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 
 /// 快捷入口卡片 Section
 class HomeQuickEntrySection extends ConsumerWidget {
@@ -45,8 +45,7 @@ class HomeQuickEntrySection extends ConsumerWidget {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) =>
-                          const ComingSoonPage(featureName: '通话记录'),
+                      builder: (_) => const CallRecordsPage(),
                     ),
                   );
                 },

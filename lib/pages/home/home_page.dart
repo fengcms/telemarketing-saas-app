@@ -19,7 +19,7 @@ import 'package:telemarketing_app/widgets/app_notice_bar.dart';
 import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/home_provider.dart';
-import 'package:telemarketing_app/pages/coming_soon_page.dart';
+import 'package:telemarketing_app/pages/team_stats/team_stats_page.dart';
 import 'home_skeletons.dart';
 import 'home_stats_section.dart';
 import 'home_schedule_section.dart';
@@ -129,8 +129,7 @@ class _HomePageState extends ConsumerState<HomePage>
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) =>
-                        const ComingSoonPage(featureName: '团队看板'),
+                    builder: (_) => const TeamStatsPage(),
                   ),
                 );
               },

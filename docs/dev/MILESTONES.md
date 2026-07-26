@@ -883,6 +883,38 @@ ApiClient 拦截器链：
 
 ---
 
+## 节点 v0.31 — 首页/个人中心 入口接线修复（2026-07-26）
+
+> 快修：修复两处「已建好页面却仍跳 ComingSoon 占位」的漏接线入口。个人中心「我的业绩」按用户选择保持 ComingSoon。
+
+### 完成内容
+
+| 入口 | 位置 | 修复后 |
+|------|------|--------|
+| 首页快捷入口「通话记录」 | `home_quick_entry_section.dart:49` | 跳 `CallRecordsPage()`（v0.17 已建） |
+| 首页 AppBar「团队看板」（TM/TA 可见） | `home_page.dart:133` | 跳 `TeamStatsPage()`（v0.25 已建） |
+
+### 改动文件
+
+| 文件 | 改动类型 |
+|------|---------|
+| `lib/pages/home/home_quick_entry_section.dart` | ✅ 修改 |
+| `lib/pages/home/home_page.dart` | ✅ 修改 |
+
+### 验证
+
+| 验证项 | 结果 |
+|------|------|
+| `flutter analyze` | 2 文件 0 issue |
+| 构建 + 装真机 | `app-release.apk` 59MB，Redmi K60 实测通过 |
+
+### 待开发
+
+- 个人中心「个人统计」整页（设计 `14-个人统计.md` 已就绪），当前入口仍为 ComingSoon。
+- 团队视图日期筛选（v0.24 放弃项）。
+
+---
+
 ## 下一步节点规划
 
 > ⚠️ 下方 P0 核心流程**实际已完成**，见 v0.1~v0.11。剩余工作均为 P1 及以后。
