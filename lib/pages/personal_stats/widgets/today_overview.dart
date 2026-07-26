@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:telemarketing_app/theme/color_scheme.dart';
+import 'package:telemarketing_app/widgets/stat_card.dart';
 
 /// 今日概况 2 卡（今日跟进 / 今日接通）
 class TodayOverview extends StatelessWidget {
@@ -18,7 +18,7 @@ class TodayOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GridView.count(
         crossAxisCount: 2,
         shrinkWrap: true,
@@ -27,41 +27,18 @@ class TodayOverview extends StatelessWidget {
         crossAxisSpacing: 12,
         childAspectRatio: 1.6,
         children: [
-          _card('今日跟进', followupCount),
-          _card('今日接通', answeredCount),
+          StatCard(
+            label: '今日跟进',
+            value: followupCount.toString(),
+            valueFontSize: 30,
+          ),
+          StatCard(
+            label: '今日接通',
+            value: answeredCount.toString(),
+            valueFontSize: 30,
+          ),
         ],
       ),
     );
   }
-
-  Widget _card(String label, int value) => Container(
-        decoration: BoxDecoration(
-          color: BrandColors.primarySurface,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: BrandColors.primary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value.toString(),
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: BrandColors.primary,
-              ),
-            ),
-          ],
-        ),
-      );
 }

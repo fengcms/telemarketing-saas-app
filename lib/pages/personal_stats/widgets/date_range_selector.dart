@@ -1,62 +1,50 @@
 /// 个人统计 - 吸顶日期范围选择器
 ///
 /// 今日 / 本周 / 本月 / 自定义（设计允许超 1 年，仅拦截起 > 止）。
+/// 统一使用公共组件 [AppFilterChips]，符合 §3 硬规则（禁止各页自绘 chip）。
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/providers/personal_stats_provider.dart';
+import 'package:telemarketing_app/widgets/app_filter_chips.dart';
 
 /// 吸顶日期范围选择条
 class DateRangeSelector extends ConsumerWidget {
   const DateRangeSelector({super.key});
 
+  /// DateRangeKind → AppFilterChips 的 code 映射
+  static const Map<DateRangeKind, String> _kindToCode = {
+    DateRangeKind.today: 'today',
+    DateRangeKind.thisWeek: 'thisWeek',
+    DateRangeKind.thisMonth: 'thisMonth',
+    DateRangeKind.custom: 'custom',
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(personalStatsProvider);
     final notifier = ref.read(personalStatsProvider.notifier);
-    final scheme = Theme.of(context).colorScheme;
-    final options = <(String, DateRangeKind)>[
-      ('今日', DateRangeKind.today),
-      ('本周', DateRangeKind.thisWeek),
-      ('本月', DateRangeKind.thisMonth),
-      ('自定义', DateRangeKind.custom),
-    ];
-    return Container(
-      color: scheme.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          spacing: 8,
-          children: [
-            for (final (label, kind) in options)
-              ChoiceChip(
-                label: Text(label),
-                selected: s.rangeKind == kind,
-                selectedColor: scheme.primary.withValues(alpha: 0.15),
-                labelStyle: TextStyle(
-                  color: s.rangeKind == kind
-                      ? scheme.primary
-                      : scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-                onSelected: (_) {
-                  switch (kind) {
-                    case DateRangeKind.today:
-                      notifier.setRangeToday();
-                    case DateRangeKind.thisWeek:
-                      notifier.setRangeThisWeek();
-                    case DateRangeKind.thisMonth:
-                      notifier.setRangeThisMonth();
-                    case DateRangeKind.custom:
-                      _pickCustom(context, notifier);
-                  }
-                },
-              ),
-          ],
-        ),
-      ),
+    return AppFilterChips(
+      items: const [
+        FilterChipItem(code: 'today', label: '今日'),
+        FilterChipItem(code: 'thisWeek', label: '本周'),
+        FilterChipItem(code: 'thisMonth', label: '本月'),
+        FilterChipItem(code: 'custom', label: '自定义'),
+      ],
+      selectedCode: _kindToCode[s.rangeKind],
+      onChanged: (code) {
+        if (code == null) return;
+        if (code == 'today') {
+          notifier.setRangeToday();
+        } else if (code == 'thisWeek') {
+          notifier.setRangeThisWeek();
+        } else if (code == 'thisMonth') {
+          notifier.setRangeThisMonth();
+        } else if (code == 'custom') {
+          _pickCustom(context, notifier);
+        }
+      },
     );
   }
 

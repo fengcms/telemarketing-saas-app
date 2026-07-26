@@ -11,8 +11,9 @@ import 'package:telemarketing_app/providers/personal_stats_provider.dart';
 import 'widgets/date_range_selector.dart';
 import 'widgets/today_overview.dart';
 import 'widgets/detail_grid.dart';
-import 'widgets/conversion_ring.dart';
+import 'widgets/conversion_pie.dart';
 import 'package:telemarketing_app/widgets/app_error_body.dart';
+import 'package:telemarketing_app/widgets/stat_card.dart';
 import 'package:telemarketing_app/theme/color_scheme.dart';
 
 /// 个人统计页
@@ -55,7 +56,7 @@ class PersonalStatsPage extends ConsumerWidget {
             ref.read(personalStatsProvider.notifier).refresh(),
       );
     }
-    if (s.stats == null) {
+    if (s.isLoading || s.stats == null) {
       return const _StatsSkeleton();
     }
     final stats = s.stats!;
@@ -72,19 +73,11 @@ class PersonalStatsPage extends ConsumerWidget {
           _sectionTitle('数据详情'),
           DetailGrid(stats: stats),
           _sectionTitle('转化率详情'),
-          Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outlineVariant
-                    .withValues(alpha: 0.3),
-              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: StatCard(
+              child: ConversionPie(stats: stats),
             ),
-            child: ConversionRing(stats: stats),
           ),
         ],
       ),
@@ -92,10 +85,14 @@ class PersonalStatsPage extends ConsumerWidget {
   }
 
   Widget _sectionTitle(String title) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
         child: Text(
           title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: BrandColors.textSecondary,
+          ),
         ),
       );
 }
@@ -147,7 +144,7 @@ class _StatsSkeletonState extends State<_StatsSkeleton>
             children: List.generate(6, (_) => _box()),
           ),
           const SizedBox(height: 24),
-          _box(height: 168),
+          _box(height: 150),
         ],
       ),
     );
@@ -158,8 +155,8 @@ class _StatsSkeletonState extends State<_StatsSkeleton>
         child: Container(
           height: height,
           decoration: BoxDecoration(
-            color: BrandColors.surface.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(12),
+            color: BrandColors.border,
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       );
