@@ -10,6 +10,7 @@ import 'package:telemarketing_app/services/api_client.dart';
 import 'package:telemarketing_app/services/api_constants.dart';
 import 'package:telemarketing_app/services/api_exception.dart';
 import 'package:telemarketing_app/models/home_stats.dart';
+import 'package:telemarketing_app/models/personal_stats.dart';
 import 'package:telemarketing_app/models/home_summary.dart';
 
 /// 首页看板数据服务
@@ -38,6 +39,36 @@ class HomeService {
         statusCode: 200,
         code: 'UNKNOWN',
         message: '获取统计数据失败',
+      );
+    } on DioException catch (e) {
+      throw ApiClient.parseError(e);
+    }
+  }
+
+  /// 获取个人统计（按日期范围）
+  ///
+  /// 调 GET /api/tenant/stats/mine，传 dateFrom/dateTo 区间，
+  /// 返回 [PersonalStats]（区间字段 + myToday 实时）。
+  Future<PersonalStats> fetchPersonalStats({
+    required String dateFrom,
+    required String dateTo,
+  }) async {
+    try {
+      final response = await _apiClient.dio.get(
+        ApiConstants.statsMine,
+        queryParameters: {
+          'dateFrom': dateFrom,
+          'dateTo': dateTo,
+        },
+      );
+      final data = response.data;
+      if (data is Map && data['success'] == true) {
+        return PersonalStats.fromJson(data as Map<String, dynamic>);
+      }
+      throw const ApiException(
+        statusCode: 200,
+        code: 'UNKNOWN',
+        message: '获取个人统计失败',
       );
     } on DioException catch (e) {
       throw ApiClient.parseError(e);

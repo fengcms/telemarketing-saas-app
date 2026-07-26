@@ -910,8 +910,46 @@ ApiClient 拦截器链：
 
 ### 待开发
 
-- 个人中心「个人统计」整页（设计 `14-个人统计.md` 已就绪），当前入口仍为 ComingSoon。
+- ~~个人中心「个人统计」整页~~ ✅ 已并入 v0.32 完成（设计 `14-个人统计.md`，入口已接线）。
 - 团队视图日期筛选（v0.24 放弃项）。
+
+---
+
+## v0.32 个人统计独立页（2026-07-26）
+> 计划：`docs/dev/PLAN_32_PERSONAL_STATS.md`；进度：`docs/dev/PROGRESS_PERSONAL_STATS-2026-07-26.md`
+> 入口：个人中心 → 「我的业绩」卡 + 「个人统计」菜单项（此前均为 ComingSoon）。
+
+### 完成内容
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 数据模型 `personal_stats.dart` | ✅ | 映射 `GET /api/tenant/stats/mine`：8 字段 + 嵌套 `myToday`；`_int`/`_num` 安全转换；派生 `conversionRateDisplay`/`conversionProgress`/`conversionSummary` |
+| 服务层 `home_service.dart` | ✅ | 扩展 `fetchPersonalStats({from,to})`，复用 `dio` + `statsMine`（与 `fetchMyStats` 同端点，不新建 Service） |
+| 状态管理 `personal_stats_provider.dart` | ✅ | `PersonalStatsNotifier` + 日期范围（今日/本周/本月/自定义）+ 5 分钟按范围 key 缓存（sentinel `_Unset`/`_unset`，同构 team_stats_provider） |
+| 页面 `personal_stats_page.dart` | ✅ | AppBar「个人统计」+ 刷新 + 吸顶日期选择 + 滚动区；错误态 `AppErrorBody` + 骨架屏 `_StatsSkeleton` |
+| 今日概况 `today_overview.dart` | ✅ | 2 卡（今日跟进/接通），固定不随 Tab 变 |
+| 数据详情 `detail_grid.dart` | ✅ | 2×3 白卡 + `formatBigNumber`（≥10000 转"万"）+ 转化率卡 accent |
+| 转化率环 `conversion_ring.dart` | ✅ | `CircularProgressIndicator`(strokeWidth:12) + 中心 % + "转化 X / 线索 Y" |
+| 日期选择器 `date_range_selector.dart` | ✅ | 改造自 team stats；放宽 90 天上限，仅拦截 `from>to` |
+| 入口接线 `profile_page.dart` + `profile_stats_card.dart` | ✅ | 「我的业绩」卡 + 「个人统计」菜单项由 ComingSoon → `PersonalStatsPage()` |
+
+### 关键决策
+| 决策 | 选择 | 原因 |
+|------|------|------|
+| 接口字段疑云 | 直接按 PLAN_32 建页 | 用户在 AskUserQuestion 直接贴真机抓包 JSON 证实 5 区间字段齐全，风险消除 |
+| 转化率口径 | 直接展示后端 `myConversionRate` | 前端不二次计算（团队统计是前端算 `Σconverted/ΣownedLeads`） |
+| 日期上限 | 放宽 90 天 | 设计允许超 1 年；仅拦截 `from>to` |
+| 缓存 | 5 分钟按范围 key + sentinel | 同构 team_stats_provider，切 Tab/范围命中缓存不重加载 |
+
+### 验证
+| 验证项 | 结果 |
+|------|------|
+| `flutter analyze` | 个人统计相关 6 文件 0 issue；全仓仅 `token_storage.dart` 11 个 `!` 基线 warning（无关） |
+| 构建 + 装真机 | `app-release.apk` 62.3MB（DEV_TOOLS 浮标），`adb install -r` 到 Redmi K60(`3e06fd6d`) Success |
+| 真机实测 | ✅ 通过（用户确认测试通过） |
+
+### 待开发
+- KGP 告警（`package_info_plus`/`sensors_plus`/`share_plus`）按方案 A 暂接受。
+- 团队视图日期筛选（v0.24 放弃项）留待后续。
 
 ---
 
@@ -938,7 +976,7 @@ ApiClient 拦截器链：
 | 日程列表页 | 10 | P1 | ✅ v0.12（双 Tab/范围/分组吸顶/共享统计+角标） |
 | 日程详情页（doc 11）+ 操作（完成/取消/新建） | 11/12 | P1 | ✅ v0.13 / v0.14 打磨 |
 | 客户列表 | 17 | P1 | ✅ v0.18（客户详情拍板不开发，点卡片跳线索详情） |
-| 个人中心 | 13 | P1 | ✅ v0.16（个人中心页 + 5 处 UI 调整；个人统计子页仍占位） |
+| 个人中心 | 13 | P1 | ✅ v0.16（个人中心页 + 5 处 UI 调整）+ v0.32（个人统计整页 + 入口接线） |
 | 线索详情「查看全部」跳转 + 日程搜索页 | — | P1 | ✅ v0.19（最近日程/通话查看全部跳搜索页 + 删除重复操作栏） |
 | 公海线索池 + 顶部栏布局重构 | 06 | P1 | ✅ v0.22（公海列表 + 领取 + Tab 合并到顶部栏 + 双控制器搜索独立） |
 | 设置页 | 19 | P1 | ✅ v0.20（三段列表 + 退出/全设备退出 + 关于弹窗 + 后端版本） |
@@ -952,4 +990,4 @@ ApiClient 拦截器链：
 
 > 本文档与 `docs/dev/HANDOVER.md`（交接文档）配套使用。
 > ⚠️ 旧 `HANDOVER_05_LEAD_DETAIL.md` 中"3 个并行请求""拨号后弹面板未做"等描述已过时，以本表与代码现状为准。
-> 节点版本：v0.30 | 更新日期：2026-07-25
+> 节点版本：v0.32 | 更新日期：2026-07-26

@@ -1283,6 +1283,44 @@ at profile_page.dart:95:36            (initState → _load → .load())
 
 ---
 
+## 15. 骨架屏里 `const Expanded(child: 方法调用)` 报 const_eval_method_invocation
+
+**严重级别**：🟠 编译期（`flutter analyze` 报错，不修则无法构建）
+
+**现象**：写骨架占位时图省事写成
+
+```dart
+const Expanded(child: _box(height: 90)),
+```
+
+`flutter analyze` 报两条：
+
+```
+error • Methods can't be invoked in constant expressions
+  • lib/pages/personal_stats/personal_stats_page.dart:134:37 • const_eval_method_invocation
+error • Methods can't be invoked in constant expressions
+  • lib/pages/personal_stats/personal_stats_page.dart:136:37 • const_eval_method_invocation
+```
+
+**根因**：`_box(height)` 是 **实例方法**（返回 `Widget`），不是类构造器。`Expanded` 上的 `const` 把整句推入常量上下文，要求所有实参都能在编译期求值；但 `child` 实参是 `_box(...)` 这个**方法调用**，方法调用不能在常量表达式里求值 → 报错。
+
+> 注意：全局把 `const _box` 替换成 `_box` 是**无效**的，因为 `const` 实际写在 `Expanded` 前面（`const Expanded(...)`），`_box` 本身没带 `const`。
+
+**修法（已落地）**：去掉 `Expanded` 上的 `const` 即可——`Expanded` 的 `child` 是运行时方法调用，本就不应是常量：
+
+```dart
+Expanded(child: _box(height: 90)),
+SizedBox(width: 12),
+Expanded(child: _box(height: 90)),
+```
+
+**教训**：
+1. 占位/骨架里若 child 来自**方法调用**（如 `_box()`、`_placeholder()` 这类返回 Widget 的 helper），包它的 `Expanded`/`Container`/`Padding` 等**不能标 `const`**。
+2. 若要 const，要么把 helper 改成 `const` 构造器（建一个 `class _Box extends StatelessWidget`），要么把 child 改成字面量（如 `const SizedBox(height: 90)`）。
+3. 全局 `const _box` → `_box` 这类替换治不了 `const Expanded(...)` 的病，要先看清 `const` 到底标在谁头上。
+
+---
+
 ## 10. 已知待解决问题
 
 | # | 问题 | 优先级 | 状态 | 说明 |

@@ -2,8 +2,8 @@
 ///
 /// 设计文档：docs/design/page-design/13-个人中心.md
 /// 展示当前登录用户的基本信息、个人业绩概览、功能入口与团队入口。
-/// 子页（团队统计/个人统计）本轮未开发，
-/// 入口统一跳转 [ComingSoonPage] 占位，后续迭代替换。
+/// 子页：团队统计已开发（v0.25，入口直连 [TeamStatsPage]）；
+/// 个人统计已开发（v0.32，业绩卡直连 [PersonalStatsPage]）。
 /// 设置页已开发，入口直连 [SettingsPage]。
 /// 通话记录/客户列表已开发，入口直连对应页面。
 ///
@@ -19,11 +19,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/home_stats.dart';
 import 'package:telemarketing_app/theme/role_label.dart';
-import 'package:telemarketing_app/pages/coming_soon_page.dart';
 import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 import 'package:telemarketing_app/pages/customers/customer_list_page.dart';
 import 'package:telemarketing_app/pages/settings/settings_page.dart';
 import 'package:telemarketing_app/pages/team_stats/team_stats_page.dart';
+import 'package:telemarketing_app/pages/personal_stats/personal_stats_page.dart';
 import 'package:telemarketing_app/pages/theme_preview_page.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_menu_row.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_stats_card.dart';
@@ -196,8 +196,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                       followupCount: _stats?.followupCount ?? 0,
                       answeredCount: _stats?.answeredCount ?? 0,
                       todayPending: todayPending,
-                      onTap: () =>
-                          _push(const ComingSoonPage(featureName: '个人统计')),
+                      onTap: () => _push(const PersonalStatsPage()),
                     ),
               const SizedBox(height: 24),
 
