@@ -14,6 +14,7 @@ import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/models/schedule.dart';
 import 'package:telemarketing_app/providers/schedule_list_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
+import 'package:telemarketing_app/providers/options_provider.dart';
 import 'widgets/schedule_card.dart';
 import 'widgets/schedule_sticky_header.dart';
 import 'widgets/schedule_skeleton.dart';
@@ -24,8 +25,7 @@ import 'package:telemarketing_app/widgets/app_segmented_tab.dart';
 import 'package:telemarketing_app/widgets/app_scope_toggle.dart';
 import 'package:telemarketing_app/widgets/app_sticky_header.dart';
 import 'package:telemarketing_app/widgets/app_list_footer.dart';
-
-part 'schedule_grouping.dart';
+import 'schedule_grouping.dart';
 
 /// 日程列表页
 class ScheduleListPage extends ConsumerStatefulWidget {
@@ -127,19 +127,32 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
 
     if (state.items.isEmpty) return _buildEmpty(state.activeTab);
 
-    final groups = _groupSchedules(state.items, state.serverTime, state.activeTab);
+    final groups = groupSchedules(state.items, state.serverTime, state.activeTab);
+
+    // 归属人姓名统一解析（按 userId 去重 watch，保留 id 兜底，避免每卡独立订阅）
+    final ownerNames = <String, String>{};
+    for (final item in state.items) {
+      final id = item.userId;
+      if (id != null && id.isNotEmpty) {
+        ownerNames[id] = ref.watch(userNameProvider(id)).value ?? id;
+      }
+    }
 
     return RefreshIndicator(
       onRefresh: () => ref.read(scheduleListProvider.notifier).refresh(),
       child: CustomScrollView(
         controller: _scrollCtrl,
         physics: const AlwaysScrollableScrollPhysics(),
-        slivers: _buildSlivers(state, groups),
+        slivers: _buildSlivers(state, groups, ownerNames),
       ),
     );
   }
 
-  List<Widget> _buildSlivers(ScheduleListState state, List<_Group> groups) {
+  List<Widget> _buildSlivers(
+    ScheduleListState state,
+    List<ScheduleGroup> groups,
+    Map<String, String> ownerNames,
+  ) {
     final slivers = <Widget>[];
     for (final g in groups) {
       final anchorKey = _groupKey(g.key);
@@ -169,6 +182,7 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
               key: i == 0 ? anchorKey : null,
               schedule: g.items[i],
               serverTime: state.serverTime,
+              ownerName: ownerNames[g.items[i].userId],
               onTap: () => _onTapSchedule(g.items[i]),
             ),
             childCount: g.items.length,

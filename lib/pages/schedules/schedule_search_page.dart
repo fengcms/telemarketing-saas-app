@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/schedule.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
+import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/pages/schedules/widgets/schedule_card.dart';
 import 'package:telemarketing_app/pages/schedules/widgets/schedule_skeleton.dart';
 import 'package:telemarketing_app/pages/schedules/schedule_detail_page.dart';
@@ -265,6 +266,15 @@ class _ScheduleSearchPageState extends ConsumerState<ScheduleSearchPage> {
     if (_items.isEmpty) {
       return _EmptyState(isSearch: _query != null);
     }
+    // 归属人姓名统一解析（去重 watch，保留 id 兜底）
+    final ownerNames = <String, String>{};
+    for (final item in _items) {
+      final id = item.userId;
+      if (id != null && id.isNotEmpty) {
+        ownerNames[id] = ref.watch(userNameProvider(id)).value ?? id;
+      }
+    }
+
     return ListView(
       controller: _scrollCtrl,
       physics: const AlwaysScrollableScrollPhysics(),
@@ -274,6 +284,7 @@ class _ScheduleSearchPageState extends ConsumerState<ScheduleSearchPage> {
           (s) => ScheduleCard(
             schedule: s,
             serverTime: _serverTime,
+            ownerName: ownerNames[s.userId],
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(

@@ -2,22 +2,26 @@
 ///
 /// 展示单条日程：左侧状态色条 + 标题 + 时间 + 关联线索 +
 /// 状态标签 + 归属人。根据状态呈现 常规/逾期/已完成/已取消 四态。
+///
+/// 归属人姓名由列表页统一解析后通过 [ownerName] 下发，
+/// 卡片本身不持有 Riverpod 依赖（保持纯展示、便于复用与测试）。
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/schedule.dart';
-import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/widgets/app_tag.dart';
 
 /// 日程卡片
-class ScheduleCard extends ConsumerWidget {
+class ScheduleCard extends StatelessWidget {
   /// 日程数据
   final Schedule schedule;
 
   /// 服务端时间（逾期判定用）
   final int serverTime;
+
+  /// 归属人姓名（列表页统一解析；为空时回退显示 userId）
+  final String? ownerName;
 
   /// 点击回调（跳转详情，v0.13）
   final VoidCallback? onTap;
@@ -26,11 +30,12 @@ class ScheduleCard extends ConsumerWidget {
     super.key,
     required this.schedule,
     required this.serverTime,
+    this.ownerName,
     this.onTap,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final s = schedule;
     final isOverdue = s.status == 'pending' && s.isOverdue(serverTime);
     final isCancelled = s.status == 'cancelled';
@@ -126,7 +131,7 @@ class ScheduleCard extends ConsumerWidget {
                         ),
                       ],
                       const SizedBox(height: 6),
-                      _OwnerRow(userId: s.userId),
+                      _OwnerRow(ownerName: ownerName, userId: s.userId),
                     ],
                   ),
                 ),
@@ -165,16 +170,17 @@ Color _statusColor(String status, bool isOverdue) {
   }
 }
 
-/// 归属人（异步解析 userName）
-class _OwnerRow extends ConsumerWidget {
+/// 归属人（姓名由列表页解析后下发；无姓名时回退显示 userId）
+class _OwnerRow extends StatelessWidget {
+  final String? ownerName;
   final String? userId;
 
-  const _OwnerRow({required this.userId});
+  const _OwnerRow({this.ownerName, this.userId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (userId == null || userId!.isEmpty) return const SizedBox();
-    final name = ref.watch(userNameProvider(userId!));
+  Widget build(BuildContext context) {
+    final display = ownerName ?? userId;
+    if (display == null || display.isEmpty) return const SizedBox();
     return Row(
       children: [
         const Icon(Icons.badge_outlined,
@@ -182,7 +188,7 @@ class _OwnerRow extends ConsumerWidget {
         const SizedBox(width: 4),
         Expanded(
           child: Text(
-            '归属：${name.value ?? userId}',
+            '归属：$display',
             style: const TextStyle(
               fontSize: 13,
               color: BrandColors.textSecondary,

@@ -9,16 +9,25 @@
 ///
 /// 注意：日期标签基于设备本地时间计算，跨天不会自动重算，
 /// 需下拉刷新或重建才会更新（跨天重算机制见开发文档，标记为待开发）。
-part of 'schedule_list_page.dart';
+library;
+
+import 'package:telemarketing_app/models/schedule.dart';
 
 /// 分组数据
-class _Group {
+class ScheduleGroup {
+  /// 分组 key（语义桶，唯一）
   final String key;
+
+  /// 吸顶头标题
   final String title;
+
+  /// 是否逾期组（红色吸顶头）
   final bool isOverdue;
+
+  /// 组内日程
   final List<Schedule> items;
 
-  _Group({
+  ScheduleGroup({
     required this.key,
     required this.title,
     required this.isOverdue,
@@ -27,7 +36,7 @@ class _Group {
 }
 
 /// 纯前端分组：语义桶模型（每个类别仅一个分组头，标签不会重复）。
-List<_Group> _groupSchedules(
+List<ScheduleGroup> groupSchedules(
     List<Schedule> items, int serverTime, String tab) {
   final order = <String, int>{};
   final buckets = <String, List<Schedule>>{};
@@ -41,7 +50,7 @@ List<_Group> _groupSchedules(
   return sortedKeys.map((k) {
     final list = buckets[k]!
       ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-    return _Group(
+    return ScheduleGroup(
       key: k,
       title: _bucketTitle(k),
       isOverdue: k == 'overdue',

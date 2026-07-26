@@ -248,12 +248,23 @@
 - 新增 `lib/widgets/app_sticky_header.dart`（`FixedStickyHeaderDelegate`）：固定高度吸顶委托，日程页私有 `_StickyHeaderDelegate` 删除改用。
 - 新增 `lib/widgets/app_list_footer.dart`（`AppListFooter`）：加载更多/已加载全部/留白三段式 footer，日程页 `_buildSlivers` 改用。
 
-**第四批 · 维护性项（未做，待确认）**
-- `schedule_grouping.dart` 的 `part` → 独立 module（涉及文件结构，单独确认）。
-- `_onScroll` 的 `loadMore` 守卫确认（行为改动，需核实 provider 已有守卫）。
-- `ScheduleCard` 的 `userNameProvider` 上移批量解析（性能优化，长列表才显现）。
+**第四批 · 维护性项（已落地，2026-07-26 续）**
 
-**校验**：`flutter analyze` 7 个改动文件 → No issues found（含 `library` 指令补齐）。全仓仅 `token_storage.dart` 既有 11 个 `!` warning（与本次无关）。
+**① `schedule_grouping.dart`：`part` → 独立 module**
+- 文件头 `part of 'schedule_list_page.dart';` → `library;` + `import '.../models/schedule.dart';`
+- 跨库可见的两个符号公开化：`_Group` → `ScheduleGroup`（公开类）、`_groupSchedules` → `groupSchedules`（公开函数）；`_bucketKey`/`_bucketOrder`/`_bucketTitle` 保持私有（仅文件内纯函数）。
+- 列表页 `part 'schedule_grouping.dart';` → `import 'schedule_grouping.dart';`，调用 `groupSchedules(...)`、`List<ScheduleGroup>`。视觉零变化。
+
+**② `_onScroll` 的 `loadMore` 守卫：确认已有，无需改动**
+- 核实 `schedule_list_provider.dart` 的 `loadMore()`（276–302 行）四重守卫：`if (state.isLoadingMore || !state.hasMore || state.isInitialLoading || cached == null) return;`
+- 同时 `_generation` 代际守卫忽略过期响应。**结论：快速滚动不会触发重复请求，原有设计已满足，本项不改码**。
+
+**③ `ScheduleCard` 归属人名字上移解析**
+- `ScheduleCard` 由 `ConsumerWidget` 降为 `StatelessWidget`，新增可选 `ownerName` 参数；内部 `_OwnerRow` 改为接收 `ownerName` 的纯展示组件（仍回退 `userId`）。
+- 归属人姓名改为列表页统一解析：在 `build` 中收集 `state.items` 的 distinct `userId`，逐个 `ref.watch(userNameProvider(id))` 构建 `Map<userId,String>`，下发到每张卡。**保留「先显 id、名字异步到位再替换」原行为**（AsyncValue 兜底）。
+- 副作用修复：搜索页 `schedule_search_page.dart` 复用 `ScheduleCard`，原行为也是卡片内解析姓名；本次同步在搜索页 `_buildList` 注入 `ownerNames`，避免归属人回退为纯 userId。
+
+**校验**：`flutter analyze` 4 个文件（list_page / grouping / card / search_page）→ No issues found；全仓扫描无新增 error/warning（仅 `token_storage.dart` 既有 `!` 误报，与本次无关）。
 
 ### 待续
 - `schedule_search_page` / `schedule_detail_*` / `schedule_form_fields` 仍含硬编码色，属「日程列表页」分析范围外，另立任务处理。
