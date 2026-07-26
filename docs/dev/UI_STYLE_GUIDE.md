@@ -108,9 +108,15 @@ Scaffold(
 | `AppTextarea` | `app_textarea.dart` | 多行文本域，`controller` + `hintText` + `quickNotes?` |
 | `AppToast` | `app_toast.dart` | 提示，`.show(context, msg)` |
 | `AppFilterChips` | `app_filter_chips.dart` | 列表页搜索框下方的单选筛选条（横滚药丸，**默认占满 100% 宽**，选项少时沿行铺满、选项多时横滚），`items` + `selectedCode` + `onChanged` |
+| `AppEmptyBody` | `app_empty_body.dart` | 空状态展示（图标 + 主文案 + 副文案），`icon` + `title` + `desc?` |
+| `AppSegmentedTab` | `app_segmented_tab.dart` | 带计数徽标的分段 Tab 栏（下划线 + 选中蓝字），`tabs` + `activeKey` + `onChanged` |
+| `AppScopeToggle` | `app_scope_toggle.dart` | 作用域切换药丸（我的 / 团队等），`options` + `currentValue` + `onChanged` |
+| `AppStickyHeader` | `app_sticky_header.dart` | 固定高度吸顶委托 `FixedStickyHeaderDelegate(height, child)` |
+| `AppListFooter` | `app_list_footer.dart` | 列表底部加载状态（加载更多 / 已加载全部 / 留白），`isLoadingMore` + `hasMore` |
 
 > **规则**：凡上述组件对应的场景，必须使用公共组件，不得手动拼装替代品。
 > 列表页「搜索框下方的单选筛选条」必须使用 `AppFilterChips`，禁止各页自绘 chip / 分段控件。
+> 列表页「空态」「带计数的分段 Tab」「作用域切换」「吸顶头委托」「列表 footer」必须使用对应公共组件，禁止各页自绘。
 
 ---
 

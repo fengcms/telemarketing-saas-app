@@ -236,7 +236,24 @@
 
 **校验**：`flutter analyze` 6 个改动文件 → 0 issue。
 
-### 待续批次
-- **第三批**：`AppEmptyBody` 抽组件（含 `_buildEmpty` 颜色收口）、`AppSegmentedTab`（双 Tab 栏）、`AppScopeToggle`（我的/团队）、吸顶头合并为 `ScheduleStickyHeader`。
-- **第四批**：吸顶委托 `_StickyHeaderDelegate` 公共化、`AppListFooter`、part→独立 module、`loadMore` 守卫、`userNameProvider` 上移解析。
+### 2026-07-26 · 第三批 + 第四批（抽组件部分）已落地，未提交
+
+**第三批 · 抽新公共组件**
+- 新增 `lib/widgets/app_empty_body.dart`（`AppEmptyBody`）：统一空态（图标 + 主文案 + 副文案）。日程列表 `_buildEmpty` 改用，颜色收口（`#DCDCDC`/`#181818`/`#A6A6A6` → 组件内 `textDisabled`/`textPrimary`/`textSecondary`；图标灰 `#DCDCDC` 保留字面量）。
+- 新增 `lib/widgets/app_segmented_tab.dart`（`AppSegmentedTab` + `SegmentedTabItem`）：带计数徽标 + 下划线分段 Tab。日程列表 `_buildTabBar`/`_tabItem` 改用。
+- 新增 `lib/widgets/app_scope_toggle.dart`（`AppScopeToggle` + `ScopeOption`）：我的/团队药丸切换。日程列表 AppBar actions 改用。
+- 合并吸顶头：`schedule_date_header.dart` + `schedule_overdue_header.dart` → 统一 `lib/pages/schedules/widgets/schedule_sticky_header.dart`（`ScheduleStickyHeader`），两处调用改用。
+
+**第四批 · 抽组件部分（已做）**
+- 新增 `lib/widgets/app_sticky_header.dart`（`FixedStickyHeaderDelegate`）：固定高度吸顶委托，日程页私有 `_StickyHeaderDelegate` 删除改用。
+- 新增 `lib/widgets/app_list_footer.dart`（`AppListFooter`）：加载更多/已加载全部/留白三段式 footer，日程页 `_buildSlivers` 改用。
+
+**第四批 · 维护性项（未做，待确认）**
+- `schedule_grouping.dart` 的 `part` → 独立 module（涉及文件结构，单独确认）。
+- `_onScroll` 的 `loadMore` 守卫确认（行为改动，需核实 provider 已有守卫）。
+- `ScheduleCard` 的 `userNameProvider` 上移批量解析（性能优化，长列表才显现）。
+
+**校验**：`flutter analyze` 7 个改动文件 → No issues found（含 `library` 指令补齐）。全仓仅 `token_storage.dart` 既有 11 个 `!` warning（与本次无关）。
+
+### 待续
 - `schedule_search_page` / `schedule_detail_*` / `schedule_form_fields` 仍含硬编码色，属「日程列表页」分析范围外，另立任务处理。

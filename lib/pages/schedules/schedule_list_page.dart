@@ -15,11 +15,15 @@ import 'package:telemarketing_app/models/schedule.dart';
 import 'package:telemarketing_app/providers/schedule_list_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'widgets/schedule_card.dart';
-import 'widgets/schedule_date_header.dart';
-import 'widgets/schedule_overdue_header.dart';
+import 'widgets/schedule_sticky_header.dart';
 import 'widgets/schedule_skeleton.dart';
 import 'schedule_detail_page.dart';
 import 'package:telemarketing_app/widgets/app_error_body.dart';
+import 'package:telemarketing_app/widgets/app_empty_body.dart';
+import 'package:telemarketing_app/widgets/app_segmented_tab.dart';
+import 'package:telemarketing_app/widgets/app_scope_toggle.dart';
+import 'package:telemarketing_app/widgets/app_sticky_header.dart';
+import 'package:telemarketing_app/widgets/app_list_footer.dart';
 
 part 'schedule_grouping.dart';
 
@@ -73,24 +77,16 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
         elevation: 0,
         actions: [
           if (canTeam)
-            GestureDetector(
-              onTap: () {
-                final next =
-                    listState.scope == 'mine' ? 'team' : 'mine';
-                ref.read(scheduleListProvider.notifier).switchScope(next);
-              },
-              child: Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  listState.scope == 'mine' ? '我的' : '团队',
-                  style: const TextStyle(fontSize: 13, color: Colors.white),
-                ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: AppScopeToggle(
+                options: const [
+                  ScopeOption('mine', '我的'),
+                  ScopeOption('team', '团队'),
+                ],
+                currentValue: listState.scope,
+                onChanged: (v) =>
+                    ref.read(scheduleListProvider.notifier).switchScope(v),
               ),
             ),
         ],
@@ -107,69 +103,13 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
   // ── Tab 栏 ──
 
   Widget _buildTabBar(ScheduleListState state, ScheduleStatsState stats) {
-    return Container(
-      color: Colors.white,
-      height: 48,
-      child: Row(
-        children: [
-          _tabItem(state, stats, 'pending', '待办', stats.pending),
-          _tabItem(state, stats, 'completed', '已完成', stats.completed),
-        ],
-      ),
-    );
-  }
-
-  Widget _tabItem(
-    ScheduleListState state,
-    ScheduleStatsState stats,
-    String tab,
-    String label,
-    int count,
-  ) {
-    final active = state.activeTab == tab;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => ref.read(scheduleListProvider.notifier).switchTab(tab),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: active ? FontWeight.w600 : FontWeight.normal,
-                    color: active ? BrandColors.primary : BrandColors.textSecondary,
-                  ),
-                ),
-                if (count > 0) ...[
-                  const SizedBox(width: 4),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: active ? BrandColors.primary : BrandColors.textSecondary,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '$count',
-                      style: const TextStyle(fontSize: 11, color: Colors.white),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 6),
-            Container(
-              height: 2,
-              width: 28,
-              color: active ? BrandColors.primary : Colors.transparent,
-            ),
-          ],
-        ),
-      ),
+    return AppSegmentedTab(
+      tabs: [
+        SegmentedTabItem(key: 'pending', label: '待办', count: stats.pending),
+        SegmentedTabItem(key: 'completed', label: '已完成', count: stats.completed),
+      ],
+      activeKey: state.activeTab,
+      onChanged: (k) => ref.read(scheduleListProvider.notifier).switchTab(k),
     );
   }
 
@@ -206,14 +146,16 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
       slivers.add(
         SliverPersistentHeader(
           pinned: true,
-          delegate: _StickyHeaderDelegate(
+          delegate: FixedStickyHeaderDelegate(
             height: 40,
             child: g.isOverdue
-                ? ScheduleOverdueHeader(
-                    count: g.items.length,
+                ? ScheduleStickyHeader(
+                    title: '已逾期 (${g.items.length})',
+                    icon: Icons.error_outline,
+                    iconColor: BrandColors.error,
                     onTap: () => _scrollToGroup(g.key),
                   )
-                : ScheduleDateHeader(
+                : ScheduleStickyHeader(
                     title: g.title,
                     onTap: () => _scrollToGroup(g.key),
                   ),
@@ -235,41 +177,14 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
       );
     }
 
-    if (state.isLoadingMore) {
-      slivers.add(
-        const SliverToBoxAdapter(
-          child: SizedBox(
-            height: 56,
-            child: Center(
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          ),
+    slivers.add(
+      SliverToBoxAdapter(
+        child: AppListFooter(
+          isLoadingMore: state.isLoadingMore,
+          hasMore: state.hasMore,
         ),
-      );
-    } else if (!state.hasMore && state.items.isNotEmpty) {
-      slivers.add(
-        SliverToBoxAdapter(
-          child: SizedBox(
-            height: 48,
-            child: Center(
-              child: Text(
-                '— 已加载全部 —',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: BrandColors.textDisabled.withValues(alpha: 0.6),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-    } else {
-      slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 8)));
-    }
+      ),
+    );
     return slivers;
   }
 
@@ -335,53 +250,16 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
       child: ListView(
         children: [
           SizedBox(height: MediaQuery.of(context).size.height * 0.2),
-          const Icon(Icons.event_note, size: 80, color: Color(0xFFDCDCDC)),
-          const SizedBox(height: 16),
-          Center(
-            child: Text(
-              isPending ? '暂无待办日程' : '暂无已完成日程',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF181818),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              isPending ? '点击底部「+」或卡片「跟进」新建日程' : '完成的日程会显示在这里',
-              style: const TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
-            ),
+          AppEmptyBody(
+            icon: Icons.event_note,
+            title: isPending ? '暂无待办日程' : '暂无已完成日程',
+            desc: isPending
+                ? '点击底部「+」或卡片「跟进」新建日程'
+                : '完成的日程会显示在这里',
           ),
         ],
       ),
     );
   }
 
-}
-
-/// 吸顶头部委托
-class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final double height;
-  final Widget child;
-
-  _StickyHeaderDelegate({required this.height, required this.child});
-
-  @override
-  double get minExtent => height;
-
-  @override
-  double get maxExtent => height;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) =>
-      child;
-
-  @override
-  bool shouldRebuild(_StickyHeaderDelegate old) => false;
 }
