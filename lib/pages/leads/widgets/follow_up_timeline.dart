@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:telemarketing_app/models/follow_up_record.dart';
 import 'package:telemarketing_app/theme/color_scheme.dart';
+import 'package:telemarketing_app/widgets/app_card_section.dart';
 import 'follow_up_card.dart';
 import 'edit_follow_up_dialog.dart';
 import 'delete_confirm_dialog.dart';
@@ -70,17 +71,16 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
       return _buildLoadingSkeleton();
     }
 
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-      ),
+    return AppCardSection(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 标题
           _buildHeader(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          const Divider(height: 1, color: BrandColors.border),
+          const SizedBox(height: 8),
           // 加载失败：行内重试
           if (widget.errorMessage != null)
             _buildErrorState()
@@ -98,28 +98,25 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
   // ── 标题 ──
 
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Row(
-        children: [
-          const Text(
-            '跟进记录',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: BrandColors.textPrimary,
-            ),
+    return Row(
+      children: [
+        const Text(
+          '跟进记录',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: BrandColors.textPrimary,
           ),
-          const SizedBox(width: 4),
-          Text(
-            '(共${widget.allRecords.length}条)',
-            style: const TextStyle(
-              fontSize: 12,
-              color: BrandColors.textSecondary,
-            ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '(共${widget.allRecords.length}条)',
+          style: const TextStyle(
+            fontSize: 12,
+            color: BrandColors.textSecondary,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -184,10 +181,8 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
   // ── 加载骨架 ──
 
   Widget _buildLoadingSkeleton() {
-    return Container(
-      color: Colors.white,
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(16),
+    return AppCardSection(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

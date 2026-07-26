@@ -19,12 +19,12 @@ class ScheduleSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCardSection(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           const Divider(height: 1, color: BrandColors.border),
           const SizedBox(height: 8),
           if (schedules.isEmpty) _buildEmptyState() else _buildList(),

@@ -36,12 +36,12 @@ class CallRecordsSection extends ConsumerWidget {
     final isManager = _isManager(authState.user?.role);
 
     return AppCardSection(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(context),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           const Divider(height: 1, color: BrandColors.border),
           const SizedBox(height: 8),
           if (isLoading && records.isEmpty)
