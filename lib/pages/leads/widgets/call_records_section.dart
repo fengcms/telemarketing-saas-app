@@ -37,6 +37,7 @@ class CallRecordsSection extends ConsumerWidget {
 
     return AppCardSection(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -69,9 +70,9 @@ class CallRecordsSection extends ConsumerWidget {
           ),
         ),
         const Spacer(),
-        TextButton(
-          onPressed: onViewAll,
-          child: const Text('查看全部'),
+        GestureDetector(
+          onTap: onViewAll,
+          child: const Text('查看全部', style: TextStyle(fontSize: 13, color: BrandColors.primary)),
         ),
       ],
     );
@@ -82,7 +83,8 @@ class CallRecordsSection extends ConsumerWidget {
       padding: EdgeInsets.symmetric(vertical: 16),
       child: Center(
         child: SizedBox(
-          width: 16, height: 16,
+          width: 16,
+          height: 16,
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
@@ -95,7 +97,10 @@ class CallRecordsSection extends ConsumerWidget {
       child: Center(
         child: Text(
           errorMessage ?? '加载失败',
-          style: const TextStyle(fontSize: 13, color: BrandColors.textSecondary),
+          style: const TextStyle(
+            fontSize: 13,
+            color: BrandColors.textSecondary,
+          ),
         ),
       ),
     );
@@ -126,7 +131,11 @@ class CallRecordsSection extends ConsumerWidget {
     );
   }
 
-  Widget _buildRecordRow(CallRecord record, bool isManager, BuildContext context) {
+  Widget _buildRecordRow(
+    CallRecord record,
+    bool isManager,
+    BuildContext context,
+  ) {
     return Container(
       height: 48,
       decoration: BoxDecoration(
@@ -140,20 +149,30 @@ class CallRecordsSection extends ConsumerWidget {
           const SizedBox(width: 8),
           Text(
             record.shortDateTime,
-            style: const TextStyle(fontSize: 13, color: BrandColors.textPrimary),
+            style: const TextStyle(
+              fontSize: 13,
+              color: BrandColors.textPrimary,
+            ),
           ),
           const SizedBox(width: 8),
           _buildAnswerTag(record.answerType),
           const SizedBox(width: 4),
           Text(
             record.durationText.isNotEmpty ? record.durationText : '-',
-            style: const TextStyle(fontSize: 13, color: BrandColors.textSecondary),
+            style: const TextStyle(
+              fontSize: 13,
+              color: BrandColors.textSecondary,
+            ),
           ),
           const Spacer(),
           if (isManager)
             GestureDetector(
               onTap: () {
-                showCorrectCallDialog(context, callId: record.id, record: record);
+                showCorrectCallDialog(
+                  context,
+                  callId: record.id,
+                  record: record,
+                );
               },
               child: const Padding(
                 padding: EdgeInsets.all(8),

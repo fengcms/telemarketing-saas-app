@@ -20,6 +20,7 @@ class ScheduleSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCardSection(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -45,9 +46,9 @@ class ScheduleSection extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        TextButton(
-          onPressed: onViewAll,
-          child: const Text('查看全部'),
+        GestureDetector(
+          onTap: onViewAll,
+          child: const Text('查看全部', style: TextStyle(fontSize: 13, color: BrandColors.primary)),
         ),
       ],
     );
@@ -71,9 +72,7 @@ class ScheduleSection extends StatelessWidget {
   }
 
   Widget _buildList() {
-    return Column(
-      children: schedules.map(_buildRow).toList(),
-    );
+    return Column(children: schedules.map(_buildRow).toList());
   }
 
   Widget _buildRow(Schedule s) {
@@ -100,12 +99,18 @@ class ScheduleSection extends StatelessWidget {
               children: [
                 Text(
                   dateStr,
-                  style: const TextStyle(fontSize: 13, color: BrandColors.textPrimary),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: BrandColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   timeStr,
-                  style: const TextStyle(fontSize: 12, color: BrandColors.textSecondary),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: BrandColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -117,13 +122,19 @@ class ScheduleSection extends StatelessWidget {
               children: [
                 Text(
                   s.title,
-                  style: const TextStyle(fontSize: 14, color: BrandColors.textPrimary),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: BrandColors.textPrimary,
+                  ),
                 ),
                 if (s.content != null && s.content!.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
                     s.content!,
-                    style: const TextStyle(fontSize: 12, color: BrandColors.textSecondary),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: BrandColors.textSecondary,
+                    ),
                   ),
                 ],
               ],
@@ -140,7 +151,10 @@ class ScheduleSection extends StatelessWidget {
     final (label, bg, fg) = _statusStyle(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(4),
+      ),
       child: Text(label, style: TextStyle(fontSize: 12, color: fg)),
     );
   }
