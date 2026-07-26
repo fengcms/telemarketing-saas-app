@@ -1154,6 +1154,72 @@ Future<void> _loadInitial() async {
 
 ---
 
+### 12.2 Riverpod 在「构建期」同步修改 provider → web 红崩、连带打崩 IndexedStack 壳
+
+**严重级别**：🔴 **阻断性（P0，表现=登录后进首页即 DartError 红崩溃）**
+
+**现象**：`flutter run -d chrome --dart-define=DEV_TOOLS=true` 登录后进入首页，控制台一串红字：
+```
+Uncaught (in promise) DartError: Tried to modify a provider while the widget tree was building.
+...
+at schedule_stats_provider.dart:88:5   (ScheduleStatsNotifier.load)
+at profile_page.dart:95:36            (initState → _load → .load())
+```
+页面卡白/进不去。安卓真机无此现象。
+
+**根因（两处构建期同步 setState）**：
+1. `lib/providers/schedule_stats_provider.dart` 的 `ScheduleStatsNotifier` 构造器里同步调 `load()`，而 `load()` **第一行**就是同步 `state = state.copyWith(isLoading: true)`。Notifier 首次创建发生在 `MainShell` 构建阶段（`ref.watch` 触发），Riverpod 的 `_debugCanModifyProviders` 在构建期处于开启状态 → 抛错。
+2. `lib/pages/profile/profile_page.dart` 的 `initState → _load()` 又 `ref.read(scheduleStatsProvider.notifier).load();`，同样是构建期同步 `setState`。
+3. `MainShell` 用 `IndexedStack` 把 4 个 Tab **一次性 keepAlive 挂载**，进首页时 `ProfilePage.initState` 必跑 → 异常 → **整个 `MainShell` 构建崩溃**，`HomePageNotifier.loadData()` 没机会执行 → 表现为「进首页不发包」。
+
+**为何只在 web 暴露**：debug 模式下的 `_debugCanModifyProviders` 校验在 web 及部分路径的 widget 时序下触发；原生端 `IndexedStack` 的挂载时序差异未触发该断言，故安卓真机正常。
+
+**修法**：
+- `schedule_stats_provider.dart`：初始 loading 态直接放进 `super(const ScheduleStatsState(isLoading: true))`，**删掉 `load()` 首行同步 `setState`**。`load()` 只在 `await` 之后才 `setState`（构建期只做异步 fetch，合法）。
+- `profile_page.dart`：`initState` 里删掉 `ref.read(scheduleStatsProvider.notifier).load();`（notifier 构造时已自动 `load()`，这行纯属重复请求，且是崩溃触发点之一）。
+
+**教训**：
+- Riverpod **仅拦截** `build` / `initState` / `didChangeDependencies` 等**构建期**的 provider 修改；事件回调（`onRefresh`、按钮 `onPressed`、操作后回调）里调 `.notifier.load()/.refresh()` 是安全的。
+- Notifier 构造器 / 页面 `initState` 若要触发异步加载，**绝不能在 `await` 之前同步 `setState`**；初始态应放进 `super(...)`，真正的状态更新推迟到 `await` 之后。
+- 用 `IndexedStack`（keepAlive）做 Tab 容器时，任一 Tab 的构建期异常都会**拖垮整个壳**，排查时栈顶通常指向某个被挂载的子页而非壳本身——别被栈顶误导，要顺着 `mount` 链往上看是谁在构建期改了 provider。
+
+---
+
+### 12.3 web 上 `flutter_secure_storage` 读 token 抛异常 → 拦截器中止请求 → 全部业务接口静默不发
+
+**严重级别**：🔴 **阻断性（P0，表现=登录成功，但首页/全部业务接口静默不发请求，极易误判为 CORS）**
+
+**现象**：登录（public 接口）正常；进首页后所有 `tenant/*` 请求不发出。Chrome **Network 面板只有 `login` 一条**，控制台**无红错**。在 Dio 拦截器加临时日志后显示：
+```
+[API][REQ] GET .../tenant/stats/mine auth=false
+[API][ERR] GET .../tenant/stats/mine type=DioExceptionType.unknown msg=null
+```
+`auth=false` + `type=unknown` + `msg=null` 是关键信号。
+
+**根因（四连）**：
+1. 非 public 请求在拦截器 `onRequest` 里调 `_tokenStorage.getAccessToken()` 注入 `Authorization`；
+2. web 端 token 存储走 `flutter_secure_storage_web`，其 `read()` 用 **AES-GCM 解密、强依赖 `window.crypto.subtle`**；
+3. `flutter run -d chrome` 默认 HTTP，且当通过**非 localhost 源**（局域网 IP、代理、127.0.0.1 之外）访问时，浏览器将其视为**不安全上下文**，`crypto.subtle` 为 `undefined` → 解密抛异常（无 message → 被包成 `DioExceptionType.unknown` / `msg=null`）；
+4. 异常在 `onRequest` **注入 `Authorization` 之前**抛出 → 请求被拦截器中止 → 不进 Network 面板、`auth` 日志为 false；又因 `HomePageNotifier` 用 `_safeCall` 把异常全吞 → 完全静默，控制台无报错。
+
+**为何 login 正常**：login 是 public 接口，拦截器 `_isPublicEndpoint` 提前 `return`、**根本不读 token 存储**，完美绕过异常——这也解释了「登录能用、其它全挂」。
+**为何安卓正常**：原生 `flutter_secure_storage` 走 Keystore/Keychain，不依赖 `crypto.subtle`。
+
+**修法**：
+- `lib/services/token_storage.dart` 按 `kIsWeb` 分流存储后端：
+  - **web → `shared_preferences`**（直接 `localStorage`，**无 `crypto.subtle` 依赖**，项目已有依赖 `^2.3.0`）；
+  - **原生（Android/iOS）→ 继续 `flutter_secure_storage`**（Keystore 加密，生产安全不变）。
+- `lib/services/api_client.dart` 的 token 读取**包 try/catch**：即使读取再异常，也降级为「不带鉴权发出」交由服务端 401 处理，**绝不再中止请求**（这正是此次静默失败的根因）。
+- ⚠️ **安全权衡**：web 用 `shared_preferences` 存 token 是**明文 localStorage**，弱于 Keystore。仅适合 web 调试/内测；若要正式发布 web 端，需评估风险（HTTPS + 短期 accessToken + refresh 兜底，或改用后端 httpOnly Cookie）。
+
+**教训**：
+1. web 上**任何**强依赖 `window.crypto.subtle` 的存储/加密库（典型：`flutter_secure_storage_web`），在**非 localhost 不安全上下文**会直接崩。web 端 token 优先用 `shared_preferences` 或后端 `httpOnly` Cookie。
+2. **Dio 拦截器 `onRequest` 里读取外部存储必须 try/catch**——一次存储异常就会静默阻断所有需鉴权请求，且极易被业务层 `_safeCall` 吞错，排查极难。
+3. **「只有 login 发出、其它都不发、Network 面板无记录、控制台无报错」是「拦截器在 `onRequest` 抛错中止请求」的典型特征，不是 CORS**（CORS 至少会先发 `OPTIONS` 预检并显示红色 CORS 错误）。定位时给拦截器加临时日志（方法/URL/`auth` 头/`error.type`/`msg`）一锤定音。
+4. 调试 web 网络问题，优先用 `--dart-define=DEV_TOOLS=true` 开 Alice 浮标（本项目已接 `alice` + `alice_dio`），或直接给 Dio 拦截器加 `enableDevTools` 守卫日志，避免被 `_safeCall` 把错误吃掉。
+
+---
+
 ## 10. 已知待解决问题
 
 | # | 问题 | 优先级 | 状态 | 说明 |
@@ -1166,5 +1232,5 @@ Future<void> _loadInitial() async {
 
 ---
 
-> 最后更新：2026-07-24  
+> 最后更新：2026-07-26  
 > 维护人：Mobile App Builder

@@ -91,8 +91,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     final today = _todayStr();
     final tenantService = ref.read(tenantServiceProvider);
     final homeService = ref.read(homeServiceProvider);
-    // 今日待办：触发一次共享 provider 刷新（幂等），由 watch 自动反映
-    ref.read(scheduleStatsProvider.notifier).load();
+    // 今日待办（todayPending）由共享 scheduleStatsProvider 自动加载：
+    // 其 notifier 构造时已发起请求，build 中 watch 即触发，无需此处重复 load。
 
     // 并行发起：租户名 + 业绩统计
     final tenantNameFuture = _safe(() => tenantService.fetchTenantName());

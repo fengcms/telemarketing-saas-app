@@ -9,6 +9,7 @@ library;
 
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'api_constants.dart';
 import 'api_exception.dart';
 import 'error_messages.dart';
@@ -52,11 +53,21 @@ class ApiClient {
         if (_isPublicEndpoint(options.path)) {
           return handler.next(options);
         }
-        final token = await _tokenStorage.getAccessToken();
+        String? token;
+        try {
+          token = await _tokenStorage.getAccessToken();
+        } catch (e, st) {
+          // Token 读取失败（如 Web 上存储异常）不应中止请求，
+          // 降级为不带鉴权发出，交由服务端 401 处理。
+          debugPrint('[API][TOKEN-ERR] $e\n$st');
+        }
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
         return handler.next(options);
+      },
+      onResponse: (response, handler) {
+        return handler.next(response);
       },
       onError: (error, handler) async {
         // 423 FORCE_CHANGE_PASSWORD — 不走 refresh→retry，直接跳转改密页
