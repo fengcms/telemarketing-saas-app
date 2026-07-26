@@ -4,6 +4,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/providers/home_provider.dart';
+import 'package:telemarketing_app/widgets/app_card_section.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/pages/coming_soon_page.dart';
 
 /// 快捷入口卡片 Section
@@ -19,63 +21,35 @@ class HomeQuickEntrySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
+    return AppCardSection(
+      title: '快捷入口',
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: IntrinsicHeight(
+        child: Row(
           children: [
-            const Text(
-              '快捷入口',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF181818),
+            Expanded(
+              child: _buildQuickEntryCard(
+                icon: Icons.assignment,
+                title: '我的线索',
+                subtitle:
+                    state.stats != null ? '${state.stats!.myLeadsTotal} 条' : null,
+                onTap: () => onSwitchToLeads?.call(),
               ),
             ),
-            const SizedBox(height: 16),
-            IntrinsicHeight(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickEntryCard(
-                      icon: Icons.assignment,
-                      title: '我的线索',
-                      subtitle: state.stats != null
-                          ? '${state.stats!.myLeadsTotal} 条'
-                          : null,
-                      onTap: () => onSwitchToLeads?.call(),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildQuickEntryCard(
+                icon: Icons.call,
+                title: '通话记录',
+                subtitle: null,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const ComingSoonPage(featureName: '通话记录'),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickEntryCard(
-                      icon: Icons.call,
-                      title: '通话记录',
-                      subtitle: null,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                const ComingSoonPage(featureName: '通话记录'),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ],
@@ -95,12 +69,12 @@ class HomeQuickEntrySection extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF3F3F3),
+          color: BrandColors.surface,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
           children: [
-            Icon(icon, size: 32, color: const Color(0xFF0052D9)),
+            Icon(icon, size: 32, color: BrandColors.primary),
             const SizedBox(height: 8),
             Text(
               title,
@@ -116,7 +90,7 @@ class HomeQuickEntrySection extends ConsumerWidget {
                 subtitle,
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFFC5C5C5),
+                  color: BrandColors.textDisabled,
                 ),
               ),
             ],

@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:telemarketing_app/widgets/app_dialog.dart';
+import 'package:telemarketing_app/widgets/app_notice_bar.dart';
 import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/home_provider.dart';
@@ -151,83 +152,22 @@ class _HomePageState extends ConsumerState<HomePage>
       ),
       body: Column(
         children: [
-          if (homeState.isOffline) _buildOfflineBanner(),
-          if (homeState.shouldShowDueSoonBanner) _buildDueSoonBanner(),
+          if (homeState.isOffline)
+            AppNoticeBar.warning(
+              text: '当前处于离线状态，数据可能不及时',
+            ),
+          if (homeState.shouldShowDueSoonBanner)
+            AppNoticeBar.info(
+              text: '您有 ${homeState.dueSoonCount} 条日程即将到期',
+              closable: true,
+              onClose: () =>
+                  ref.read(homePageProvider.notifier).closeDueSoonBanner(),
+              onTap: () {
+                // 跳转日程 Tab
+              },
+            ),
           Expanded(child: _buildBody(homeState)),
         ],
-      ),
-    );
-  }
-
-  // ── 顶部提示条 ──
-
-  Widget _buildOfflineBanner() {
-    return _buildNoticeBar(
-      icon: Icons.error_outline,
-      iconColor: const Color(0xFFE37318),
-      bgColor: const Color(0xFFFFF3E0),
-      textColor: const Color(0xFFE37318),
-      text: '当前处于离线状态，数据可能不及时',
-    );
-  }
-
-  Widget _buildDueSoonBanner() {
-    final homeState = ref.read(homePageProvider);
-    return _buildNoticeBar(
-      icon: Icons.access_time,
-      iconColor: const Color(0xFF0052D9),
-      bgColor: const Color(0xFFE0EAFF),
-      textColor: const Color(0xFF0052D9),
-      text: '您有 ${homeState.dueSoonCount} 条日程即将到期',
-      closable: true,
-      onClose: () =>
-          ref.read(homePageProvider.notifier).closeDueSoonBanner(),
-      onTap: () {
-        // 跳转日程 Tab — 待实现 Tab 切换机制后完善
-      },
-    );
-  }
-
-  Widget _buildNoticeBar({
-    required IconData icon,
-    required Color iconColor,
-    required Color bgColor,
-    required Color textColor,
-    required String text,
-    bool closable = false,
-    VoidCallback? onClose,
-    VoidCallback? onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 36,
-        color: bgColor,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: iconColor),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                text,
-                style: TextStyle(fontSize: 13, color: textColor),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (closable)
-              GestureDetector(
-                onTap: onClose,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  alignment: Alignment.center,
-                  child:
-                      const Icon(Icons.close, size: 16, color: Color(0xFF0052D9)),
-                ),
-              ),
-          ],
-        ),
       ),
     );
   }
