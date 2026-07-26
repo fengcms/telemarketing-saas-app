@@ -7,6 +7,7 @@ import 'package:telemarketing_app/models/schedule.dart';
 import 'package:telemarketing_app/providers/home_provider.dart';
 import 'package:telemarketing_app/widgets/app_card_section.dart';
 import 'package:telemarketing_app/theme/color_scheme.dart';
+import 'package:telemarketing_app/pages/schedules/schedule_detail_page.dart';
 import 'home_skeletons.dart';
 
 /// 待办日程卡片 Section
@@ -39,6 +40,7 @@ class HomeScheduleSection extends ConsumerWidget {
           else
             ...state.schedules!.asMap().entries.map(
                   (entry) => _buildScheduleItem(
+                    context,
                     entry.value,
                     isLast: entry.key == state.schedules!.length - 1,
                     serverTime: state.serverTime > 0
@@ -81,36 +83,57 @@ class HomeScheduleSection extends ConsumerWidget {
     );
   }
 
-  Widget _buildScheduleItem(Schedule schedule,
+  Widget _buildScheduleItem(
+      BuildContext context, Schedule schedule,
       {required bool isLast, required int serverTime}) {
     final overdue = schedule.isOverdue(serverTime);
     return GestureDetector(
       onTap: () {
-        // 跳转日程详情 — 待开发
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) =>
+                ScheduleDetailPage(scheduleId: schedule.id),
+          ),
+        );
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              width: 44,
-              child: Text(
-                schedule.timeDisplay,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: overdue
-                      ? BrandColors.error
-                      : const Color(0xFF3C3C3C),
+            // ── 日期（月/日）+ 时间（时:分） ──
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  schedule.dateShortDisplay,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                    color: overdue
+                        ? BrandColors.error
+                        : BrandColors.textSecondary,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 2),
+                Text(
+                  schedule.timeDisplay,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: overdue
+                        ? BrandColors.error
+                        : const Color(0xFF3C3C3C),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ── 日程标题 ──
                   Text(
                     schedule.title,
                     style: TextStyle(
@@ -123,6 +146,7 @@ class HomeScheduleSection extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
+                  // ── 线索名称 ──
                   Text(
                     '线索：${schedule.leadName ?? "无"}',
                     style: TextStyle(
@@ -134,12 +158,26 @@ class HomeScheduleSection extends ConsumerWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  // ── 日程备注 ──
+                  if (schedule.content != null &&
+                      schedule.content!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      schedule.content!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: BrandColors.textDisabled,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
               ),
             ),
             if (overdue)
               Container(
-                margin: const EdgeInsets.only(right: 4),
+                margin: const EdgeInsets.only(left: 4),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(

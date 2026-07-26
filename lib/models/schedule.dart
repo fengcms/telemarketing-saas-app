@@ -56,6 +56,13 @@ class Schedule {
     return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
+  /// 短日期显示（M月d日），用于首页日程列表
+  String get dateShortDisplay {
+    final dt =
+        DateTime.fromMillisecondsSinceEpoch(scheduledAt * 1000);
+    return '${dt.month}月${dt.day}日';
+  }
+
   /// 完整日期时间显示（yyyy-MM-dd HH:mm），用于日程卡片
   ///
   /// 月/日/时/分统一补零，与列表分组 key 风格一致。
