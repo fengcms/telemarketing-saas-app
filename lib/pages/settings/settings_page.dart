@@ -334,12 +334,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget _buildCard({required List<Widget> children}) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
+      child: Material(
+        type: MaterialType.card,
         color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: BrandColors.border, width: 0.5),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
+          side: BorderSide(color: BrandColors.border, width: 0.5),
+        ),
+        child: Column(children: children),
       ),
-      child: Column(children: children),
     );
   }
 }
