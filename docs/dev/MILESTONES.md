@@ -953,6 +953,33 @@ ApiClient 拦截器链：
 
 ---
 
+## v0.33 线索筛选「归属人」角色可见性修复（2026-07-26）
+> 类型：bug 修复（非功能新增）；进度：`docs/dev/PROGRESS_LEADS_OWNER_FILTER_ROLE-2026-07-26.md`
+
+### 问题
+| 现象 | 说明 |
+|------|------|
+| 员工（tenant_employee）登录 | 线索列表 → 筛选抽屉出现「归属人」选项，但后端该角色 scope 固定为 'mine'，只能看自己线索，该筛选无意义 |
+| 数据口径不一致 | 员工看不到他人线索，展示「归属人」筛选与列表数据矛盾 |
+
+### 根因
+`lib/pages/ads/widgets/ads_filter_sheet.dart` 的 `_buildOwnerSection()` 对所有角色无条件渲染，UI 未与后端 scope 语义（员工=mine / TM·TA=all）对齐。
+
+### 修复
+| 文件 | 改动 |
+|------|------|
+| `lib/pages/ads/widgets/ads_filter_sheet.dart` | `build()` 取 `authProvider.user.role`，仅 `tenant_admin`/`tenant_manager` 渲染「归属人」区块（连同间距包进 `if`） |
+| `lib/pages/ads/ads_list_page.dart` | 激活筛选标签栏「归属」标签加 `isManager` 判定，与抽屉一致 |
+
+### 验证
+| 验证项 | 结果 |
+|------|------|
+| `flutter analyze` | 2 文件 0 issue |
+| 构建 + 装真机 | `app-release.apk` 59MB（DEV_TOOLS 浮标），Redmi K60 实测通过 |
+| 真机实测 | ✅ 员工登录筛选抽屉无「归属人」；TM/TA 正常显示并可按归属人筛选 |
+
+---
+
 ## 下一步节点规划
 
 > ⚠️ 下方 P0 核心流程**实际已完成**，见 v0.1~v0.11。剩余工作均为 P1 及以后。
@@ -990,4 +1017,4 @@ ApiClient 拦截器链：
 
 > 本文档与 `docs/dev/HANDOVER.md`（交接文档）配套使用。
 > ⚠️ 旧 `HANDOVER_05_LEAD_DETAIL.md` 中"3 个并行请求""拨号后弹面板未做"等描述已过时，以本表与代码现状为准。
-> 节点版本：v0.32 | 更新日期：2026-07-26
+> 节点版本：v0.33 | 更新日期：2026-07-26

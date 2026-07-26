@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/option_item.dart';
+import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/lead_list_provider.dart';
 import 'package:telemarketing_app/theme/user_color.dart';
 import 'package:telemarketing_app/widgets/tag_chip.dart';
@@ -97,6 +98,12 @@ class _LeadsFilterSheetState extends ConsumerState<LeadsFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // 归属人筛选仅对团队经理 / 管理员可见：
+    // 员工（tenant_employee）后端 scope 固定为 'mine'，只能看自己的线索，
+    // 展示「归属人」筛选无意义，且会与列表数据口径不一致。
+    final role = ref.read(authProvider).user?.role;
+    final canFilterByOwner =
+        role == 'tenant_admin' || role == 'tenant_manager';
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
       child: Column(
@@ -105,8 +112,10 @@ class _LeadsFilterSheetState extends ConsumerState<LeadsFilterSheet> {
         children: [
           _buildTitle(),
           const SizedBox(height: 16),
-          _buildOwnerSection(),
-          const SizedBox(height: 16),
+          if (canFilterByOwner) ...[
+            _buildOwnerSection(),
+            const SizedBox(height: 16),
+          ],
           _buildStatusSection(),
           if (widget.state.categories.isNotEmpty) ...[
             const SizedBox(height: 16),

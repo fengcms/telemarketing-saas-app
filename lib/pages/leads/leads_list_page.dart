@@ -203,7 +203,10 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
       _publicLeads.length < _publicTotal && _publicTotal > 0;
 
   /// 筛选标签栏
-  Widget _buildFilterTags(LeadListState state) {
+  ///
+  /// [isManager] 控制「归属」标签是否展示：员工（tenant_employee）后端 scope
+  /// 固定为 'mine'，不按归属人筛选，故不展示该标签。
+  Widget _buildFilterTags(LeadListState state, bool isManager) {
     return Container(
       width: double.infinity,
       height: 48,
@@ -246,7 +249,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
                 '已选',
                 () => ref.read(leadListProvider.notifier).clearFilter('date'),
               ),
-            if (state.ownerId != null && state.ownerId!.isNotEmpty)
+            if (isManager && state.ownerId != null && state.ownerId!.isNotEmpty)
               _buildTag(
                 '归属',
                 '已指定',
@@ -345,7 +348,7 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
 
                   // ── 我的线索筛选标签栏 ──
                   if (!isPublic && state.hasActiveFilters)
-                    _buildFilterTags(state),
+                    _buildFilterTags(state, isManager),
 
                   Expanded(child: isPublic ? _buildPublicBody() : _buildBody(state, isManager)),
                 ],

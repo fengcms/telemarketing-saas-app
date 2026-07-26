@@ -1321,6 +1321,25 @@ Expanded(child: _box(height: 90)),
 
 ---
 
+## 16. 线索筛选「归属人」必须按角色隐藏（员工 scope=mine）
+
+**严重级别**：🟡 逻辑 bug（`flutter analyze` 不报，但员工会看到无意义筛选项，与后端数据口径不一致）
+
+**现象**：线索列表筛选抽屉（`lib/pages/leads/widgets/leads_filter_sheet.dart`）里 `_buildOwnerSection()`（「归属人」区块）对所有角色无条件渲染。员工（`tenant_employee`）登录时也能看到「归属人」选项，但后端该角色 `scope` 固定为 `'mine'`，只能看自己的线索，该筛选毫无意义。
+
+**根因**：「归属人」筛选依赖 `GET /api/tenant/leads` 的 `ownerId` 参数，该参数仅在 `tenant_admin` / `tenant_manager`（即 TM/TA）的 `scope='all'` 下生效。员工后端强制 `scope='mine'`，`ownerId` 被忽略。UI 没按角色门控，导致员工看到不可用的选项。
+
+**修法（已落地）**：
+1. `leads_filter_sheet.dart`：`build()` 内取 `ref.read(authProvider).user?.role`，仅当 `role == 'tenant_admin' || role == 'tenant_manager'` 才渲染「归属人」区块（连同其前后间距一并包进 `if (canFilterByOwner) ...[]`，避免多/少一段间距或残留空段）。
+2. `leads_list_page.dart`：顶部激活筛选标签栏里的「归属」标签同样加 `isManager` 判定，避免员工在极端情况下看到「归属：已指定」残留标签——与抽屉角色可见性保持一致。判定沿用全端既有真实值写法（术语源 `lib/theme/role_label.dart`）。
+
+**教训**：
+1. 任何「按归属人 / 按成员 / 团队维度」的筛选、字段、入口，都要先确认当前角色的 `scope` 语义：员工 `scope='mine'`，TM/TA `scope='all'`。
+2. 角色判定统一用真实值 `tenant_admin` / `tenant_manager` / `tenant_employee`，不要用 `TM`/`TA` 简称（v0.29 已修过一轮短写 bug）。
+3. 抽屉里「无条件渲染整段」的写法要警惕：某段只服务部分角色时，必须用 `if (isManager) ...[]` 包住**整段**（含其前后间距），否则间距错位或残留空段。
+
+---
+
 ## 10. 已知待解决问题
 
 | # | 问题 | 优先级 | 状态 | 说明 |
