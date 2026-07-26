@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:telemarketing_app/models/team_stats.dart';
 import 'package:telemarketing_app/providers/team_stats_provider.dart';
 import 'package:telemarketing_app/theme/chart_colors.dart';
+import 'package:telemarketing_app/widgets/stat_card.dart';
 
 /// 概览卡片组
 class OverviewCards extends StatelessWidget {
@@ -24,7 +25,6 @@ class OverviewCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: GridView.count(
@@ -35,29 +35,31 @@ class OverviewCards extends StatelessWidget {
         crossAxisSpacing: 12,
         childAspectRatio: 1.5,
         children: [
-          _card(
-            scheme,
-            '总线索数',
-            formatBigNumber(stats.total),
-            rangeKind == DateRangeKind.today ? _delta(compare.addedDiff) : null,
+          StatCard(
+            label: '总线索数',
+            value: formatBigNumber(stats.total),
+            valueFontSize: 30,
+            badge: rangeKind == DateRangeKind.today
+                ? _delta(compare.addedDiff)
+                : null,
           ),
-          _card(
-            scheme,
-            '公海线索',
-            formatBigNumber(stats.byStatus.pending),
-            stats.staleInPool > 0 ? _stale(stats.staleInPool) : null,
+          StatCard(
+            label: '公海线索',
+            value: formatBigNumber(stats.byStatus.pending),
+            valueFontSize: 30,
+            badge: stats.staleInPool > 0 ? _stale(stats.staleInPool) : null,
           ),
-          _card(
-            scheme,
-            '转化率',
-            '${stats.teamConversionRate.toStringAsFixed(1)}%',
-            null,
+          StatCard(
+            label: '转化率',
+            value: '${stats.teamConversionRate.toStringAsFixed(1)}%',
+            valueFontSize: 30,
+            accent: true,
           ),
-          _card(
-            scheme,
-            '跟进中',
-            formatBigNumber(stats.byStatus.following),
-            rangeKind == DateRangeKind.today
+          StatCard(
+            label: '跟进中',
+            value: formatBigNumber(stats.byStatus.following),
+            valueFontSize: 30,
+            badge: rangeKind == DateRangeKind.today
                 ? _delta(compare.followupDiff)
                 : null,
           ),
@@ -65,48 +67,6 @@ class OverviewCards extends StatelessWidget {
       ),
     );
   }
-
-  Widget _card(
-    ColorScheme scheme,
-    String label,
-    String value,
-    Widget? badge,
-  ) =>
-      Card(
-        elevation: 0,
-        color: scheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.3)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (badge != null) ...[
-                const SizedBox(height: 4),
-                badge,
-              ],
-            ],
-          ),
-        ),
-      );
 
   Widget _delta(int diff) {
     if (diff == 0) {

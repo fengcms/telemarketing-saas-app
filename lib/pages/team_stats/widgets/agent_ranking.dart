@@ -7,6 +7,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:telemarketing_app/models/team_stats.dart';
 import 'package:telemarketing_app/theme/chart_colors.dart';
+import 'package:telemarketing_app/widgets/app_filter_chips.dart';
 
 /// 坐席绩效排行
 class AgentRanking extends StatefulWidget {
@@ -68,24 +69,14 @@ class _AgentRankingState extends State<AgentRanking> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            spacing: 8,
-            children: _sortLabels.entries.map((e) {
-              final selected = _sortBy == e.key;
-              return ChoiceChip(
-                label: Text(e.value),
-                selected: selected,
-                selectedColor: ChartColors.brand.withValues(alpha: 0.15),
-                labelStyle: TextStyle(
-                  color: selected ? ChartColors.brand : scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-                onSelected: (_) => setState(() => _sortBy = e.key),
-              );
-            }).toList(),
-          ),
+        AppFilterChips(
+          items: _sortLabels.entries
+              .map((e) => FilterChipItem(code: e.key, label: e.value))
+              .toList(),
+          selectedCode: _sortBy,
+          onChanged: (code) {
+            if (code != null) setState(() => _sortBy = code);
+          },
         ),
         const SizedBox(height: 8),
         ...visible.asMap().entries.map((entry) {

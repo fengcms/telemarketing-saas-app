@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/providers/team_stats_provider.dart';
 import 'package:telemarketing_app/widgets/app_toast.dart';
+import 'package:telemarketing_app/widgets/app_filter_chips.dart';
 
 /// 吸顶日期范围选择条
 class DateRangeSelector extends ConsumerWidget {
@@ -17,49 +18,36 @@ class DateRangeSelector extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(teamStatsProvider);
     final notifier = ref.read(teamStatsProvider.notifier);
-    final scheme = Theme.of(context).colorScheme;
-    final options = <(String, DateRangeKind)>[
-      ('今日', DateRangeKind.today),
-      ('本周', DateRangeKind.thisWeek),
-      ('本月', DateRangeKind.thisMonth),
-      ('自定义', DateRangeKind.custom),
-    ];
-    return Container(
-      color: scheme.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          spacing: 8,
-          children: [
-            for (final (label, kind) in options)
-              ChoiceChip(
-                label: Text(label),
-                selected: s.rangeKind == kind,
-                selectedColor: scheme.primary.withValues(alpha: 0.15),
-                labelStyle: TextStyle(
-                  color: s.rangeKind == kind
-                      ? scheme.primary
-                      : scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-                onSelected: (_) {
-                  switch (kind) {
-                    case DateRangeKind.today:
-                      notifier.setRangeToday();
-                    case DateRangeKind.thisWeek:
-                      notifier.setRangeThisWeek();
-                    case DateRangeKind.thisMonth:
-                      notifier.setRangeThisMonth();
-                    case DateRangeKind.custom:
-                      _pickCustom(context, notifier);
-                  }
-                },
-              ),
-          ],
-        ),
-      ),
+    return AppFilterChips(
+      items: const [
+        FilterChipItem(code: 'today', label: '今日'),
+        FilterChipItem(code: 'thisWeek', label: '本周'),
+        FilterChipItem(code: 'thisMonth', label: '本月'),
+        FilterChipItem(code: 'custom', label: '自定义'),
+      ],
+      selectedCode: _codeOf(s.rangeKind),
+      onChanged: (code) {
+        if (code == null) return;
+        if (code == 'today') {
+          notifier.setRangeToday();
+        } else if (code == 'thisWeek') {
+          notifier.setRangeThisWeek();
+        } else if (code == 'thisMonth') {
+          notifier.setRangeThisMonth();
+        } else if (code == 'custom') {
+          _pickCustom(context, notifier);
+        }
+      },
     );
+  }
+
+  String _codeOf(DateRangeKind kind) {
+    return switch (kind) {
+      DateRangeKind.today => 'today',
+      DateRangeKind.thisWeek => 'thisWeek',
+      DateRangeKind.thisMonth => 'thisMonth',
+      DateRangeKind.custom => 'custom',
+    };
   }
 
   Future<void> _pickCustom(

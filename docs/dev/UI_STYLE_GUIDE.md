@@ -143,7 +143,7 @@ Scaffold(
 
 ## 5. 白卡片容器
 
-### 5.1 内容详情卡（圆角 12px，阴影）
+### 5.1 内容详情卡（圆角 10px，微阴影）
 
 ```dart
 Card(
@@ -155,7 +155,7 @@ Card(
 )
 ```
 
-主题已配置 `CardTheme`（`component_tokens.dart`）：白底 `Colors.white` + 圆角 12px + 微阴影。直接用 `Card` 组件即可。
+主题已配置 `CardTheme`（`component_tokens.dart`）：白底 `Colors.white` + 圆角 10px + 微阴影（标准微阴影 `BoxShadow(color: 0x12000000, blurRadius: 8, offset: Offset(0, 2))`）。数据类卡片推荐用公共 `StatCard` 组件（圆角 10 + 微阴影，支持 `label`/`value`/`badge`/自定义 `child`），与线索卡 `LeadCard`、日程卡片保持同源一致。
 
 ### 5.2 设置页卡片（列表式，6px 圆角，灰边框）
 
@@ -531,5 +531,5 @@ Text(
 
 ---
 
-> **版本**：v2.1 | **最后更新**：2026-07-26（补充图标禁令、组件复用、日程卡片规范、行内操作图标按钮规范）
+> **版本**：v2.1 | **最后更新**：2026-07-26（补充图标禁令、组件复用、日程卡片规范、行内操作图标按钮规范；§5.1 圆角 12px 校正为 10px 与全 app 落地一致）
 > **相关文档**：`docs/dev/COMPONENT_GUIDE.md`（组件使用说明）、`docs/dev/UI_MIGRATION_HANDOVER-2026-07-25.md`（交接文档）

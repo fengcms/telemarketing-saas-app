@@ -27,6 +27,9 @@ class StatCard extends StatelessWidget {
   /// 自定义内容模式（优先级高于 [label]/[value]）
   final Widget? child;
 
+  /// 附加徽标（如环比、超期提醒），显示在数值下方
+  final Widget? badge;
+
   /// 内边距（默认 横14/纵12，收紧垂直空间避免卡片溢出）
   final EdgeInsetsGeometry padding;
 
@@ -37,6 +40,7 @@ class StatCard extends StatelessWidget {
     this.accent = false,
     this.valueFontSize = 24,
     this.child,
+    this.badge,
     this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
   });
 
@@ -81,6 +85,10 @@ class StatCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+              if (badge != null) ...[
+                const SizedBox(height: 4),
+                badge!,
+              ],
             ],
           ),
     );

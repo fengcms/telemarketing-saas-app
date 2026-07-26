@@ -34,15 +34,16 @@ class StatusDonut extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 132,
-          height: 132,
+          width: 150,
+          height: 150,
           child: Stack(
             alignment: Alignment.center,
             children: [
               PieChart(
                 PieChartData(
+                  startDegreeOffset: -90,
                   sectionsSpace: 2,
-                  centerSpaceRadius: 28,
+                  centerSpaceRadius: 30,
                   borderData: FlBorderData(show: false),
                   sections: items.map((e) {
                     final (_, value, color) = e;
@@ -50,7 +51,7 @@ class StatusDonut extends StatelessWidget {
                       value: value.toDouble(),
                       color: color,
                       title: '',
-                      radius: 46,
+                      radius: 44,
                     );
                   }).toList(),
                   pieTouchData: PieTouchData(enabled: false),

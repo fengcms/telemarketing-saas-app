@@ -8,11 +8,14 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/providers/team_stats_provider.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
+import 'package:telemarketing_app/widgets/app_error_body.dart';
+import 'package:telemarketing_app/widgets/app_empty_body.dart';
 import 'widgets/date_range_selector.dart';
 import 'widgets/overview_cards.dart';
 import 'widgets/conversion_funnel.dart';
 import 'widgets/status_donut.dart';
-import 'widgets/trend_line_chart.dart';
+import 'widgets/trend_bar_chart.dart';
 import 'widgets/agent_ranking.dart';
 
 /// 团队看板页
@@ -47,7 +50,7 @@ class TeamStatsPage extends ConsumerWidget {
     if (s.errorMessage != null) {
       return _error(s.errorMessage.toString(), ref);
     }
-    if (s.stats == null) {
+    if (s.isLoading || s.stats == null) {
       return const _StatsSkeleton();
     }
     if (s.isEmpty) {
@@ -64,12 +67,10 @@ class TeamStatsPage extends ConsumerWidget {
             compare: stats.compareYesterday,
           ),
           _module(
-            context,
             title: '转化漏斗',
             child: ConversionFunnel(funnel: stats.funnel),
           ),
           _module(
-            context,
             title: '状态分布',
             child: StatusDonut(
               byStatus: stats.byStatus,
@@ -77,12 +78,10 @@ class TeamStatsPage extends ConsumerWidget {
             ),
           ),
           _module(
-            context,
             title: '逐日趋势',
-            child: TrendLineChart(trend: stats.dailyTrend),
+            child: TrendBarChart(trend: stats.dailyTrend),
           ),
           _module(
-            context,
             title: '坐席绩效排行',
             child: AgentRanking(agents: stats.agentPerf),
           ),
@@ -91,24 +90,32 @@ class TeamStatsPage extends ConsumerWidget {
     );
   }
 
-  Widget _module(
-    BuildContext context, {
+  Widget _module({
     required String title,
     required Widget child,
   }) {
-    final scheme = Theme.of(context).colorScheme;
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.3)),
+      decoration: BoxDecoration(
+        color: BrandColors.surfaceContainer,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: ExpansionTile(
         initiallyExpanded: true,
         title: Text(
           title,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: BrandColors.textSecondary,
+          ),
         ),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [child],
@@ -116,54 +123,21 @@ class TeamStatsPage extends ConsumerWidget {
     );
   }
 
-  Widget _error(String msg, WidgetRef ref) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.cloud_off, size: 48, color: Colors.grey),
-              const SizedBox(height: 12),
-              const Text(
-                '加载失败',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                msg,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () =>
-                    ref.read(teamStatsProvider.notifier).refresh(),
-                child: const Text('重试'),
-              ),
-            ],
-          ),
-        ),
+  Widget _error(String msg, WidgetRef ref) => AppErrorBody(
+        icon: Icons.cloud_off,
+        iconSize: 48,
+        title: '加载失败',
+        message: msg,
+        actionText: '重试',
+        onAction: () => ref.read(teamStatsProvider.notifier).refresh(),
       );
 
-  Widget _empty() => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.inbox_outlined, size: 48, color: Colors.grey),
-              SizedBox(height: 12),
-              Text(
-                '当前时间范围暂无数据',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-              SizedBox(height: 4),
-              Text(
-                '试试切换「今日 / 本周 / 本月」',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
+  Widget _empty() => Center(
+        child: AppEmptyBody(
+          icon: Icons.inbox_outlined,
+          iconSize: 48,
+          title: '当前时间范围暂无数据',
+          desc: '试试切换「今日 / 本周 / 本月」',
         ),
       );
 }
@@ -193,7 +167,6 @@ class _StatsSkeletonState extends State<_StatsSkeleton>
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -205,14 +178,14 @@ class _StatsSkeletonState extends State<_StatsSkeleton>
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
             childAspectRatio: 1.5,
-            children: List.generate(4, (_) => _box(scheme)),
+            children: List.generate(4, (_) => _box()),
           ),
           const SizedBox(height: 16),
           ...List.generate(
             3,
             (_) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _box(scheme, height: 120),
+              child: _box(height: 120),
             ),
           ),
         ],
@@ -220,13 +193,13 @@ class _StatsSkeletonState extends State<_StatsSkeleton>
     );
   }
 
-  Widget _box(ColorScheme scheme, {double height = 80}) => FadeTransition(
+  Widget _box({double height = 80}) => FadeTransition(
         opacity: _alpha,
         child: Container(
           height: height,
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(12),
+            color: BrandColors.border,
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       );
