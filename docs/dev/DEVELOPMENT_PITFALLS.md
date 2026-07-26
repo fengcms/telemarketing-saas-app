@@ -1220,6 +1220,36 @@ at profile_page.dart:95:36            (initState → _load → .load())
 
 ---
 
+## 13. 逐页 UI 迁移会漏掉「同模块详情/搜索/表单」兄弟页
+
+**严重级别**：🟡 **一致性风险（非崩溃，但肉眼可见的风格割裂）**
+
+**现象**：列表页（`schedule_list_page`）做完 TDesign→M3 清洗（状态标签/信息卡/错误态复用 `AppTag`/`AppInfoRow`/`AppErrorBody`、颜色收敛 `BrandColors.*`）后，同模块的**详情页**仍是旧写法：
+- 时间/关联线索/内容/其他信息分区标题用 **emoji**（📅👤📝📞），全仓仅此处用 emoji，其余页面（含线索详情）全部 Material `Icons`；
+- 状态标签手写 `statusTag`、信息卡手写 `_infoRow`、错误态手写 `_buildErrorState` —— 与列表页/线索详情的复用组件**双轨并存**；
+- 详情卡圆角 **12 无阴影**、列表卡 **10+阴影**、骨架屏 **10+阴影** —— 加载完成时卡片「缩角+掉阴影」闪跳；
+- 约 34 处硬编码 `Color(0xFF...)` 未收敛。
+
+**根因**：M3 迁移是**按页推进**的，列表页那一轮清洗没有覆盖它的兄弟页（detail/search/form）。详情页因「不在列表改造范围内」被自然跳过，加上 TDesign 旧设计稿本就用 emoji 图标，是迁移唯一没改干净的地方。
+
+**修法（本任务已落地）**：
+- emoji → `Icons.event`/`person`/`description`/`phone`/`replay`，新增 `_sectionLabel` 助手统一分区标题样式；
+- `detailCard` 圆角 12→10 并加 `0x0D000000` 微阴影，与列表卡/骨架屏三处一致；
+- `statusTag`→`AppTag`、`_infoRow`→`AppInfoRow`、`_buildErrorState`→`AppErrorBody`（颜色原值不动，仅换容器）；
+- 硬编码色收敛到 `BrandColors.*`；无对应常量的保留内联（`0xFFE3F3EA` 完成标签浅绿底 / `0xFFDCDCDC` 禁用灰 / `0xFFF4F4F4` shimmer / 阴影遮罩值）。
+
+**重要澄清（避免错误「修复」）**：
+- 完成态绿色详情页用 `#2BA471` = `BrandColors.success`（**正确**）；列表页却硬编码 `#00A870`（**离群**）。双绿要统一是去改**列表页**，详情页不动。
+- `schedule_search_page` / `schedule_form_fields` 的硬编码色属列表页分析范围外，本轮未动。
+
+**教训**：
+1. 做完一个页面的 UI 清洗后，**必须审计同模块的兄弟页**（detail / search / form / header），它们是同一设计稿派生，极易出现「列表已改、详情还是旧的」双轨。
+2. **emoji 图标是全 app 红线**——任何页面发现 emoji 应直接替换为 `Icons.*`（见 `UI_STYLE_GUIDE.md` §14 硬规则）。
+3. 卡片圆角/阴影要在「列表卡 + 详情卡 + 骨架屏」三处对齐，否则加载态切换会闪跳。
+4. 收敛颜色时先确认哪一侧与 `BrandColors` 主题一致（通常是详情/头图），不要想当然「统一到列表侧」。
+
+---
+
 ## 10. 已知待解决问题
 
 | # | 问题 | 优先级 | 状态 | 说明 |

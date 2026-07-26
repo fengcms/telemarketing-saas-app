@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/widgets/app_action_bar.dart';
 
 /// 底部操作栏（pending：取消/拨号/完成；其余：重新打开）
@@ -43,7 +44,8 @@ Widget actionBar({
   } else {
     actions.add(
       ActionItem(
-        text: '🔄 重新打开',
+        icon: Icons.replay,
+        text: '重新打开',
         type: ActionType.primary,
         loading: actionLoading,
         onTap: actionLoading ? null : onReopen,
@@ -55,7 +57,7 @@ Widget actionBar({
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
     decoration: const BoxDecoration(
       color: Colors.white,
-      border: Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1)),
+      border: Border(top: BorderSide(color: BrandColors.line, width: 1)),
       boxShadow: [
         BoxShadow(
           color: Color(0x14000000),
@@ -85,13 +87,13 @@ Widget actionButton({
           Icon(icon, size: 18,
               color: isDisabled
                   ? const Color(0xFFDCDCDC)
-                  : const Color(0xFF0052D9)),
+                  : BrandColors.primary),
           const SizedBox(width: 6),
           Text(
             label,
             style: const TextStyle(
               fontSize: 14,
-              color: Color(0xFF181818),
+              color: BrandColors.textPrimary,
             ),
           ),
         ],

@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 
 /// 日程列表加载骨架屏
 ///
@@ -74,7 +75,7 @@ class _SkeletonCard extends StatelessWidget {
           // 左侧状态色条（静态灰）
           const SizedBox(
             width: 4,
-            child: ColoredBox(color: Color(0xFFE7E7E7)),
+            child: ColoredBox(color: BrandColors.border),
           ),
           Expanded(
             child: Padding(
@@ -150,9 +151,9 @@ class ShimmerBlock extends StatelessWidget {
               end: Alignment.centerRight,
               stops: [a, b, c],
               colors: const [
-                Color(0xFFE7E7E7),
+                BrandColors.border,
                 Color(0xFFF4F4F4),
-                Color(0xFFE7E7E7),
+                BrandColors.border,
               ],
             ),
           ),

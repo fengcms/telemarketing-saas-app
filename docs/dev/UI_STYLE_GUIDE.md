@@ -518,8 +518,15 @@ Text(
 | 提示灰色 | `BrandColors.textSecondary` | `Color(0xFFA6A6A6)` |
 | 多行文本 | `AppTextarea(controller: _, hintText: _)` | `TextField + 手动计数器` |
 | 日期选择 | `showDatePicker(...)` | `TDPicker.showDatePicker(...)` |
+| 图标 | `Icon(Icons.xxx, size: 20, color: ...)` | **emoji**（📅👤📝📞🔄⏰🏠 等，跨平台字形不一致、与线性图标风格割裂） |
+| 状态标签 | `AppTag(label: _, color: _)` | 手写 `Container` 标签（会出现两套颜色逻辑） |
+| 信息行 | `AppInfoRow(icon: _, label: _, value: _)` | 手写 `_infoRow`（左标签右值） |
+| 错误/空态 | `AppErrorBody(...)` / `AppEmptyBody(...)` | 手写错误/空布局 |
+| 日程卡片 | `detailCard` / 列表卡（圆角 10px + 微阴影，三处一致避免加载闪跳） | 圆角 12 无阴影 |
+
+> ⚠️ **硬规则**：全 app 图标一律用 Material `Icons.*`，**禁止任何 emoji**。emoji 仅在日程详情页历史遗留中出现过（已整改），属 M3 迁移遗漏，不允许新增。
 
 ---
 
-> **版本**：v2.0 | **最后更新**：2026-07-25（TDesign→M3 全量迁移后）
+> **版本**：v2.1 | **最后更新**：2026-07-26（补充图标禁令、组件复用与日程卡片规范）
 > **相关文档**：`docs/dev/COMPONENT_GUIDE.md`（组件使用说明）、`docs/dev/UI_MIGRATION_HANDOVER-2026-07-25.md`（交接文档）

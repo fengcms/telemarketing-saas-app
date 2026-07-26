@@ -23,6 +23,7 @@ import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/providers/schedule_list_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'package:telemarketing_app/widgets/app_dialog.dart';
+import 'package:telemarketing_app/widgets/app_error_body.dart';
 import 'package:telemarketing_app/services/api_exception.dart';
 import 'widgets/schedule_form_sheet.dart';
 import 'widgets/schedule_detail_cards.dart';
@@ -177,7 +178,7 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
     ref.watch(authProvider);
     final showContent = !_isLoading && _errorCode == null && _detail != null;
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F3F3),
+      backgroundColor: BrandColors.surface,
       appBar: AppBar(
         backgroundColor: BrandColors.primary,
         foregroundColor: Colors.white,
@@ -198,7 +199,7 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
                     value: 'delete',
                     child: Text('删除',
                         style: TextStyle(
-                            fontSize: 14, color: Color(0xFFD54941))),
+                            fontSize: 14, color: BrandColors.error)),
                   ),
               ],
             ),
@@ -265,7 +266,7 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
     );
   }
 
-  /// 错误态（按错误码区分 404 / 403 / 通用）
+  /// 错误态（按错误码区分 404 / 403 / 通用，复用公共 AppErrorBody）
   Widget _buildErrorState() {
     final is404 = _errorCode == 'NOT_FOUND';
     final is403 = _errorCode == 'AUTH_FORBIDDEN';
@@ -275,41 +276,21 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
             ? '无权查看该日程'
             : '加载失败';
     final message = is404 || is403 ? '' : (_errorMessage ?? '');
-    return ListView(
-      children: [
-        SizedBox(height: MediaQuery.of(context).size.height * 0.2),
-        const Icon(Icons.event_busy, size: 80, color: Color(0xFFDCDCDC)),
-        const SizedBox(height: 16),
-        Center(
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF181818),
-            ),
-          ),
-        ),
-        if (message.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              message,
-              style: const TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
-            ),
-          ),
-        ],
-        const SizedBox(height: 16),
-        Center(
-          child: TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              is404 || is403 ? '返回列表' : '重新加载',
-              style: const TextStyle(color: Color(0xFF0052D9)),
-            ),
-          ),
-        ),
-      ],
+    return AppErrorBody(
+      icon: Icons.event_busy,
+      iconSize: 80,
+      iconColor: const Color(0xFFDCDCDC),
+      title: title,
+      message: message,
+      messageColor: BrandColors.textSecondary,
+      actionText: is404 || is403 ? '返回列表' : '重新加载',
+      onAction: () {
+        if (is404 || is403) {
+          Navigator.of(context).pop();
+        } else {
+          unawaited(_load(force: true));
+        }
+      },
     );
   }
 
@@ -454,7 +435,7 @@ class _ScheduleDetailPageState extends ConsumerState<ScheduleDetailPage>
       content: '确定删除该日程？删除后不可恢复。',
       cancelText: '取消',
       confirmText: '删除',
-      confirmColor: const Color(0xFFD54941),
+      confirmColor: BrandColors.error,
       onConfirm: () {},
     );
     if (confirm != true) return;

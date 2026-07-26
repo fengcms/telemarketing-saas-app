@@ -7,21 +7,45 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:telemarketing_app/models/schedule_detail.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
+import 'package:telemarketing_app/widgets/app_tag.dart';
+import 'package:telemarketing_app/widgets/app_info_row.dart';
 import 'schedule_skeleton.dart';
 
-/// 通用卡片容器（左右 16、上 8、圆角 12、白底；灰底背景透出即板块间隔）
+/// 通用卡片容器（左右 16、上 8、圆角 10+微阴影；对齐列表卡与骨架屏）
 Widget detailCard({required Widget child, VoidCallback? onTap}) {
   final inner = Container(
     margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x0D000000),
+          blurRadius: 6,
+          offset: Offset(0, 2),
+        ),
+      ],
     ),
     child: child,
   );
   if (onTap == null) return inner;
   return GestureDetector(onTap: onTap, child: inner);
+}
+
+/// 分区标题行（前导图标 + 文字，对齐 AppInfoRow 风格）
+Widget _sectionLabel(IconData icon, String text) {
+  return Row(
+    children: [
+      Icon(icon, size: 16, color: BrandColors.textSecondary),
+      const SizedBox(width: 8),
+      Text(
+        text,
+        style: const TextStyle(fontSize: 12, color: BrandColors.textSecondary),
+      ),
+    ],
+  );
 }
 
 /// 首屏骨架屏（白卡片 + shimmer 扫光，对齐列表页风格）
@@ -135,8 +159,8 @@ Widget titleSection(ScheduleDetail d) {
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: d.status == 'completed' || d.status == 'cancelled'
-                  ? const Color(0xFFA6A6A6)
-                  : const Color(0xFF181818),
+                  ? BrandColors.textSecondary
+                  : BrandColors.textPrimary,
             ),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
@@ -149,34 +173,29 @@ Widget titleSection(ScheduleDetail d) {
   );
 }
 
-/// 状态标签（待办/已完成/已取消）
+/// 状态标签（待办/已完成/已取消）— 复用公共 AppTag
 Widget statusTag(ScheduleDetail d) {
   late final Color bg;
   late final Color fg;
   late final String label;
   if (d.status == 'completed') {
     bg = const Color(0xFFE3F3EA);
-    fg = const Color(0xFF2BA471);
+    fg = BrandColors.success;
     label = '已完成';
   } else if (d.status == 'cancelled') {
-    bg = const Color(0xFFF3F3F3);
-    fg = const Color(0xFFA6A6A6);
+    bg = BrandColors.surface;
+    fg = BrandColors.textSecondary;
     label = '已取消';
   } else {
-    bg = const Color(0xFFF2F3FF);
-    fg = const Color(0xFF0052D9);
+    bg = BrandColors.primarySurface;
+    fg = BrandColors.primary;
     label = '待办';
   }
-  return Container(
+  return AppTag(
+    label: label,
+    backgroundColor: bg,
+    textColor: fg,
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(
-      color: bg,
-      borderRadius: BorderRadius.circular(6),
-    ),
-    child: Text(
-      label,
-      style: TextStyle(fontSize: 12, color: fg),
-    ),
   );
 }
 
@@ -187,10 +206,7 @@ Widget timeCard(ScheduleDetail d) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '📅 计划时间',
-          style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-        ),
+        _sectionLabel(Icons.event, '计划时间'),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -201,8 +217,8 @@ Widget timeCard(ScheduleDetail d) {
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: overdue
-                      ? const Color(0xFFD54941)
-                      : const Color(0xFF181818),
+                      ? BrandColors.error
+                      : BrandColors.textPrimary,
                 ),
               ),
             ),
@@ -210,7 +226,7 @@ Widget timeCard(ScheduleDetail d) {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD54941),
+                  color: BrandColors.error,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Text(
@@ -231,15 +247,12 @@ Widget leadCard(ScheduleDetail d, VoidCallback? onTap) {
     return detailCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text(
-            '👤 关联线索',
-            style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-          ),
-          SizedBox(height: 8),
-          Text(
+        children: [
+          _sectionLabel(Icons.person, '关联线索'),
+          const SizedBox(height: 8),
+          const Text(
             '该线索已被删除',
-            style: TextStyle(fontSize: 16, color: Color(0xFFA6A6A6)),
+            style: TextStyle(fontSize: 16, color: BrandColors.textSecondary),
           ),
         ],
       ),
@@ -252,13 +265,10 @@ Widget leadCard(ScheduleDetail d, VoidCallback? onTap) {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: const [
-            Text(
-              '👤 关联线索',
-              style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-            ),
-            Spacer(),
-            Icon(Icons.chevron_right, size: 20, color: Color(0xFFA6A6A6)),
+          children: [
+            _sectionLabel(Icons.person, '关联线索'),
+            const Spacer(),
+            const Icon(Icons.chevron_right, size: 20, color: BrandColors.textSecondary),
           ],
         ),
         const SizedBox(height: 8),
@@ -267,13 +277,19 @@ Widget leadCard(ScheduleDetail d, VoidCallback? onTap) {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF181818),
+            color: BrandColors.textPrimary,
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          '📞 ${lead.phone}',
-          style: const TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
+        Row(
+          children: [
+            const Icon(Icons.phone, size: 14, color: BrandColors.textSecondary),
+            const SizedBox(width: 4),
+            Text(
+              lead.phone,
+              style: const TextStyle(fontSize: 14, color: BrandColors.textSecondary),
+            ),
+          ],
         ),
       ],
     ),
@@ -287,10 +303,7 @@ Widget contentCard(ScheduleDetail d) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '📝 日程内容',
-          style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-        ),
+        _sectionLabel(Icons.description, '日程内容'),
         const SizedBox(height: 8),
         Text(
           empty ? '暂无内容' : d.content!,
@@ -298,8 +311,8 @@ Widget contentCard(ScheduleDetail d) {
             fontSize: 14,
             fontStyle: empty ? FontStyle.italic : FontStyle.normal,
             color: empty
-                ? const Color(0xFFA6A6A6)
-                : const Color(0xFF181818),
+                ? BrandColors.textSecondary
+                : BrandColors.textPrimary,
           ),
         ),
       ],
@@ -307,40 +320,28 @@ Widget contentCard(ScheduleDetail d) {
   );
 }
 
-/// 其他信息卡（创建时间 / 归属人 / 更新时间）
+/// 其他信息卡（创建时间 / 归属人 / 更新时间）— 复用公共 AppInfoRow
 Widget infoCard(ScheduleDetail d, String? ownerName) {
   final owner = ownerName ?? d.userId;
   return detailCard(
     child: Column(
       children: [
-        _infoRow('创建时间', ScheduleDetail.formatTs(d.createdAt)),
-        const SizedBox(height: 12),
-        _infoRow('归属人', owner.isEmpty ? '未知' : owner),
-        const SizedBox(height: 12),
-        _infoRow('更新时间', ScheduleDetail.formatTs(d.updatedAt)),
-      ],
-    ),
-  );
-}
-
-/// 其他信息卡内的两列行（标签 + 值）
-Widget _infoRow(String label, String value) {
-  return SizedBox(
-    height: 28,
-    child: Row(
-      children: [
-        SizedBox(
-          width: 80,
-          child: Text(
-            label,
-            style: const TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
-          ),
+        AppInfoRow(
+          icon: Icons.schedule,
+          label: '创建时间',
+          value: ScheduleDetail.formatTs(d.createdAt),
         ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF181818)),
-          ),
+        const SizedBox(height: 12),
+        AppInfoRow(
+          icon: Icons.badge_outlined,
+          label: '归属人',
+          value: owner.isEmpty ? '未知' : owner,
+        ),
+        const SizedBox(height: 12),
+        AppInfoRow(
+          icon: Icons.update,
+          label: '更新时间',
+          value: ScheduleDetail.formatTs(d.updatedAt),
         ),
       ],
     ),
