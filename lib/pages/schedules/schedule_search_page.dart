@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/models/schedule.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
@@ -162,7 +163,7 @@ class _ScheduleSearchPageState extends ConsumerState<ScheduleSearchPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('日程搜索'),
-        backgroundColor: const Color(0xFF0052D9),
+        backgroundColor: BrandColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -191,14 +192,14 @@ class _ScheduleSearchPageState extends ConsumerState<ScheduleSearchPage> {
       child: Container(
         height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFFF3F3F3),
+          color: BrandColors.surface,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
             const Padding(
               padding: EdgeInsets.only(left: 10),
-              child: Icon(Icons.search, size: 20, color: Color(0xFFA6A6A6)),
+              child: Icon(Icons.search, size: 20, color: BrandColors.textSecondary),
             ),
             const SizedBox(width: 2),
             Expanded(
@@ -207,10 +208,10 @@ class _ScheduleSearchPageState extends ConsumerState<ScheduleSearchPage> {
                 onSubmitted: _doSearch,
                 keyboardType: TextInputType.phone,
                 textInputAction: TextInputAction.search,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF181818)),
+                style: const TextStyle(fontSize: 14, color: BrandColors.textPrimary),
                 decoration: const InputDecoration(
                   hintText: '搜索手机号',
-                  hintStyle: TextStyle(fontSize: 14, color: Color(0xFFC5C5C5)),
+                  hintStyle: TextStyle(fontSize: 14, color: BrandColors.textDisabled),
                   border: InputBorder.none,
                   isDense: true,
                   contentPadding: EdgeInsets.symmetric(vertical: 10),
@@ -225,7 +226,7 @@ class _ScheduleSearchPageState extends ConsumerState<ScheduleSearchPage> {
                 },
                 child: const Padding(
                   padding: EdgeInsets.all(6),
-                  child: Icon(Icons.close, size: 20, color: Color(0xFFA6A6A6)),
+                  child: Icon(Icons.close, size: 20, color: BrandColors.textSecondary),
                 ),
               ),
             GestureDetector(
@@ -235,7 +236,7 @@ class _ScheduleSearchPageState extends ConsumerState<ScheduleSearchPage> {
                 margin: const EdgeInsets.only(top: 3, right: 3, bottom: 3),
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0052D9),
+                  color: BrandColors.primary,
                   borderRadius: BorderRadius.circular(17),
                 ),
                 alignment: Alignment.center,
@@ -312,7 +313,7 @@ class _ScheduleSearchPageState extends ConsumerState<ScheduleSearchPage> {
             child: Center(
               child: Text(
                 '没有更多了',
-                style: TextStyle(fontSize: 13, color: Color(0xFFA6A6A6)),
+                style: TextStyle(fontSize: 13, color: BrandColors.textSecondary),
               ),
             ),
           ),
@@ -336,7 +337,7 @@ class _ErrorState extends StatelessWidget {
           const Icon(Icons.error_outline, size: 40, color: Color(0xFFDCDCDC)),
           const SizedBox(height: 8),
           const Text('加载失败',
-              style: TextStyle(fontSize: 14, color: Color(0xFF181818))),
+              style: TextStyle(fontSize: 14, color: BrandColors.textPrimary)),
           const SizedBox(height: 12),
           TextButton(onPressed: onRetry, child: const Text('重试')),
         ],
@@ -365,7 +366,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             isSearch ? '未找到相关日程' : '暂无日程',
-            style: const TextStyle(fontSize: 14, color: Color(0xFF181818)),
+            style: const TextStyle(fontSize: 14, color: BrandColors.textPrimary),
           ),
         ],
       ),

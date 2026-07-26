@@ -27,7 +27,7 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF181818),
+          color: BrandColors.textPrimary,
         ),
       ),
     );
@@ -54,7 +54,7 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
                 color: Colors.white,
-                border: Border.all(color: const Color(0xFFE7E7E7), width: 1),
+                border: Border.all(color: BrandColors.border, width: 1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -64,12 +64,12 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
                       dateStr,
                       style: const TextStyle(
                         fontSize: 16,
-                        color: Color(0xFF181818),
+                        color: BrandColors.textPrimary,
                       ),
                     ),
                   ),
                   const Icon(Icons.calendar_today,
-                      size: 18, color: Color(0xFFA6A6A6)),
+                      size: 18, color: BrandColors.textSecondary),
                 ],
               ),
             ),
@@ -163,7 +163,7 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
                 color: Colors.white,
-                border: Border.all(color: const Color(0xFFE7E7E7), width: 1),
+                border: Border.all(color: BrandColors.border, width: 1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -173,12 +173,12 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
                       timeStr,
                       style: const TextStyle(
                         fontSize: 16,
-                        color: Color(0xFF181818),
+                        color: BrandColors.textPrimary,
                       ),
                     ),
                   ),
                   const Icon(Icons.access_time,
-                      size: 18, color: Color(0xFFA6A6A6)),
+                      size: 18, color: BrandColors.textSecondary),
                 ],
               ),
             ),
@@ -247,7 +247,7 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
                 _dateError!,
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFFD54941),
+                  color: BrandColors.error,
                 ),
               ),
             ),
