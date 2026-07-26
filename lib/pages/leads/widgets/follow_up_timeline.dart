@@ -7,6 +7,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:telemarketing_app/models/follow_up_record.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'follow_up_card.dart';
 import 'edit_follow_up_dialog.dart';
 import 'delete_confirm_dialog.dart';
@@ -106,7 +107,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF181818),
+              color: BrandColors.textPrimary,
             ),
           ),
           const SizedBox(width: 4),
@@ -114,7 +115,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
             '(共${widget.allRecords.length}条)',
             style: const TextStyle(
               fontSize: 12,
-              color: Color(0xFFA6A6A6),
+              color: BrandColors.textSecondary,
             ),
           ),
         ],
@@ -138,7 +139,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
             widget.errorMessage!,
             style: const TextStyle(
               fontSize: 14,
-              color: Color(0xFFD54941),
+              color: BrandColors.error,
             ),
           ),
         ),
@@ -157,14 +158,14 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
           Icon(
             Icons.undo,
             size: 40,
-            color: const Color(0xFFDCDCDC),
+            color: BrandColors.textDisabled,
           ),
           const SizedBox(height: 8),
           const Text(
             '暂无跟进记录',
             style: TextStyle(
               fontSize: 14,
-              color: Color(0xFF181818),
+              color: BrandColors.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
@@ -172,7 +173,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
             '点击「跟进」按钮添加第一条记录',
             style: TextStyle(
               fontSize: 12,
-              color: Color(0xFFA6A6A6),
+              color: BrandColors.textSecondary,
             ),
           ),
         ],
@@ -225,7 +226,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: const Color(0xFFEEEEEE),
+        color: BrandColors.border,
         borderRadius: BorderRadius.circular(4),
       ),
     );
@@ -271,7 +272,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
                 Container(
                   width: 2,
                   height: 120, // 大致高度，由卡片内容撑开
-                  color: const Color(0xFFEEEEEE),
+                  color: BrandColors.border,
                 ),
             ],
           ),
@@ -317,7 +318,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
         height: size,
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
-          color: Color(0xFF0052D9),
+          color: BrandColors.primary,
         ),
       );
     } else {
@@ -329,7 +330,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
           shape: BoxShape.circle,
           color: Colors.transparent,
           border: Border.all(
-            color: const Color(0xFFDCDCDC),
+            color: BrandColors.textDisabled,
             width: 2,
           ),
         ),

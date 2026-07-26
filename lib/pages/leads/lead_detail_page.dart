@@ -16,6 +16,8 @@ import 'package:telemarketing_app/pages/schedules/schedule_search_page.dart';
 import 'package:telemarketing_app/providers/lead_detail_provider.dart';
 import 'package:telemarketing_app/providers/schedule_list_provider.dart';
 import 'package:telemarketing_app/widgets/app_action_bar.dart';
+import 'package:telemarketing_app/widgets/app_error_body.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'widgets/lead_header_section.dart';
 import 'widgets/follow_up_panel.dart';
 import 'widgets/follow_up_timeline.dart';
@@ -166,40 +168,21 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
 
   /// 错误/已删除态
   Widget _buildErrorBody(String? errorMessage) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.info,
-            size: 64,
-            color: Color(0xFFA6A6A6),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            errorMessage ?? '该线索已删除或不存在',
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF181818),
-            ),
-          ),
-          const SizedBox(height: 24),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('返回列表'),
-          ),
-        ],
-      ),
+    return AppErrorBody(
+      icon: Icons.info,
+      message: errorMessage ?? '该线索已删除或不存在',
+      actionText: '返回列表',
+      onAction: () => Navigator.of(context).pop(),
     );
   }
 
   Widget _buildActionBar(LeadDetail detail) {
     return Container(
       height: 44,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          top: BorderSide(color: Color(0xFFEEEEEE), width: 0.5),
+          top: BorderSide(color: BrandColors.border, width: 0.5),
         ),
       ),
       child: AppActionBar(

@@ -6,36 +6,32 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:telemarketing_app/models/schedule.dart';
+import 'package:telemarketing_app/widgets/app_card_section.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 
 /// 最近日程区块
 class ScheduleSection extends StatelessWidget {
   final List<Schedule> schedules;
-
-  /// 「查看全部」点击回调（跳日程搜索页，带手机号搜索）
   final VoidCallback? onViewAll;
 
   const ScheduleSection({super.key, required this.schedules, this.onViewAll});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      decoration: const BoxDecoration(color: Colors.white),
+    return AppCardSection(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(),
           const SizedBox(height: 16),
-          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+          const Divider(height: 1, color: BrandColors.border),
           const SizedBox(height: 8),
           if (schedules.isEmpty) _buildEmptyState() else _buildList(),
         ],
       ),
     );
   }
-
-  // ── 标题 ──
 
   Widget _buildHeader() {
     return Row(
@@ -45,22 +41,17 @@ class ScheduleSection extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF181818),
+            color: BrandColors.textPrimary,
           ),
         ),
         const Spacer(),
-        GestureDetector(
-          onTap: onViewAll,
-          child: const Text(
-            '查看全部',
-            style: TextStyle(fontSize: 13, color: Color(0xFF0052D9)),
-          ),
+        TextButton(
+          onPressed: onViewAll,
+          child: const Text('查看全部'),
         ),
       ],
     );
   }
-
-  // ── 空态 ──
 
   Widget _buildEmptyState() {
     return Container(
@@ -68,22 +59,16 @@ class ScheduleSection extends StatelessWidget {
       width: double.infinity,
       child: const Column(
         children: [
-          Icon(
-            Icons.calendar_today,
-            size: 40,
-            color: Color(0xFFDCDCDC),
-          ),
+          Icon(Icons.calendar_today, size: 40, color: BrandColors.textDisabled),
           SizedBox(height: 8),
           Text(
             '暂无日程',
-            style: TextStyle(fontSize: 14, color: Color(0xFF181818)),
+            style: TextStyle(fontSize: 14, color: BrandColors.textPrimary),
           ),
         ],
       ),
     );
   }
-
-  // ── 列表 ──
 
   Widget _buildList() {
     return Column(
@@ -100,15 +85,14 @@ class ScheduleSection extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Color(0xFFEEEEEE), width: 0.5),
+          bottom: BorderSide(color: BrandColors.border, width: 0.5),
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 日期+时间
           SizedBox(
             width: 76,
             child: Column(
@@ -116,82 +100,59 @@ class ScheduleSection extends StatelessWidget {
               children: [
                 Text(
                   dateStr,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF181818),
-                  ),
+                  style: const TextStyle(fontSize: 13, color: BrandColors.textPrimary),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   timeStr,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFFA6A6A6),
-                  ),
+                  style: const TextStyle(fontSize: 12, color: BrandColors.textSecondary),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 12),
-          // 标题+备注
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   s.title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF181818),
-                  ),
+                  style: const TextStyle(fontSize: 14, color: BrandColors.textPrimary),
                 ),
                 if (s.content != null && s.content!.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
                     s.content!,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFFA6A6A6),
-                    ),
+                    style: const TextStyle(fontSize: 12, color: BrandColors.textSecondary),
                   ),
                 ],
               ],
             ),
           ),
           const SizedBox(width: 8),
-          // 状态标签
           _buildStatusTag(s.status),
         ],
       ),
     );
   }
 
-  // ── 状态标签 ──
-
   Widget _buildStatusTag(String status) {
     final (label, bg, fg) = _statusStyle(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(fontSize: 12, color: fg),
-      ),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
+      child: Text(label, style: TextStyle(fontSize: 12, color: fg)),
     );
   }
 
-  /// 状态样式：[标签, 背景色, 文字色]
   (String, Color, Color) _statusStyle(String status) {
     switch (status) {
       case 'completed':
-        return ('已完成', const Color(0x1A2BA471), const Color(0xFF2BA471));
+        return ('已完成', const Color(0x1A2BA471), BrandColors.success);
       case 'cancelled':
-        return ('已取消', const Color(0x1AD54941), const Color(0xFFD54941));
+        return ('已取消', const Color(0x1AD54941), BrandColors.error);
       default:
-        return ('待办', const Color(0x1A0052D9), const Color(0xFF0052D9));
+        return ('待办', const Color(0x1A0052D9), BrandColors.primary);
     }
   }
 }
