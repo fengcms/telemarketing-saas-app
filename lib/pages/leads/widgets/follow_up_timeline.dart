@@ -73,6 +73,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
 
     return AppCardSection(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -134,10 +135,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
           },
           child: Text(
             widget.errorMessage!,
-            style: const TextStyle(
-              fontSize: 14,
-              color: BrandColors.error,
-            ),
+            style: const TextStyle(fontSize: 14, color: BrandColors.error),
           ),
         ),
       ),
@@ -152,26 +150,16 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
       width: double.infinity,
       child: Column(
         children: [
-          Icon(
-            Icons.undo,
-            size: 40,
-            color: BrandColors.textDisabled,
-          ),
+          Icon(Icons.undo, size: 40, color: BrandColors.textDisabled),
           const SizedBox(height: 8),
           const Text(
             '暂无跟进记录',
-            style: TextStyle(
-              fontSize: 14,
-              color: BrandColors.textPrimary,
-            ),
+            style: TextStyle(fontSize: 14, color: BrandColors.textPrimary),
           ),
           const SizedBox(height: 4),
           const Text(
             '点击「跟进」按钮添加第一条记录',
-            style: TextStyle(
-              fontSize: 12,
-              color: BrandColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 12, color: BrandColors.textSecondary),
           ),
         ],
       ),
@@ -183,6 +171,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
   Widget _buildLoadingSkeleton() {
     return AppCardSection(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -215,8 +204,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
     );
   }
 
-  Widget _skeletonBlock(
-      {double width = double.infinity, double height = 16}) {
+  Widget _skeletonBlock({double width = double.infinity, double height = 16}) {
     return Container(
       width: width,
       height: height,
@@ -238,8 +226,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
           _buildTimelineItem(records[i], i),
         ],
         // 加载更多
-        if (_hasMore)
-          _buildLoadMoreButton(),
+        if (_hasMore) _buildLoadMoreButton(),
       ],
     );
   }
@@ -324,10 +311,7 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.transparent,
-          border: Border.all(
-            color: BrandColors.textDisabled,
-            width: 2,
-          ),
+          border: Border.all(color: BrandColors.textDisabled, width: 2),
         ),
       );
     }
@@ -340,9 +324,10 @@ class _FollowUpTimelineState extends State<FollowUpTimeline> {
       child: TextButton(
         onPressed: () {
           setState(() {
-            _visibleCount =
-                (_visibleCount + _batchSize)
-                    .clamp(0, widget.allRecords.length);
+            _visibleCount = (_visibleCount + _batchSize).clamp(
+              0,
+              widget.allRecords.length,
+            );
           });
         },
         child: const Text('加载更多跟进记录'),
