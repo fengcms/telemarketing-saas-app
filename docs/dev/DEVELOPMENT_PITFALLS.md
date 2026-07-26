@@ -1250,6 +1250,39 @@ at profile_page.dart:95:36            (initState → _load → .load())
 
 ---
 
+## 14. fl_chart 0.70 API 变化 + 团队统计后端契约修正
+
+### A. fl_chart 0.70 破坏性 API 变更
+
+**严重级别**：🟠 编译期（不修则 `flutter analyze` 报错）
+
+**现象**：`pubspec.yaml` 写 `fl_chart: ^0.70.0`（2024 年末发布的 0.70 大版本）后，按旧文档/旧示例写的图表代码大量 `deprecated`/`undefined` 报错：
+
+1. `PieChart`/`LineChart` 构造参数 `swapAnimationDuration` / `swapAnimationCurve` 已**移除**，改顶层命名参数 `duration` / `curve`（`Duration(seconds:1)` / `Curves.easeInOut`）。旧写法在 0.70 直接报 `undefined named parameter`。
+2. 颜色 `Color.withOpacity(x)` 在 Dart 3.x 被 `withValues(alpha: x)` 取代（Flutter 3.27+/Dart 3.3+ deprecated `withOpacity`）。图表里环形扇区、折线 `belowBarData` 渐变、选中态底色都必须改 `withValues(alpha:)`。
+3. `LineChartBarData.belowBarData` 渐变用 `color.withValues(alpha:0.1)`，不能用 `withOpacity`。
+
+**修法（已落地）**：
+- 所有 `PieChart(data, swapAnimationDuration:..)` → `PieChart(data, duration:.., curve:..)`；`LineChart` 同理。
+- 全文件 `withOpacity(` → `withValues(alpha: `（conversion_funnel / agent_ranking / date_range_selector / overview_cards / team_stats_page / trend_line_chart）。
+- `flutter analyze` 复验 0 issue。
+
+**教训**：引第三方图表/组件库**先看 changelog 的 major 版本破坏性变更**，0.70 与 0.6x 的动画参数、颜色 API 都不一样；不要照搬老示例。
+
+### B. 团队统计后端契约：seed 聚合键 `pool`→`pending`
+
+**严重级别**：🔴 数据正确性（不修则漏斗基数恒 0、公海段为 0）
+
+**现象**：团队统计接口 `GET /api/tenant/stats` 返回漏斗 `funnel.pool` 恒为 0、状态分布无公海数据。设计上「公海」权威定义为 `status=pending && ownerId IS NULL`，但 seed 脚本把聚合快照键误写成 `pool`，导致服务端算出的 `funnel.pool` 与 `byStatus` 里的 pending 段都对不上、甚至恒 0。
+
+**修法（后端全链路 + 客户端契约锁定）**：
+- 后端：seed 脚本聚合键 `pool`→`pending`；design.md 同步；测试库历史脏数据 `UPDATE`。现在接口读 `byStatus["pending"]`。
+- 客户端（`PLAN_29` 同步）：统一用 `pending` 单键——`TeamStatusBreakdown`/`TeamFunnel` 的 `pending` 字段即公海；漏斗 base=`funnel.pending`；状态分布「公海」段对应 `byStatus.pending`；**不再写 `pool || pending` 兼容**（既然后端已修正，兼容是死代码）。
+
+**教训**：客户端「契约」类字段若服务端漂移过，必须回写计划文档 + 模型注释标清权威键，避免后人又按旧字段名取数；服务端 seed/聚合键命名要与业务语义（status 枚举值）一致，不要用自造别名。
+
+---
+
 ## 10. 已知待解决问题
 
 | # | 问题 | 优先级 | 状态 | 说明 |

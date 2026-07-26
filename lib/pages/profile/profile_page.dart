@@ -23,6 +23,7 @@ import 'package:telemarketing_app/pages/coming_soon_page.dart';
 import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 import 'package:telemarketing_app/pages/customers/customer_list_page.dart';
 import 'package:telemarketing_app/pages/settings/settings_page.dart';
+import 'package:telemarketing_app/pages/team_stats/team_stats_page.dart';
 import 'package:telemarketing_app/pages/theme_preview_page.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_menu_row.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_stats_card.dart';
@@ -243,8 +244,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                     ProfileMenuRow(
                       icon: Icons.dashboard,
                       title: '团队统计',
-                      onTap: () =>
-                          _push(const ComingSoonPage(featureName: '团队统计')),
+                      onTap: () => _push(const TeamStatsPage()),
                     ),
                   ],
                 ),

@@ -754,6 +754,39 @@ ApiClient 拦截器链：
 - 团队视图日期筛选（本节点放弃）
 ---
 
+## v0.25 团队统计独立页（2026-07-26）
+> 计划：`docs/dev/PLAN_29_TEAM_STATS.md`；进度：`docs/dev/PROGRESS_TEAM_STATS-2026-07-26.md`
+> 团队模块阶段三（阶段一=线索池 v0.22，阶段二=日程视图 v0.24）。TM/TA 在「我的」页可见「团队统计」入口，TE 不可见。
+
+### 完成内容
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 数据模型 `team_stats.dart` | ✅ | 映射 `GET /api/tenant/stats`（pending 单键契约）：状态分布/漏斗/Agent 绩效/逐日趋势/环比；`teamConversionRate`=Σconverted/ΣownedLeads 前端算 |
+| 服务层 `team_stats_service.dart` | ✅ | `fetchTeamStats`；区间无数据抛 `NoDataInRangeException` |
+| 状态管理 `team_stats_provider.dart` | ✅ | `TeamStatsNotifier` + 日期范围（今日/本周/本月/自定义≤90天）+ 5 分钟按范围 key 缓存 |
+| 图表 `chart_colors.dart` + 5 组件 | ✅ | fl_chart 环形（状态分布）+ 折线（逐日趋势）+ 漏斗进度条 + 概述 2×2 + 坐席排行 Top3 金银铜 |
+| 入口 `profile_page.dart` | ✅ | 「团队统计」由 ComingSoon 改为直推 `TeamStatsPage()` |
+| 依赖 `pubspec.yaml` | ✅ | 引入 `fl_chart: ^0.70.0` |
+
+### 关键决策
+| 决策 | 选择 | 原因 |
+|------|------|------|
+| 后端契约 | 统一 `pending` 单键 | 公海权威定义 `status=pending && ownerId IS NULL`；seed 曾误写 `pool` 致漏斗恒 0，已全链路修正，客户端不再兼容 `pool` |
+| 图表库 | fl_chart ^0.70.0 | 轻量声明式，环形+折线都满足；注意 0.70 破坏性 API（见 `DEVELOPMENT_PITFALLS.md` §14） |
+| 日期格式化 | 本地 `_fmt`，不引 intl | pubspec 无 intl，避免额外 pub get |
+
+### 验证
+| 验证项 | 结果 |
+|------|------|
+| `flutter analyze` | 本次 13 文件 0 error 0 warning |
+| 构建 + 装真机 | `app-release.apk` 59MB，`adb install -r` 到 Redmi K60(`3e06fd6d`) Success |
+| 真机实测 | 通过（用户确认无明显问题） |
+
+### 待开发（团队模块三阶段已全完成）
+- KGP 警告（`package_info_plus`/`sensors_plus`/`share_plus`）按方案 A 暂接受。
+- 团队视图日期筛选（v0.24 放弃项）留待后续。
+---
+
 ## v0.27 首页日程接口合并（2026-07-25）
 
 > 开发文档：`docs/dev/PLAN_25_HOME_SCHEDULE_MERGE.md`
