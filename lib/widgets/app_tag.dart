@@ -16,17 +16,21 @@ class AppTag extends StatelessWidget {
   final Color? backgroundColor;
   final Color? textColor;
 
+  /// 内边距（默认 6×2，与原样式一致）
+  final EdgeInsetsGeometry padding;
+
   const AppTag({
     super.key,
     required this.label,
     this.backgroundColor,
     this.textColor,
+    this.padding = const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: padding,
       decoration: BoxDecoration(
         color: backgroundColor ?? const Color(0xFFF2F3FF),
         borderRadius: BorderRadius.circular(4),

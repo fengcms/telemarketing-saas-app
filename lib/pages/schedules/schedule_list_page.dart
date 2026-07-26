@@ -19,6 +19,7 @@ import 'widgets/schedule_date_header.dart';
 import 'widgets/schedule_overdue_header.dart';
 import 'widgets/schedule_skeleton.dart';
 import 'schedule_detail_page.dart';
+import 'package:telemarketing_app/widgets/app_error_body.dart';
 
 part 'schedule_grouping.dart';
 
@@ -64,7 +65,7 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
         ref.read(scheduleListProvider.notifier).canSwitchScope;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F3F3),
+      backgroundColor: BrandColors.surface,
       appBar: AppBar(
         title: const Text('日程'),
         backgroundColor: BrandColors.primary,
@@ -140,9 +141,7 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: active ? FontWeight.w600 : FontWeight.normal,
-                    color: active
-                        ? const Color(0xFF0052D9)
-                        : const Color(0xFF6B7A90),
+                    color: active ? BrandColors.primary : BrandColors.textSecondary,
                   ),
                 ),
                 if (count > 0) ...[
@@ -151,9 +150,7 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                     decoration: BoxDecoration(
-                      color: active
-                          ? const Color(0xFF0052D9)
-                          : const Color(0xFFA6A6A6),
+                      color: active ? BrandColors.primary : BrandColors.textSecondary,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -168,7 +165,7 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
             Container(
               height: 2,
               width: 28,
-              color: active ? const Color(0xFF0052D9) : Colors.transparent,
+              color: active ? BrandColors.primary : Colors.transparent,
             ),
           ],
         ),
@@ -255,13 +252,16 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
       );
     } else if (!state.hasMore && state.items.isNotEmpty) {
       slivers.add(
-        const SliverToBoxAdapter(
+        SliverToBoxAdapter(
           child: SizedBox(
             height: 48,
             child: Center(
               child: Text(
                 '— 已加载全部 —',
-                style: TextStyle(fontSize: 12, color: Color(0x99C5C5C5)),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: BrandColors.textDisabled.withValues(alpha: 0.6),
+                ),
               ),
             ),
           ),
@@ -310,35 +310,16 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
       child: ListView(
         children: [
           SizedBox(height: MediaQuery.of(context).size.height * 0.2),
-          const Icon(Icons.error_outline, size: 80, color: Color(0xFFDCDCDC)),
-          const SizedBox(height: 16),
-          const Center(
-            child: Text(
-              '加载失败',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF181818),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              message,
-              style: const TextStyle(fontSize: 14, color: Color(0xFFA6A6A6)),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: TextButton(
-              onPressed: () =>
-                  ref.read(scheduleListProvider.notifier).refresh(),
-              child: const Text(
-                '重新加载',
-                style: TextStyle(color: Color(0xFF0052D9)),
-              ),
-            ),
+          AppErrorBody(
+            icon: Icons.error_outline,
+            iconSize: 80,
+            iconColor: const Color(0xFFDCDCDC),
+            title: '加载失败',
+            message: message,
+            messageColor: BrandColors.textSecondary,
+            actionText: '重新加载',
+            onAction: () =>
+                ref.read(scheduleListProvider.notifier).refresh(),
           ),
         ],
       ),

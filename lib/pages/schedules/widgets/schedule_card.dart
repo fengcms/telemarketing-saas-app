@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/schedule.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
+import 'package:telemarketing_app/widgets/app_tag.dart';
 
 /// 日程卡片
 class ScheduleCard extends ConsumerWidget {
@@ -35,13 +37,13 @@ class ScheduleCard extends ConsumerWidget {
     final isCompleted = s.status == 'completed';
 
     final Color barColor = isOverdue
-        ? const Color(0xFFD54941)
+        ? BrandColors.error
         : isCompleted
-            ? const Color(0xFFC5C5C5)
-            : const Color(0xFF0052D9);
+            ? BrandColors.textDisabled
+            : BrandColors.primary;
 
     final Color titleColor =
-        isCancelled ? const Color(0xFFA6A6A6) : const Color(0xFF181818);
+        isCancelled ? BrandColors.textSecondary : BrandColors.textPrimary;
 
     return GestureDetector(
       onTap: onTap,
@@ -86,9 +88,13 @@ class ScheduleCard extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          _StatusTag(
-                            status: s.status,
-                            isOverdue: isOverdue,
+                          AppTag(
+                            label: _statusLabel(s.status, isOverdue),
+                            backgroundColor: _statusColor(s.status, isOverdue)
+                                .withValues(alpha: 0.1),
+                            textColor: _statusColor(s.status, isOverdue),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
                           ),
                         ],
                       ),
@@ -96,13 +102,13 @@ class ScheduleCard extends ConsumerWidget {
                       Row(
                         children: [
                           const Icon(Icons.access_time,
-                              size: 14, color: Color(0xFF6B7A90)),
+                              size: 14, color: BrandColors.textSecondary),
                           const SizedBox(width: 4),
                           Text(
                             s.dateTimeDisplay,
                             style: const TextStyle(
                               fontSize: 13,
-                              color: Color(0xFF6B7A90),
+                              color: BrandColors.textSecondary,
                             ),
                           ),
                         ],
@@ -113,7 +119,7 @@ class ScheduleCard extends ConsumerWidget {
                           s.content!,
                           style: const TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF6B7A90),
+                            color: BrandColors.textSecondary,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -133,41 +139,29 @@ class ScheduleCard extends ConsumerWidget {
   }
 }
 
-/// 状态标签
-class _StatusTag extends StatelessWidget {
-  final String status;
-  final bool isOverdue;
+/// 状态标签文案
+String _statusLabel(String status, bool isOverdue) {
+  if (isOverdue) return '逾期';
+  switch (status) {
+    case 'completed':
+      return '已完成';
+    case 'cancelled':
+      return '已取消';
+    default:
+      return '待办';
+  }
+}
 
-  const _StatusTag({required this.status, required this.isOverdue});
-
-  @override
-  Widget build(BuildContext context) {
-    final label = isOverdue
-        ? '逾期'
-        : status == 'completed'
-            ? '已完成'
-            : status == 'cancelled'
-                ? '已取消'
-                : '待办';
-    final color = isOverdue
-        ? const Color(0xFFD54941)
-        : status == 'completed'
-            ? const Color(0xFF00A870)
-            : status == 'cancelled'
-                ? const Color(0xFFA6A6A6)
-                : const Color(0xFF0052D9);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(fontSize: 12, color: color),
-      ),
-    );
+/// 状态标签色（与品牌色对齐；完成绿沿用设计系统既有 #00A870）
+Color _statusColor(String status, bool isOverdue) {
+  if (isOverdue) return BrandColors.error;
+  switch (status) {
+    case 'completed':
+      return const Color(0xFF00A870);
+    case 'cancelled':
+      return BrandColors.textSecondary;
+    default:
+      return BrandColors.primary;
   }
 }
 
@@ -184,14 +178,14 @@ class _OwnerRow extends ConsumerWidget {
     return Row(
       children: [
         const Icon(Icons.badge_outlined,
-            size: 14, color: Color(0xFF6B7A90)),
+            size: 14, color: BrandColors.textSecondary),
         const SizedBox(width: 4),
         Expanded(
           child: Text(
             '归属：${name.value ?? userId}',
             style: const TextStyle(
               fontSize: 13,
-              color: Color(0xFF6B7A90),
+              color: BrandColors.textSecondary,
             ),
             overflow: TextOverflow.ellipsis,
           ),
