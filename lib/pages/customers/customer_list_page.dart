@@ -12,6 +12,7 @@ import 'package:telemarketing_app/models/customer.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/customer_service_provider.dart';
 import 'package:telemarketing_app/widgets/app_search_bar.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/pages/customers/widgets/customer_filter_bar.dart';
 import 'package:telemarketing_app/pages/customers/widgets/customer_card.dart';
 import 'package:telemarketing_app/pages/customers/widgets/customer_list_skeleton.dart';
@@ -216,7 +217,7 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
             hintText: '搜索客户姓名/电话/公司',
           ),
           // 搜索栏与筛选栏间分隔线
-          const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+          const Divider(height: 1, thickness: 1, color: BrandColors.line),
           // 等级筛选（通栏）
           CustomerFilterBar(
             selectedLevel: _level,

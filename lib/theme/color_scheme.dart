@@ -37,6 +37,11 @@ abstract final class BrandColors {
   /// 边框（gray-4）
   static const Color border = Color(0xFFE7E7E7);
 
+  /// 分隔线（Divider）
+  ///
+  /// 与 [border] 接近，仅用于列表/区块间的 1px 分隔线。
+  static const Color line = Color(0xFFEEEEEE);
+
   /// 次要文字（gray-6）
   static const Color textSecondary = Color(0xFFA6A6A6);
 

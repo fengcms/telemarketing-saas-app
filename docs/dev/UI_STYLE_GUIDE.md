@@ -107,8 +107,10 @@ Scaffold(
 | `AppBottomSheet` | `app_bottom_sheet.dart` | 底部抽屉，`.show(title, child)` |
 | `AppTextarea` | `app_textarea.dart` | 多行文本域，`controller` + `hintText` + `quickNotes?` |
 | `AppToast` | `app_toast.dart` | 提示，`.show(context, msg)` |
+| `AppFilterChips` | `app_filter_chips.dart` | 列表页搜索框下方的单选筛选条（横滚药丸，**默认占满 100% 宽**，选项少时沿行铺满、选项多时横滚），`items` + `selectedCode` + `onChanged` |
 
 > **规则**：凡上述组件对应的场景，必须使用公共组件，不得手动拼装替代品。
+> 列表页「搜索框下方的单选筛选条」必须使用 `AppFilterChips`，禁止各页自绘 chip / 分段控件。
 
 ---
 

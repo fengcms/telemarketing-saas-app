@@ -1,19 +1,21 @@
 /// 通话记录「接听类型」筛选条
 ///
 /// 设计文档 §4.4。
-/// 接听类型横滚 Chip（全部/已接听/无人接听/拒接/空号/停机）。
+/// 接听类型横滚胶囊筛选（全部/已接听/无人接听/拒接/空号/停机）。
+/// 视觉与交互统一走公共组件 [AppFilterChips]，不再自绘。
 library;
 
 import 'package:flutter/material.dart';
+import 'package:telemarketing_app/widgets/app_filter_chips.dart';
 
 /// 接听类型筛选项（code 为 null 表示「全部」）
-const List<({String? code, String label})> _answerFilters = [
-  (code: null, label: '全部'),
-  (code: 'answered', label: '已接听'),
-  (code: 'no_answer', label: '无人接听'),
-  (code: 'rejected', label: '拒接'),
-  (code: 'empty_number', label: '空号'),
-  (code: 'suspended', label: '停机'),
+const List<FilterChipItem> answerFilters = [
+  FilterChipItem(code: null, label: '全部'),
+  FilterChipItem(code: 'answered', label: '已接听'),
+  FilterChipItem(code: 'no_answer', label: '无人接听'),
+  FilterChipItem(code: 'rejected', label: '拒接'),
+  FilterChipItem(code: 'empty_number', label: '空号'),
+  FilterChipItem(code: 'suspended', label: '停机'),
 ];
 
 /// 接听类型横滚筛选条
@@ -32,60 +34,10 @@ class CallFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: _answerFilters.map((f) {
-            final selected = f.code == selectedAnswerType;
-            return _chip(
-              label: f.label,
-              selected: selected,
-              onTap: () => onAnswerTypeChanged(f.code),
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  /// 自绘 Chip（规避零先例的 TDTag）
-  Widget _chip({
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          height: 32,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: selected
-                ? const Color(0xFFF2F3FF)
-                : const Color(0xFFF3F3F3),
-            borderRadius: BorderRadius.circular(999),
-            border: selected
-                ? Border.all(color: const Color(0xFF0052D9), width: 1)
-                : null,
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color: selected
-                    ? const Color(0xFF0052D9)
-                    : const Color(0xFF6B7A90),
-              ),
-            ),
-          ),
-        ),
-      ),
+    return AppFilterChips(
+      items: answerFilters,
+      selectedCode: selectedAnswerType,
+      onChanged: onAnswerTypeChanged,
     );
   }
 }

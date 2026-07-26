@@ -12,6 +12,7 @@ import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/call_service_provider.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/widgets/app_search_bar.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/pages/call_records/widgets/call_filter_bar.dart';
 import 'package:telemarketing_app/pages/call_records/widgets/call_record_row.dart';
 import 'package:telemarketing_app/pages/call_records/widgets/call_list_skeleton.dart';
@@ -232,6 +233,8 @@ class _CallRecordsPageState extends ConsumerState<CallRecordsPage> {
             hintText: '搜索手机号',
             keyboardType: TextInputType.phone,
           ),
+          // 搜索栏与筛选栏间分隔线（与客户列表页统一）
+          const Divider(height: 1, thickness: 1, color: BrandColors.line),
           // 接听类型筛选
           CallFilterBar(
             selectedAnswerType: _answerType,
