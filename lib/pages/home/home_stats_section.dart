@@ -25,6 +25,7 @@ class HomeStatsSection extends ConsumerWidget {
     return AppCardSection(
       title: '今日工作概况',
       trailing: dateLabel,
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: state.isLoadingStats && state.stats == null
           ? _buildStatsGrid(null)
           : state.statsError != null && state.stats == null
