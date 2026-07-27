@@ -121,6 +121,9 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
   /// 可选归属人列表（TM/TA）
   List<OptionItem> _owners = const [];
 
+  /// 快捷备注列表（type=schedule）
+  List<OptionItem> _quickNotes = const [];
+
   /// 提交中（防重复）
   bool _isSubmitting = false;
 
@@ -135,6 +138,7 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
     super.initState();
     _initFields();
     _loadOwnersIfNeeded();
+    _loadQuickNotes();
   }
 
   @override
@@ -187,6 +191,17 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
       });
     } catch (_) {
       // 加载失败：归属人列表空；创建模式仍可用默认（当前用户）
+    }
+  }
+
+  /// 加载日程快捷备注列表（type=schedule），对标跟进面板的 type=followup
+  Future<void> _loadQuickNotes() async {
+    try {
+      final notes = await ref.read(optionsCacheProvider).getQuickNotes();
+      if (!mounted) return;
+      setState(() => _quickNotes = notes.where((n) => n.type == 'schedule').toList());
+    } catch (_) {
+      // 静默失败
     }
   }
 

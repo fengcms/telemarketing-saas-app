@@ -61,7 +61,7 @@ class LeadListState {
     this.ownerId,
     this.dateFrom,
     this.dateTo,
-    this.sortBy = '-updatedAt',
+    this.sortBy = 'nextFollowupAt',
     this.categories = const [],
     this.projects = const [],
     this.users = const [],
@@ -343,6 +343,8 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
   Future<void> refresh() async {
     state = state.copyWith(isInitialLoading: true);
     _reloadPage(1);
+    // 并行刷新选项数据（项目/分类/用户），与 _loadInitial 一致
+    await _loadOptions(_ref.read(leadServiceProvider));
   }
 
   void _reloadPage(int page) {

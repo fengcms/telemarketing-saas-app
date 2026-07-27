@@ -264,6 +264,7 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
       child: AppTextarea(
         controller: _contentCtrl,
         hintText: '补充说明...',
+        quickNotes: _quickNotes.map((n) => n.name).toList(),
         onChanged: (_) => setState(() => _dirty = true),
       ),
     );

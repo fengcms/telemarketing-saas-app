@@ -71,6 +71,8 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
   @override
   void initState() {
     super.initState();
+    _selectedAnswerType = 'answered';
+    _showDuration = true;
     _loadCategories();
     _loadQuickNotes();
   }
@@ -121,19 +123,19 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 跟进内容 + 快捷备注
-        _buildContentField(),
-        const SizedBox(height: 16),
-        // 接听类型
+        // ① 接听类型
         _buildAnswerTypeSelector(),
         // 通话时长（已接听时显示来自系统通话记录的最近通话时间）
         if (_showDuration) ...[
           const SizedBox(height: 16),
           _buildCallLogDisplay(),
         ],
-        // 修改分类（可选）
+        // ② 线索分类（可选）
         const SizedBox(height: 16),
         _buildCategorySelector(),
+        const SizedBox(height: 16),
+        // ③ 跟进内容
+        _buildContentField(),
         const SizedBox(height: 24),
         // 提交按钮
         _buildSubmitButton(),
@@ -145,9 +147,10 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
   // ── 跟进内容输入 ──
 
   Widget _buildContentField() {
+    final isAnswered = _selectedAnswerType == 'answered';
     return AppFormSection(
       label: '跟进内容',
-      required: true,
+      required: isAnswered,
       child: AppTextarea(
         controller: _contentController,
         hintText: '请输入跟进内容...',
@@ -362,8 +365,9 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
   // ── 提交按钮 ──
 
   Widget _buildSubmitButton() {
-    final isValid = _contentController.text.trim().isNotEmpty &&
-        _selectedAnswerType != null;
+    final isAnswered = _selectedAnswerType == 'answered';
+    final isValid = _selectedAnswerType != null &&
+        (!isAnswered || _contentController.text.trim().isNotEmpty);
 
     return AppActionBar.submit(
       text: '提交跟进',

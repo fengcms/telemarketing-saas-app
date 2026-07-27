@@ -595,11 +595,25 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
   }
 
   Widget _buildPublicEmpty() {
-    return Center(
-      child: AppEmptyBody(
-        icon: Icons.waves,
-        title: '当前公海没有可领取的线索',
-        desc: '新线索导入后将自动出现在这里',
+    return RefreshIndicator(
+      onRefresh: () => _loadPublicLeads(page: 1),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+          AppEmptyBody(
+            icon: Icons.waves,
+            title: '当前公海没有可领取的线索',
+            desc: '新线索导入后将自动出现在这里',
+          ),
+          const SizedBox(height: 24),
+          Center(
+            child: FilledButton.tonal(
+              onPressed: () => _loadPublicLeads(page: 1),
+              child: const Text('刷新'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -666,11 +680,27 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
   // ── 空态 ──
 
   Widget _buildEmpty(bool isSearch) {
-    return Center(
-      child: AppEmptyBody(
-        icon: isSearch ? Icons.search_off : Icons.inbox,
-        title: isSearch ? '未找到相关线索' : '暂无线索',
-        desc: isSearch ? '请尝试其他关键词或筛选条件' : '请联系管理员导入',
+    return RefreshIndicator(
+      onRefresh: () => ref.read(leadListProvider.notifier).refresh(),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+          AppEmptyBody(
+            icon: isSearch ? Icons.search_off : Icons.inbox,
+            title: isSearch ? '未找到相关线索' : '暂无线索',
+            desc: isSearch ? '请尝试其他关键词或筛选条件' : '请联系管理员导入',
+          ),
+          if (!isSearch) ...[
+            const SizedBox(height: 24),
+            Center(
+              child: FilledButton.tonal(
+                onPressed: () => ref.read(leadListProvider.notifier).refresh(),
+                child: const Text('加载数据'),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
