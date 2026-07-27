@@ -1,12 +1,30 @@
 /// API 网关常量配置
 ///
 /// 集中管理后端接口地址和认证相关的常亮。
-/// 线上测试环境：https://tm-api-test.kao9.com/
+/// 测试环境（默认）：https://tm-api-test.kao9.com/
+/// 生产环境（需 dart-define）：https://tm-api.kao9.com/
+///
+/// 编译时通过 --dart-define=API_BASE_URL=https://tm-api.kao9.com 切换。
+/// 不传参数时自动使用测试环境地址。
 class ApiConstants {
   ApiConstants._();
 
-  /// 线上测试环境地址
-  static const String baseUrl = 'https://tm-api-test.kao9.com';
+  /// 生产环境地址
+  static const String prodBaseUrl = 'https://tm-api.kao9.com';
+
+  /// 测试环境地址（默认）
+  static const String testBaseUrl = 'https://tm-api-test.kao9.com';
+
+  /// 实际使用的后端地址
+  ///
+  /// 编译时通过 `--dart-define=API_BASE_URL=...` 覆盖。
+  /// 不传 dart-define 时默认使用测试环境 [testBaseUrl]。
+  /// 生产构建推荐：
+  /// `flutter build apk --release --dart-define=API_BASE_URL=https://tm-api.kao9.com`
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: testBaseUrl,
+  );
 
   /// AccessToken 过期缓冲时间（秒）
   /// Token 实际过期前 60 秒就视为即将过期，提前刷新
