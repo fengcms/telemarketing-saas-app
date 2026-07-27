@@ -175,7 +175,10 @@ class _LeadsFilterSheetState extends ConsumerState<LeadsFilterSheet> {
   }
 
   Widget _buildOwnerSection() {
-    final users = widget.state.users;
+    // 仅显示员工（排除管理员和经理）
+    final users = widget.state.users
+        .where((u) => u.role == 'tenant_employee')
+        .toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

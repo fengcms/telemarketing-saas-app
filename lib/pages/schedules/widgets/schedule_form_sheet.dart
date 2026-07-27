@@ -49,6 +49,8 @@ Future<bool?> showScheduleFormSheet(
   // 编辑模式
   String? scheduleId,
   ScheduleDetail? initial,
+  /// TM/TA：非已转化线索的归属人 ID（用于默认选中）
+  String? leadOwnerId,
 }) async {
   return AppBottomSheet.show<bool>(
     context: context,
@@ -62,6 +64,7 @@ Future<bool?> showScheduleFormSheet(
       prefillContent: prefillContent,
       scheduleId: scheduleId,
       initial: initial,
+      leadOwnerId: leadOwnerId,
     ),
   );
 }
@@ -88,6 +91,9 @@ class ScheduleFormContent extends ConsumerStatefulWidget {
   /// 编辑模式：已加载的详情（回填用）
   final ScheduleDetail? initial;
 
+  /// TM/TA：非已转化线索的归属人 ID（用于默认选中）
+  final String? leadOwnerId;
+
   const ScheduleFormContent({
     super.key,
     this.leadId,
@@ -96,6 +102,7 @@ class ScheduleFormContent extends ConsumerStatefulWidget {
     this.prefillContent,
     this.scheduleId,
     this.initial,
+    this.leadOwnerId,
   });
 
   @override
@@ -172,25 +179,36 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
   }
 
   /// TM/TA 才加载归属人列表。
-  /// 创建模式默认当前用户；编辑模式不改归属人（后端 PATCH 不支持 userId），
-  /// 归属人以只读形式展示实际归属人，故此处不为编辑模式预设 [_owner]。
+  /// 创建模式默认值：非已转化线索 → 线索归属人；已转化 → 当前用户。
+  /// 选项范围：仅显示线索归属员工 + 管理员/经理（不显示其他普通员工）。
   Future<void> _loadOwnersIfNeeded() async {
     final user = ref.read(authProvider).user;
     final isManager = user?.role == 'tenant_admin' || user?.role == 'tenant_manager';
     if (!isManager) return;
     try {
-      final users = await ref.read(optionsCacheProvider).getUsers();
+      final allUsers = await ref.read(optionsCacheProvider).getUsers();
       if (!mounted) return;
+
+      // 过滤：只保留线索归属人 + 管理员/经理
+      final filtered = allUsers.where((u) =>
+          u.id == widget.leadOwnerId ||
+          u.role == 'tenant_admin' ||
+          u.role == 'tenant_manager').toList();
+
       setState(() {
-        _owners = users;
+        _owners = filtered;
         if (!_isEdit) {
-          // 仅创建模式默认当前登录用户
-          _owner = users.where((u) => u.id == user?.id).firstOrNull ??
-              users.firstOrNull;
+          // 非已转化线索 → 默认线索归属人；已转化/无归属人 → 默认当前用户
+          final defaultOwner = widget.leadOwnerId != null
+              ? filtered.where((u) => u.id == widget.leadOwnerId).firstOrNull
+              : null;
+          _owner = defaultOwner ??
+              filtered.where((u) => u.id == user?.id).firstOrNull ??
+              filtered.firstOrNull;
         }
       });
     } catch (_) {
-      // 加载失败：归属人列表空；创建模式仍可用默认（当前用户）
+      // 加载失败：归属人列表空
     }
   }
 

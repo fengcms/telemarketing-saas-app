@@ -1405,6 +1405,45 @@ Expanded(child: _box(height: 90)),
 | 5 | 真机调试 service protocol 连接失败 | P3 | ⚠️ 无害 | CI/自动化环境正常现象，不影响 APP 运行 |
 
 ---
+> 最后更新：2026-07-28  
 
-> 最后更新：2026-07-27  
+---
+
+## 19. 编辑线索/客户分流 + 客户编辑抽屉
+
+**问题**：管理员/经理打开已转化线索时，"编辑"按钮应打开客户编辑（非线索编辑）。
+
+**修法**：
+1. `lead_service.dart` 新增 `updateCustomer()` 方法调 `PATCH /api/tenant/customers/:id`
+2. `edit_customer_dialog.dart` 新建，包含姓名/客户级别（TagChipRow 单选）/备注
+3. `lead_detail_page.dart` `_buildActionBar` 中编辑按钮按 `detail.isConverted` 分流
+
+**教训**：已转化线索不可通过 `PATCH /leads/:id` 编辑（后端返回 400 STATUS_ROLLBACK_FORBIDDEN），必须走客户编辑接口。两条路径的**入口不可混淆**。
+
+---
+
+## 20. OptionsCacheService 序列化丢失 role
+
+**问题**：归属人选择器过滤时只看得到线索归属人，管理员/经理不出现。
+
+**根因**：`options_cache_service.dart` 的 `_encodeList()`（第 112-118 行）将 `OptionItem` 序列化到 `SharedPreferences` 时，只写了 `id`、`name`、`type`，**遗漏了 `role` 字段**。从磁盘反序列化后所有用户的 role 为 null，过滤条件 `u.role == 'tenant_admin'` 永远不成立。
+
+**修法**：在 `_encodeList` 中加 `if (e.role != null) map['role'] = e.role;`。
+
+**教训**：新增字段时，如果该对象**同时涉及磁盘序列化**（`_encodeList` / `_decodeList`），必须同步更新编码/解码逻辑，否则缓存会导致数据丢失。光调 API 和 fromJson 是不够的。
+
+---
+
+## 21. 日程归属人默认值与选择器改造
+
+**问题**：
+- 管理员/经理在非已转化线索上创建日程，归属人默认是自己的账号而不是线索的归属人
+- 归属人用 `DropdownButton`，选项多时用户体验差
+
+**修法**：
+1. `showScheduleFormSheet` 加 `leadOwnerId` 参数，传入线索的 ownerId
+2. `_loadOwnersIfNeeded` 中过滤选项为「线索归属人 + 管理员/经理」，并分叉默认值（有 leadOwnerId → 默认归属人；无 → 默认自己）
+3. `_buildOwnerSection` 中 `DropdownButton` 改为 `GestureDetector` 文本展示 + 点击弹出 `showModalBottomSheet` 选人列表（RadioListTile 风格，带角色标注）
+
+**教训**：表单中的人员选择器，`DropdownButton` 在超过几个人后体验显著下降，改用底部抽屉 + RadioListTile 更符合 Material Design 的移动端交互规范。
 > 维护人：Mobile App Builder

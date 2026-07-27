@@ -111,18 +111,52 @@ class LeadService {
 
   // ── 编辑线索 ──
 
-  /// 编辑线索（分类/状态）
+  /// 编辑线索（姓名/分类/备注/状态）
+  ///
+  /// TM/TA 可改 name / categoryId / remark；TE 仅 categoryId / status。
+  /// 已转化线索不可编辑，后端返回 400 STATUS_ROLLBACK_FORBIDDEN。
   Future<bool> updateLead({
     required String id,
+    String? name,
     String? categoryId,
+    String? remark,
     String? status,
   }) async {
     try {
       final body = <String, dynamic>{};
+      if (name != null) body['name'] = name;
       if (categoryId != null) body['categoryId'] = categoryId;
+      if (remark != null) body['remark'] = remark;
       if (status != null) body['status'] = status;
       final response = await _apiClient.dio.patch(
         '${ApiConstants.leads}/$id',
+        data: body,
+      );
+      final data = response.data;
+      return data is Map && data['success'] == true;
+    } on DioException catch (e) {
+      throw ApiClient.parseError(e);
+    }
+  }
+
+  // ── 编辑客户 ──
+
+  /// 编辑客户信息（姓名/级别/备注）
+  ///
+  /// 所有角色可用；TE 仅可改自己归属的客户。
+  Future<bool> updateCustomer({
+    required String id,
+    String? name,
+    String? level,
+    String? remark,
+  }) async {
+    try {
+      final body = <String, dynamic>{};
+      if (name != null) body['name'] = name;
+      if (level != null) body['level'] = level;
+      if (remark != null) body['remark'] = remark;
+      final response = await _apiClient.dio.patch(
+        '${ApiConstants.customers}/$id',
         data: body,
       );
       final data = response.data;

@@ -1,66 +1,63 @@
-/// 编辑线索面板（底部抽屉样式）
+/// 客户编辑面板（底部抽屉样式）
 ///
-/// 设计文档 §2.4 - 编辑线索弹窗
-/// 分类平铺 + 状态平铺（TE仅前向流转）
+/// 仅经理/管理员在已转化线索上使用，编辑客户信息（姓名/级别/备注）。
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/widgets/app_toast.dart';
-import 'package:telemarketing_app/models/lead_detail.dart';
-import 'package:telemarketing_app/models/option_item.dart';
+import 'package:telemarketing_app/models/customer_detail.dart';
 import 'package:telemarketing_app/providers/lead_detail_provider.dart';
 import 'package:telemarketing_app/providers/lead_list_provider.dart';
-import 'package:telemarketing_app/providers/options_provider.dart';
+import 'package:telemarketing_app/services/api_exception.dart';
 import 'package:telemarketing_app/widgets/app_action_bar.dart';
 import 'package:telemarketing_app/widgets/app_bottom_sheet.dart';
 import 'package:telemarketing_app/widgets/app_form_section.dart';
 import 'package:telemarketing_app/widgets/app_textarea.dart';
 import 'package:telemarketing_app/widgets/tag_chip.dart';
-import 'package:telemarketing_app/services/api_exception.dart';
 
-/// 显示编辑线索面板（底部抽屉）
-void showEditLeadDialog(
+/// 显示编辑客户面板（底部抽屉）
+void showEditCustomerDialog(
   BuildContext context, {
-  required String leadId,
-  required LeadDetail detail,
+  required CustomerDetail customer,
 }) {
   AppBottomSheet.show<void>(
     context: context,
-    title: '编辑 ${detail.name} 线索',
-    child: _EditLeadPanel(
-      leadId: leadId,
-      detail: detail,
-    ),
+    title: '编辑客户信息',
+    child: _EditCustomerPanel(customer: customer),
   );
 }
 
-class _EditLeadPanel extends ConsumerStatefulWidget {
-  final String leadId;
-  final LeadDetail detail;
+class _EditCustomerPanel extends ConsumerStatefulWidget {
+  final CustomerDetail customer;
 
-  const _EditLeadPanel({
-    required this.leadId,
-    required this.detail,
-  });
+  const _EditCustomerPanel({required this.customer});
 
   @override
-  ConsumerState<_EditLeadPanel> createState() => _EditLeadPanelState();
+  ConsumerState<_EditCustomerPanel> createState() =>
+      _EditCustomerPanelState();
 }
 
-class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
+class _EditCustomerPanelState extends ConsumerState<_EditCustomerPanel> {
   final _nameCtrl = TextEditingController();
   final _remarkCtrl = TextEditingController();
-  String? _selectedCategoryId;
+  String _selectedLevel = 'normal';
   bool _isSubmitting = false;
-  List<OptionItem> _categories = [];
+
+  /// 客户级别选项（用于 TagChipRow）
+  static const _levelOptions = [
+    ('normal', '普通'),
+    ('important', '重要'),
+    ('vip', 'VIP'),
+    ('lost', '流失'),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl.text = widget.detail.name;
-    _selectedCategoryId = widget.detail.categoryId;
-    _loadCategories();
+    _nameCtrl.text = widget.customer.name;
+    _selectedLevel = widget.customer.level;
+    _remarkCtrl.text = widget.customer.remark ?? '';
   }
 
   @override
@@ -68,20 +65,6 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
     _nameCtrl.dispose();
     _remarkCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadCategories() async {
-    try {
-      final cache = ref.read(optionsCacheProvider);
-      final cats = await cache.getCategories();
-      if (mounted) {
-        setState(() {
-          _categories = cats;
-        });
-      }
-    } catch (_) {
-      // 静默失败
-    }
   }
 
   @override
@@ -93,8 +76,8 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
         // ── 姓名 ──
         _buildNameField(),
         const SizedBox(height: 16),
-        // ── 线索分类 ──
-        _buildCategorySelector(),
+        // ── 客户级别 ──
+        _buildLevelSelector(),
         const SizedBox(height: 16),
         // ── 备注 ──
         _buildRemarkField(),
@@ -113,34 +96,29 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
       child: TextField(
         controller: _nameCtrl,
         decoration: const InputDecoration(
-          hintText: '请输入姓名',
+          hintText: '请输入客户姓名',
           border: InputBorder.none,
         ),
       ),
     );
   }
 
-  // ── 标题行 ──
+  // ── 客户级别 ──
 
-
-  // ── 分类选择器（横向平铺 chips） ──
-
-  Widget _buildCategorySelector() {
+  Widget _buildLevelSelector() {
     return AppFormSection(
-      label: '线索分类',
-      child: _categories.isEmpty
-          ? const Text(
-              '暂无可选分类',
-              style: TextStyle(fontSize: 12, color: Color(0xFFA6A6A6)),
-            )
-          : TagChipRow(
-              scrollable: true,
-              chips: _categories.map((c) => TagChipData(
-                label: c.name,
-                selected: _selectedCategoryId == c.id,
-                onTap: () => setState(() => _selectedCategoryId = c.id),
-              )).toList(),
-            ),
+      label: '客户级别',
+      child: TagChipRow(
+        scrollable: true,
+        chips: _levelOptions.map((l) {
+          final (value, label) = l;
+          return TagChipData(
+            label: label,
+            selected: _selectedLevel == value,
+            onTap: () => setState(() => _selectedLevel = value),
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -151,13 +129,10 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
       label: '备注',
       child: AppTextarea(
         controller: _remarkCtrl,
-        hintText: '线索备注...',
-        maxLength: 500,
+        hintText: '客户备注...',
       ),
     );
   }
-
-  /// 平铺 chip（选中态高亮）
 
   // ── 提交按钮 ──
 
@@ -177,21 +152,20 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
       final service = ref.read(leadServiceProvider);
       final name = _nameCtrl.text.trim();
       final remark = _remarkCtrl.text.trim();
-      await service.updateLead(
-        id: widget.leadId,
+      await service.updateCustomer(
+        id: widget.customer.id,
         name: name.isNotEmpty ? name : null,
-        categoryId: _selectedCategoryId,
+        level: _selectedLevel,
         remark: remark.isNotEmpty ? remark : null,
       );
 
       if (!mounted) return;
       Navigator.of(context).pop();
       ref.read(leadDetailProvider.notifier).refreshBundle();
-      AppToast.show(context, '线索已更新');
+      AppToast.show(context, '客户信息已更新');
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      // 透出后端中文错误
       AppToast.show(context, e.message);
     } catch (e) {
       if (!mounted) return;

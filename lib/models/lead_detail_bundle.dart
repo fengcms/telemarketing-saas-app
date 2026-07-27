@@ -6,6 +6,7 @@
 library;
 
 import 'package:telemarketing_app/models/lead_detail.dart';
+import 'package:telemarketing_app/models/customer_detail.dart';
 import 'package:telemarketing_app/models/follow_up_record.dart';
 import 'package:telemarketing_app/models/call_record.dart';
 import 'package:telemarketing_app/models/schedule.dart';
@@ -13,6 +14,9 @@ import 'package:telemarketing_app/models/schedule.dart';
 class LeadDetailBundle {
   /// 线索对象（含 categoryId 等字段）
   final LeadDetail lead;
+
+  /// 客户对象（仅已转化线索存在，否则为 null）
+  final CustomerDetail? customer;
 
   /// 全量跟进时间线（按 createdAt 倒序）
   final List<FollowUpRecord> followups;
@@ -28,6 +32,7 @@ class LeadDetailBundle {
 
   const LeadDetailBundle({
     required this.lead,
+    this.customer,
     this.followups = const [],
     this.calls = const [],
     this.schedules = const [],
@@ -42,6 +47,7 @@ class LeadDetailBundle {
     int? fetchedAtMs,
   }) {
     final leadJson = body['lead'] as Map<String, dynamic>?;
+    final customerJson = body['customer'] as Map<String, dynamic>?;
     final followups = (body['followups'] as List<dynamic>? ?? [])
         .map((e) => FollowUpRecord.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -55,6 +61,9 @@ class LeadDetailBundle {
     return LeadDetailBundle(
       // lead 缺失时退化为空对象，交由上层按 404/已删除 处理
       lead: LeadDetail.fromJson(leadJson ?? const {}),
+      customer: customerJson != null
+          ? CustomerDetail.fromJson(customerJson)
+          : null,
       followups: followups,
       calls: calls,
       schedules: schedules,

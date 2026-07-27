@@ -20,6 +20,34 @@ class LeadConstants {
     'invalid': '无效',
   };
 
+  /// 客户级别 → 中文显示名
+  static const Map<String, String> customerLevelLabels = {
+    'normal': '普通',
+    'important': '重要',
+    'vip': 'VIP',
+    'lost': '流失',
+  };
+
+  /// 获取客户级别中文显示名
+  static String customerLevelLabel(String code) =>
+      customerLevelLabels[code] ?? code;
+
+  /// 获取客户级别标签颜色（背景, 文字色）
+  static (Color, Color) customerLevelColorStyle(String code) {
+    switch (code) {
+      case 'normal':
+        return (const Color(0xFF2BA471), const Color(0xFFFFFFFF)); // 绿底白字
+      case 'important':
+        return (const Color(0xFF0052D9), const Color(0xFFFFFFFF)); // 蓝底白字
+      case 'vip':
+        return (const Color(0xFFDAA520), const Color(0xFFFFFFFF)); // 金底白字
+      case 'lost':
+        return (const Color(0xFFDCDCDC), const Color(0xFFA6A6A6)); // 灰底灰字
+      default:
+        return (const Color(0xFF2BA471), const Color(0xFFFFFFFF));
+    }
+  }
+
   /// 线索状态合法流转（权威数据源，所有角色通用）
   ///
   /// 对齐后端 docs/dev/LEAD_CONVERT_CHANGE_FRONTEND.md §1：

@@ -13,6 +13,8 @@ class Lead {
   final LeadOwner? owner;
   /// 归属人 ID（扁平字段，API 返回 `ownerId` 字符串）
   final String? ownerId;
+  /// 客户 ID（已转化线索有值，否则为 null）
+  final String? customerId;
   final int? lastFollowupAt;
   final int? nextFollowupAt;
   final int updatedAt;
@@ -28,6 +30,7 @@ class Lead {
     this.project,
     this.owner,
     this.ownerId,
+    this.customerId,
     this.lastFollowupAt,
     this.nextFollowupAt,
     required this.updatedAt,
@@ -49,6 +52,7 @@ class Lead {
           ? LeadOwner.fromJson(json['owner'] as Map<String, dynamic>)
           : null,
       ownerId: json['ownerId']?.toString(),
+      customerId: json['customerId']?.toString(),
       lastFollowupAt: _toInt(json['lastFollowupAt']),
       nextFollowupAt: _toInt(json['nextFollowupAt']),
       updatedAt: _toInt(json['updatedAt']),

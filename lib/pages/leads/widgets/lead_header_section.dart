@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/constants/lead_constants.dart';
 import 'package:telemarketing_app/models/lead_detail.dart';
+import 'package:telemarketing_app/models/customer_detail.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/widgets/app_info_row.dart';
 import 'package:telemarketing_app/widgets/app_tag.dart';
@@ -17,9 +18,23 @@ import 'dial_helper.dart';
 /// 线索详情页头部信息区（Section A）
 class LeadHeaderSection extends ConsumerWidget {
   final LeadDetail detail;
+  final CustomerDetail? customer;
   final VoidCallback? onDial;
 
-  const LeadHeaderSection({super.key, required this.detail, this.onDial});
+  const LeadHeaderSection({
+    super.key,
+    required this.detail,
+    this.customer,
+    this.onDial,
+  });
+
+  /// 显示的沉淀备注：已转化线索优先客户备注，否则线索备注
+  String? get _displayRemark {
+    if (detail.isConverted && customer != null) {
+      return customer!.remark ?? detail.remark;
+    }
+    return detail.remark;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -57,9 +72,16 @@ class LeadHeaderSection extends ConsumerWidget {
         ),
         const SizedBox(width: 8),
         _buildStatusTag(),
-        const SizedBox(width: 6),
-        if (detail.categoryId != null && detail.categoryId!.isNotEmpty)
+        if (detail.isConverted && customer != null) ...[
+          const SizedBox(width: 6),
+          _buildLevelTag(),
+        ],
+        if (!detail.isConverted &&
+            detail.categoryId != null &&
+            detail.categoryId!.isNotEmpty) ...[
+          const SizedBox(width: 6),
           _buildCategoryTag(ref),
+        ],
       ],
     );
   }
@@ -69,6 +91,18 @@ class LeadHeaderSection extends ConsumerWidget {
         LeadConstants.statusColorStyle(detail.status);
     return AppTag(
       label: label,
+      backgroundColor: bgColor,
+      textColor: textColor,
+    );
+  }
+
+  /// 客户级别 tag（仅已转化线索显示）
+  Widget _buildLevelTag() {
+    final level = customer?.level ?? 'normal';
+    final (bgColor, textColor) =
+        LeadConstants.customerLevelColorStyle(level);
+    return AppTag(
+      label: LeadConstants.customerLevelLabel(level),
       backgroundColor: bgColor,
       textColor: textColor,
     );
@@ -165,6 +199,13 @@ class LeadHeaderSection extends ConsumerWidget {
             icon: Icons.person,
             label: '归属',
             value: detail.owner!.name,
+          ),
+        // 备注：已转化线索优先显示客户备注，否则显示线索备注
+        if (_displayRemark != null)
+          AppInfoRow(
+            icon: Icons.notes,
+            label: '备注',
+            value: _displayRemark!,
           ),
       ],
     );

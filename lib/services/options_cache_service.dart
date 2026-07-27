@@ -113,6 +113,7 @@ class OptionsCacheService {
     return jsonEncode(items.map((e) {
       final map = <String, dynamic>{'id': e.id, 'name': e.name};
       if (e.type != null) map['type'] = e.type;
+      if (e.role != null) map['role'] = e.role;
       return map;
     }).toList());
   }

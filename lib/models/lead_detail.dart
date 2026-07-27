@@ -11,6 +11,9 @@ class LeadDetail {
   final String status;
   final String? categoryId;
   final String? projectId;
+  final String? ownerId;
+  /// 客户 ID（已转化线索有值，否则为 null）
+  final String? customerId;
   final LeadDetailProject? project;
   final LeadDetailOwner? owner;
   final int? lastFollowupAt;
@@ -31,6 +34,8 @@ class LeadDetail {
     required this.status,
     this.categoryId,
     this.projectId,
+    this.ownerId,
+    this.customerId,
     this.project,
     this.owner,
     this.lastFollowupAt,
@@ -59,6 +64,8 @@ class LeadDetail {
       status: json['status']?.toString() ?? 'pending',
       categoryId: json['categoryId']?.toString(),
       projectId: json['projectId']?.toString(),
+      ownerId: json['ownerId']?.toString(),
+      customerId: json['customerId']?.toString(),
       project: json['project'] != null
           ? LeadDetailProject.fromJson(
               json['project'] as Map<String, dynamic>)

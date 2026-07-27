@@ -271,13 +271,12 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
   }
 
   // ── 归属人 ──
-  // 创建模式（仅 TM/TA）：下拉选择，默认当前用户；
-  // 编辑模式：后端 PATCH 不支持改归属人，改为只读展示该日程的实际归属人，
-  // 消除「默认选当前登录用户」的误导（详见 DEVELOPMENT_PITFALLS §19）。
+  // 创建模式（仅 TM/TA）：点击弹出抽屉选择。默认值由 _loadOwnersIfNeeded 按角色+线索状态决定。
+  // 编辑模式：后端 PATCH 不支持改归属人，改为只读展示该日程的实际归属人。
 
   Widget _buildOwnerSection() {
     if (_isEdit) {
-      // 编辑：只读展示真实归属人（由 initial.userId 经 _owners 映射姓名）
+      // 编辑：只读展示真实归属人
       final ownerName = _resolveOwnerName(widget.initial?.userId);
       return AppFormSection(
         label: '归属人',
@@ -289,24 +288,101 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
     }
     return AppFormSection(
       label: '归属人',
-      child: DropdownButton<OptionItem>(
-        isExpanded: true,
-        value: _owner,
-        hint: const Text('选择归属人'),
-        items: _owners
-            .map((u) => DropdownMenuItem(
-                  value: u,
-                  child: Text(u.name),
-                ))
-            .toList(),
-        onChanged: (v) {
-          if (v == null) return;
-          setState(() {
-            _owner = v;
-            _dirty = true;
-          });
-        },
+      child: GestureDetector(
+        onTap: _showOwnerPicker,
+        child: Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: BrandColors.border, width: 1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _owner?.name ?? '选择归属人',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: _owner != null
+                        ? BrandColors.textPrimary
+                        : BrandColors.textSecondary,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right,
+                  size: 20, color: BrandColors.textSecondary),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+
+  /// 获取归属人选项的后缀标注（归属人/管理员/经理）
+  Widget? _ownerSubtitle(OptionItem u) {
+    String? label;
+    if (u.id == widget.leadOwnerId) {
+      label = '归属人';
+    } else if (u.role == 'tenant_admin') {
+      label = '管理员';
+    } else if (u.role == 'tenant_manager') {
+      label = '经理';
+    }
+    return label != null
+        ? Text(label, style: const TextStyle(fontSize: 12))
+        : null;
+  }
+
+  /// 弹出归属人选择抽屉
+  void _showOwnerPicker() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  '选择归属人',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ..._owners.map((u) => ListTile(
+                    leading: Icon(
+                      _owner?.id == u.id
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      color: _owner?.id == u.id
+                          ? BrandColors.primary
+                          : BrandColors.textSecondary,
+                    ),
+                    title: Text(u.name),
+                    subtitle: _ownerSubtitle(u),
+                    onTap: () {
+                      setState(() {
+                        _owner = u;
+                        _dirty = true;
+                      });
+                      Navigator.of(ctx).pop();
+                    },
+                  )),
+            ],
+          ),
+        );
+      },
     );
   }
 

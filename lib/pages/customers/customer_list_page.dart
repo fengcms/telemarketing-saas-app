@@ -44,15 +44,14 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
   bool _isFetching = false; // 拉第一页重入锁（首屏/刷新/筛选共用）
   String? _error;
 
-  /// 是否可切换 scope（TE 不可，TM/TA 可）
-  bool get _canSwitchScope {
-    final role = ref.read(authProvider).user?.role;
-    return role != null && role != 'tenant_employee';
-  }
-
   @override
   void initState() {
     super.initState();
+    // TM/TA 默认展示全部客户；TE 固定 mine（后端限制）
+    final role = ref.read(authProvider).user?.role;
+    if (role == 'tenant_admin' || role == 'tenant_manager') {
+      _scope = 'all';
+    }
     _scrollController.addListener(_onScroll);
     _loadInitial();
   }
@@ -151,13 +150,6 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
     await _loadInitial();
   }
 
-  /// scope 切换（仅 TM/TA）
-  Future<void> _onScopeChanged(String scope) async {
-    if (scope == _scope) return;
-    setState(() => _scope = scope);
-    await _loadInitial();
-  }
-
   /// 搜索（空词则取消搜索）
   void _doSearch(String q) {
     final trimmed = q.trim();
@@ -183,30 +175,6 @@ class _CustomerListPageState extends ConsumerState<CustomerListPage> {
         backgroundColor: const Color(0xFF0052D9),
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: _canSwitchScope
-            ? [
-                PopupMenuButton<String>(
-                  icon: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _scope == 'all' ? '全部' : '我的',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const Icon(Icons.arrow_drop_down, color: Colors.white),
-                    ],
-                  ),
-                  onSelected: _onScopeChanged,
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'mine', child: Text('我的客户')),
-                    PopupMenuItem(value: 'all', child: Text('全部客户')),
-                  ],
-                ),
-              ]
-            : null,
       ),
       body: Column(
         children: [

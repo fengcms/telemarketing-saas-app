@@ -30,6 +30,7 @@ import 'widgets/call_records_section.dart';
 import 'widgets/schedule_section.dart';
 import 'widgets/lead_bottom_nav.dart';
 import 'widgets/edit_lead_dialog.dart';
+import 'widgets/edit_customer_dialog.dart';
 import 'package:telemarketing_app/pages/schedules/widgets/schedule_form_sheet.dart';
 
 /// 线索详情页
@@ -121,12 +122,13 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
     final detail = state.detail!;
     return Scaffold(
       backgroundColor: const Color(0xFFF3F3F3),
-      appBar: _buildNavBar(),
+      appBar: _buildNavBar(isConverted: detail.isConverted),
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: LeadHeaderSection(
               detail: detail,
+              customer: state.bundle?.customer,
               onDial: () => _recentlyDialed = true,
             ),
           ),
@@ -159,11 +161,13 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
   }
 
   /// 统一的导航栏
-  PreferredSizeWidget _buildNavBar() {
+  ///
+  /// [isConverted] 控制标题文案：已转化线索显示「客户详情」。
+  PreferredSizeWidget _buildNavBar({bool isConverted = false}) {
     // 不显式覆盖背景/前景，沿用全局 appBarTheme（蓝底 #0052D9 + 白字白图标），
-    // 与全站其他通栏保持一致。此前误设白底导致继承主题白前景而“看不见”。
+    // 与全站其他通栏保持一致。此前误设白底导致继承主题白前景而"看不见"。
     return AppBar(
-      title: const Text('线索详情'),
+      title: Text(isConverted ? '客户详情' : '线索详情'),
       leading: IconButton(
         icon: const Icon(Icons.chevron_left),
         onPressed: () => Navigator.of(context).pop(),
@@ -185,25 +189,26 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
     final user = ref.read(authProvider).user;
     final isEmployee = user?.role == 'tenant_employee';
 
-    // ── 跟进 / 日程（所有角色共有） ──
+    // ── 跟进 / 日程（员工在已转化线索禁用；经理/管理员始终可用） ──
     final actions = <ActionItem>[
       ActionItem(
         text: '跟进', type: ActionType.text, icon: Icons.reply,
-        onTap: detail.isConverted
+        onTap: detail.isConverted && isEmployee
             ? null
             : () => showFollowUpPanel(context, leadId: detail.id),
       ),
       ActionItem(
         text: '日程', type: ActionType.text, icon: Icons.calendar_today,
-        onTap: detail.isConverted
+        onTap: detail.isConverted && isEmployee
             ? null
             : () async {
                 final changed = await showScheduleFormSheet(
-                  context,
-                  leadId: detail.id,
-                  leadName: detail.name,
-                  leadPhone: detail.phone,
-                );
+                      context,
+                      leadId: detail.id,
+                      leadName: detail.name,
+                      leadPhone: detail.phone,
+                      leadOwnerId: detail.ownerId,
+                    );
                 if (changed == true) {
                   try { ref.read(scheduleListProvider.notifier).refresh(); } catch (_) {}
                   try { ref.read(leadDetailProvider.notifier).refreshBundle(); } catch (_) {}
@@ -212,28 +217,31 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
       ),
     ];
 
-    // ── 转化（员工仅 following 显示；经理始终显示，非 following 灰态） ──
-    if (isEmployee) {
-      if (detail.status == 'following') {
-        actions.add(ActionItem(
-          text: '转化', type: ActionType.text, icon: Icons.check_circle,
-          onTap: () => _markConverted(detail.id),
-        ));
-      }
-    } else {
+    // ── 转化（仅员工在 following 态显示） ──
+    if (isEmployee && detail.status == 'following') {
       actions.add(ActionItem(
-        text: '标记为已转化', type: ActionType.text, icon: Icons.check_circle,
-        onTap: detail.status == 'following'
-            ? () => _markConverted(detail.id)
-            : null,
+        text: '转化', type: ActionType.text, icon: Icons.check_circle,
+        onTap: () => _markConverted(detail.id),
       ));
     }
 
-    // ── 编辑（仅经理/管理员） ──
+    // ── 编辑（仅经理/管理员；按线索状态分流） ──
     if (!isEmployee) {
       actions.add(ActionItem(
         text: '编辑', type: ActionType.text, icon: Icons.edit,
-        onTap: () => showEditLeadDialog(context, leadId: detail.id, detail: detail),
+        onTap: () {
+          if (detail.isConverted) {
+            // 已转化 → 编辑客户信息
+            final bundle = ref.read(leadDetailProvider).bundle;
+            final customer = bundle?.customer;
+            if (customer != null) {
+              showEditCustomerDialog(context, customer: customer);
+            }
+          } else {
+            // 非已转化 → 编辑线索信息
+            showEditLeadDialog(context, leadId: detail.id, detail: detail);
+          }
+        },
       ));
     }
 
