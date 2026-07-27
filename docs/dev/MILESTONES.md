@@ -1012,6 +1012,7 @@ ApiClient 拦截器链：
 | 通话记录列表优化 | 04 | P1 | ✅ v0.28（首屏 5 分钟缓存 + TM/TA 卡片拨打人） |
 | 团队模块（入口/统计/日程/线索池） | 20/21/22/23 | P1 | 阶段一✅（团队线索池：归属人圆点/统计摘要条/归属人筛选）；阶段二三📋未开发 |
 | 全端待办角标口径统一 | 04(续) | P1 | ✅ v0.29（弃 dueToday，统一读 todayPending；stats/mine+stats 顶层已返 todayPending，与 home-summary 同源） |
+| 跨账号缓存隔离 + 登录时序 + 日程 Tab 数字 | 34 | P1 | ✅ v0.34（CacheCoordinator 分层清退 + 缓存 key 加 userId/tenantId 维度 + force tenantId 修 2 bug + 日程 mine/team 双口径随 scope） |
 
 ---
 

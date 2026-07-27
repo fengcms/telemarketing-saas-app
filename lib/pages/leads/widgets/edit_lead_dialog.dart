@@ -11,13 +11,13 @@ import 'package:telemarketing_app/constants/lead_constants.dart';
 import 'package:telemarketing_app/models/lead_detail.dart';
 import 'package:telemarketing_app/models/option_item.dart';
 import 'package:telemarketing_app/providers/lead_detail_provider.dart';
-import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/lead_list_provider.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/widgets/app_action_bar.dart';
 import 'package:telemarketing_app/widgets/app_bottom_sheet.dart';
 import 'package:telemarketing_app/widgets/app_form_section.dart';
 import 'package:telemarketing_app/widgets/tag_chip.dart';
+import 'package:telemarketing_app/services/api_exception.dart';
 
 /// 显示编辑线索面板（底部抽屉）
 void showEditLeadDialog(
@@ -34,15 +34,6 @@ void showEditLeadDialog(
     ),
   );
 }
-
-/// 线索状态的前向流转映射
-const Map<String, List<String>> _forwardStatusMap = {
-  'pending': ['pending', 'following'],
-  'assigned': ['assigned', 'following'],
-  'following': ['following', 'converted'],
-  'converted': ['converted'], // 终态，不可再修改
-  'invalid': ['invalid', 'pending'], // 无效可重新激活
-};
 
 class _EditLeadPanel extends ConsumerStatefulWidget {
   final String leadId;
@@ -73,15 +64,9 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
   }
 
   Future<void> _loadOptions() async {
-    final isManager = ref.read(authProvider).user?.role == 'tenant_admin' ||
-        ref.read(authProvider).user?.role == 'tenant_manager';
-
-    // 状态选项
-    final forwardStatuses =
-        _forwardStatusMap[widget.detail.status] ?? [widget.detail.status];
-    _availableStatuses = isManager
-        ? LeadConstants.statusLabels.keys.toList()
-        : forwardStatuses;
+    // 状态选项：所有角色统一按权威状态机收敛（含当前态），
+    // 避免 manager 编辑 converted 时误选回退项被后端 400 拒绝。
+    _availableStatuses = LeadConstants.allowedStatuses(widget.detail.status);
 
     // 分类选项
     try {
@@ -183,13 +168,21 @@ class _EditLeadPanelState extends ConsumerState<_EditLeadPanel> {
       await service.updateLead(
         id: widget.leadId,
         categoryId: _selectedCategoryId,
-        status: _selectedStatus,
+        // 状态未真正变更时（仍为当前态）不传 status，交给后端保持原状。
+        // 后端状态机只允许「向前流转」，self-transition（如 assigned→assigned）
+        // 会被判为非法流转返回 400。仅当用户选了与当前不同的合法目标才传。
+        status: _selectedStatus != widget.detail.status ? _selectedStatus : null,
       );
 
       if (!mounted) return;
       Navigator.of(context).pop();
       ref.read(leadDetailProvider.notifier).refreshBundle();
       AppToast.show(context, '线索已更新');
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      // 透出后端中文错误（如 STATUS_ROLLBACK_FORBIDDEN → “状态回退被拒…”）
+      AppToast.show(context, e.message);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);

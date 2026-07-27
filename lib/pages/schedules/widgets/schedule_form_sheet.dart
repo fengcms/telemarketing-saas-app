@@ -167,21 +167,26 @@ class _ScheduleFormContentState extends ConsumerState<ScheduleFormContent> {
     }
   }
 
-  /// TM/TA 才加载归属人列表，默认当前用户
+  /// TM/TA 才加载归属人列表。
+  /// 创建模式默认当前用户；编辑模式不改归属人（后端 PATCH 不支持 userId），
+  /// 归属人以只读形式展示实际归属人，故此处不为编辑模式预设 [_owner]。
   Future<void> _loadOwnersIfNeeded() async {
     final user = ref.read(authProvider).user;
-    final isManager = user?.role == 'tenant_manager' || user?.role == 'tenant_admin';
+    final isManager = user?.role == 'tenant_admin' || user?.role == 'tenant_manager';
     if (!isManager) return;
     try {
       final users = await ref.read(optionsCacheProvider).getUsers();
       if (!mounted) return;
       setState(() {
         _owners = users;
-        _owner = users.where((u) => u.id == user?.id).firstOrNull ??
-            users.firstOrNull;
+        if (!_isEdit) {
+          // 仅创建模式默认当前登录用户
+          _owner = users.where((u) => u.id == user?.id).firstOrNull ??
+              users.firstOrNull;
+        }
       });
     } catch (_) {
-      // 加载失败：归属人列表空，仍可用默认（当前用户）
+      // 加载失败：归属人列表空；创建模式仍可用默认（当前用户）
     }
   }
 

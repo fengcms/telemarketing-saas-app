@@ -13,9 +13,14 @@ import 'package:telemarketing_app/models/lead_detail.dart';
 import 'package:telemarketing_app/models/lead_list_context.dart';
 import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 import 'package:telemarketing_app/pages/schedules/schedule_search_page.dart';
+import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/lead_detail_provider.dart';
+import 'package:telemarketing_app/providers/lead_list_provider.dart';
 import 'package:telemarketing_app/providers/schedule_list_provider.dart';
+import 'package:telemarketing_app/services/api_exception.dart';
 import 'package:telemarketing_app/widgets/app_action_bar.dart';
+import 'package:telemarketing_app/widgets/app_dialog.dart';
+import 'package:telemarketing_app/widgets/app_toast.dart';
 import 'package:telemarketing_app/widgets/app_error_body.dart';
 import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'widgets/lead_header_section.dart';
@@ -177,6 +182,61 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
   }
 
   Widget _buildActionBar(LeadDetail detail) {
+    final user = ref.read(authProvider).user;
+    final isEmployee = user?.role == 'tenant_employee';
+
+    // ── 跟进 / 日程（所有角色共有） ──
+    final actions = <ActionItem>[
+      ActionItem(
+        text: '跟进', type: ActionType.text, icon: Icons.reply,
+        onTap: detail.isConverted
+            ? null
+            : () => showFollowUpPanel(context, leadId: detail.id),
+      ),
+      ActionItem(
+        text: '日程', type: ActionType.text, icon: Icons.calendar_today,
+        onTap: detail.isConverted
+            ? null
+            : () async {
+                final changed = await showScheduleFormSheet(
+                  context,
+                  leadId: detail.id,
+                  leadName: detail.name,
+                  leadPhone: detail.phone,
+                );
+                if (changed == true) {
+                  try { ref.read(scheduleListProvider.notifier).refresh(); } catch (_) {}
+                  try { ref.read(leadDetailProvider.notifier).refreshBundle(); } catch (_) {}
+                }
+              },
+      ),
+    ];
+
+    // ── 转化（员工仅 following 显示；经理始终显示，非 following 灰态） ──
+    if (isEmployee) {
+      if (detail.status == 'following') {
+        actions.add(ActionItem(
+          text: '转化', type: ActionType.text, icon: Icons.check_circle,
+          onTap: () => _markConverted(detail.id),
+        ));
+      }
+    } else {
+      actions.add(ActionItem(
+        text: '标记为已转化', type: ActionType.text, icon: Icons.check_circle,
+        onTap: detail.status == 'following'
+            ? () => _markConverted(detail.id)
+            : null,
+      ));
+    }
+
+    // ── 编辑（仅经理/管理员） ──
+    if (!isEmployee) {
+      actions.add(ActionItem(
+        text: '编辑', type: ActionType.text, icon: Icons.edit,
+        onTap: () => showEditLeadDialog(context, leadId: detail.id, detail: detail),
+      ));
+    }
+
     return Container(
       height: 44,
       decoration: BoxDecoration(
@@ -185,38 +245,35 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
           top: BorderSide(color: BrandColors.border, width: 0.5),
         ),
       ),
-      child: AppActionBar(
-        actions: [
-          ActionItem(
-            text: '跟进', type: ActionType.text, icon: Icons.reply,
-            onTap: detail.isConverted
-                ? null
-                : () => showFollowUpPanel(context, leadId: detail.id),
-          ),
-          ActionItem(
-            text: '日程', type: ActionType.text, icon: Icons.calendar_today,
-            onTap: detail.isConverted
-                ? null
-                : () async {
-                    final changed = await showScheduleFormSheet(
-                      context,
-                      leadId: detail.id,
-                      leadName: detail.name,
-                      leadPhone: detail.phone,
-                    );
-                    if (changed == true) {
-                      try { ref.read(scheduleListProvider.notifier).refresh(); } catch (_) {}
-                      try { ref.read(leadDetailProvider.notifier).refreshBundle(); } catch (_) {}
-                    }
-                  },
-          ),
-          ActionItem(
-            text: '编辑', type: ActionType.text, icon: Icons.edit,
-            onTap: () => showEditLeadDialog(context, leadId: detail.id, detail: detail),
-          ),
-        ],
-      ),
+      child: AppActionBar(actions: actions),
     );
+  }
+
+  /// 标记线索为已转化（前置确认框，复用 PATCH status=converted，后端自动建档客户）
+  ///
+  /// 仅对 [following] 态线索显示（操作栏 onTap 已门控）。转化后刷新详情，
+  /// 既有逻辑使跟进/日程自动禁用、客户列表出现自动建档客户（Q3：停留详情页）。
+  Future<void> _markConverted(String leadId) async {
+    final confirmed = await AppDialog.confirm(
+      context: context,
+      title: '确认转化线索',
+      content: '确认将该线索转化为客户？系统将自动为客户建档。',
+      confirmText: '确定转化',
+      onConfirm: () {},
+    );
+    if (!mounted || confirmed != true) return;
+    try {
+      await ref.read(leadServiceProvider).updateLead(id: leadId, status: 'converted');
+      if (!mounted) return;
+      ref.read(leadDetailProvider.notifier).refreshBundle();
+      AppToast.show(context, '已转化为客户并自动建档');
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      AppToast.show(context, e.message);
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.show(context, '操作失败，请重试');
+    }
   }
 
   /// 跳日程搜索页（带线索手机号，搜索该号码关联的日程）

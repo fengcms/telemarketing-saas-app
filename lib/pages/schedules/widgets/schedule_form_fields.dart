@@ -269,9 +269,23 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
     );
   }
 
-  // ── 归属人（仅 TM/TA，编辑模式隐藏） ──
+  // ── 归属人 ──
+  // 创建模式（仅 TM/TA）：下拉选择，默认当前用户；
+  // 编辑模式：后端 PATCH 不支持改归属人，改为只读展示该日程的实际归属人，
+  // 消除「默认选当前登录用户」的误导（详见 DEVELOPMENT_PITFALLS §19）。
 
   Widget _buildOwnerSection() {
+    if (_isEdit) {
+      // 编辑：只读展示真实归属人（由 initial.userId 经 _owners 映射姓名）
+      final ownerName = _resolveOwnerName(widget.initial?.userId);
+      return AppFormSection(
+        label: '归属人',
+        child: Text(
+          ownerName,
+          style: TextStyle(fontSize: 16, color: BrandColors.textPrimary),
+        ),
+      );
+    }
     return AppFormSection(
       label: '归属人',
       child: DropdownButton<OptionItem>(
@@ -293,6 +307,14 @@ extension _ScheduleFormFields on _ScheduleFormContentState {
         },
       ),
     );
+  }
+
+  /// 编辑模式只读展示：将归属人 ID 映射为姓名（来自已加载的 [_owners]）。
+  /// 列表未就绪时回退显示 ID；为空时显示占位符。
+  String _resolveOwnerName(String? ownerId) {
+    if (ownerId == null || ownerId.isEmpty) return '—';
+    final name = _owners.where((u) => u.id == ownerId).firstOrNull?.name;
+    return name ?? ownerId;
   }
 
   // ── 全宽提交按钮 ──

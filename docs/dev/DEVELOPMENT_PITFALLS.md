@@ -1340,6 +1340,60 @@ Expanded(child: _box(height: 90)),
 
 ---
 
+## 17. 跨账号缓存隔离：CacheCoordinator 分层 + force tenantId
+
+**严重级别**：🔴 数据越权 / 跨租户泄漏（`flutter analyze` 不报，但会出现"看到别人数据 / 下拉串旧租户"）
+
+**现象**：
+- A 用户退出换 B 用户登录后，线索 / 日程 / 通话 / 客户等私有数据疑似残留前一个账号。
+- 跨租户切换时，options（归属人 / 分类下拉）仍显示**旧租户**的数据。
+- 登录后进入首页，公司名必经历"空白 → 重拉"闪烁（白拉一次 profile）。
+
+**根因（多因叠加）**：
+1. 登出只清 token + authProvider 状态，**无 `ref.invalidate`** 任何数据 provider（`auth_provider.dart`）。
+2. `main_shell.dart` 用 IndexedStack 常驻 4 个 Tab，切换账号不重建 → provider 不重置。
+3. 缓存 key 普遍**不含 userId**：`schedule_list_provider` 的 `_cacheKey='$scope:$tab:$ownerId'`、`call_service` 的 `_buildKey='$q|$answerType'`、`personal_stats` / `team_stats` 的 `'$from~$to'`。
+4. **登录时序 bug**：`fetchTenantId()` 受 10h TTL 短路——跨租户但缓存有效时不调 API，返回本地旧 tenantId；`prevTenantId`（残留旧值）== `newTenantId`（也是旧值）→ `crossTenant=false` 误判同租户 → 不清 options 缓存 → 串台。
+5. **清退 bug**：`_clearTenantShared` 调 `tenantService.clearAll()`，把登录阶段刚预热好的公司数据全清了 → 首页公司名闪烁 + profile 请求白费。
+
+**修法（已落地，见 PLAN_34）**：
+1. 新增 `cache_coordinator.dart` 统一收口：`onLogout()` 只清用户私有（同租户换人保留共享）；`onSessionChanged(crossTenant)` 任何切换都清私有，仅跨租户再清共享（`optionsCacheService.clearAll()` 内存+磁盘 + `invalidate(teamStatsProvider)`）。
+2. 缓存 key 加维度纵深防御：`schedule_list` 拼 `userId:scope:tab:ownerId`、`personal_stats` 拼 `userId~from~to`、`call_service` 拼 `userId`、options 磁盘 key 加 `tenantId` 前缀。
+3. `tenant_service.fetchTenantId({force})`：登录路径传 `force:true` 绕过 TTL 拿真实租户 ID；`_clearTenantShared` 去掉 `tenantService.clearAll()`（保留预热的公司数据）。
+
+**教训**：
+1. 跨账号缓存失效必须**集中收口**到一个 Coordinator，不要在 N 个 provider 各自 `ref.listen(authProvider)`——容易漏、难审计。
+2. 缓存 key **必须含用户 / 租户维度**，作为清退逻辑的纵深防御，漏网也不会串数据。
+3. 「同一份公司数据」的 profile 接口被缓存预热后，清退逻辑**不要把它也清了**，否则白拉 + 闪烁。
+4. 跨租户判定**绝不能走 TTL 命中的旧值**——登录必须 `force` 拉真实租户 ID，否则误判同租户会泄漏旧租户下拉。
+5. 两层用户模型：同租户换人保留共享（options / profile），跨租户全清——UI 与缓存都要按此边界分层。
+
+---
+
+## 18. 日程 Tab 数字口径必须随 scope 切换
+
+**严重级别**：🟡 逻辑 bug（Tab 数字与列表条目不一致，误导用户判断待办量）
+
+**现象**：日程页「待办 / 已完成」两个 Tab 的数字，在经理 / 管理员切换「我的」↔「团队」时，与下方列表条目数量对不上；切 Tab 有时重拉闪烁；跨账号登录后数字残留旧值。
+
+**根因**：
+1. `ScheduleStatsState` 仅有单份 `stats`，不区分 mine / team 口径——经理在「我的」视图却显示团队总数。
+2. `schedule_list_provider._switchTab` 的缓存 key 为 `'${state.scope}:$tab'`，漏了 `userId` / `ownerId` 维度，命中错缓存或重拉。
+3. `scheduleStatsProvider` 未挂到 CacheCoordinator 失效清单，跨账号残留。
+
+**修法（已落地）**：
+1. `schedule_stats_provider.dart`：`ScheduleStatsState` 拆为 `mineStats` + `teamStats` 双字段；新增 `pendingForScope(scope)` / `completedForScope(scope)` getter，按当前 scope 取对应口径；保留 `todayPending` 指向 mine 口径（供 home / 个人中心角标）。
+2. `schedule_list_page.dart`：Tab 数字改为 `stats.pendingForScope(state.scope)` / `completedForScope(state.scope)`。
+3. `schedule_list_provider.dart`：`_switchTab` 缓存 key 改为完整 `_cacheKey='${_userId ?? ''}:${state.scope}:$tab:${state.selectedOwnerId ?? ''}'`。
+4. `cache_coordinator.dart`：`_clearUserPrivate` 补 `_ref.invalidate(scheduleStatsProvider)`。
+
+**教训**：
+1. 同一份数据被「我的 / 团队」两种 scope 复用时，状态**必须按 scope 分桶**，取数时按当前 scope 取，绝不能共用单份。
+2. 缓存 key 拼装要和**读路径完全一致**——漏一个维度就串数据或切 Tab 闪烁。
+3. 新增持有的跨账号数据 provider，**必须挂进 CacheCoordinator 失效清单**，否则跨账号必残留。
+
+---
+
 ## 10. 已知待解决问题
 
 | # | 问题 | 优先级 | 状态 | 说明 |
@@ -1352,5 +1406,5 @@ Expanded(child: _box(height: 90)),
 
 ---
 
-> 最后更新：2026-07-26  
+> 最后更新：2026-07-27  
 > 维护人：Mobile App Builder

@@ -20,6 +20,23 @@ class LeadConstants {
     'invalid': '无效',
   };
 
+  /// 线索状态合法流转（权威数据源，所有角色通用）
+  ///
+  /// 对齐后端 docs/dev/LEAD_CONVERT_CHANGE_FRONTEND.md §1：
+  /// - TE 仅「前向流转」；manager 同受此约束（无退回入口，Q4 不保留 recycle）。
+  /// - [invalid] 终态（重新激活不保留，Q2）；[converted] 硬终态。
+  static const Map<String, List<String>> leadStatusTransitions = {
+    'pending': ['assigned', 'following', 'invalid'],
+    'assigned': ['following', 'invalid'],
+    'following': ['invalid', 'converted'],
+    'invalid': [], // 终态
+    'converted': [], // 硬终态
+  };
+
+  /// 某状态下可选项（含当前态，保证选中高亮；终态则仅当前态 = 只读）
+  static List<String> allowedStatuses(String current) =>
+      <String>{current, ...leadStatusTransitions[current] ?? const []}.toList();
+
   /// 接听类型枚举 → 中文显示名
   static const Map<String, String> answerTypeLabels = {
     'answered': '已接听',
