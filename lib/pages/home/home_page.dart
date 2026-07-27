@@ -14,12 +14,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:telemarketing_app/widgets/app_dialog.dart';
 import 'package:telemarketing_app/widgets/app_notice_bar.dart';
 import 'package:telemarketing_app/theme/color_scheme.dart';
-import 'package:telemarketing_app/providers/auth_provider.dart';
 import 'package:telemarketing_app/providers/home_provider.dart';
-import 'package:telemarketing_app/pages/team_stats/team_stats_page.dart';
 import 'home_skeletons.dart';
 import 'home_stats_section.dart';
 import 'home_schedule_section.dart';
@@ -95,26 +92,9 @@ class _HomePageState extends ConsumerState<HomePage>
     });
   }
 
-  /// 退出登录
-  void _onLogout(BuildContext context) {
-    AppDialog.confirm(
-      context: context,
-      title: '确认退出',
-      content: '确定要退出登录吗？',
-      confirmText: '退出',
-      confirmColor: const Color(0xFFD54941),
-      onConfirm: () => ref.read(authProvider.notifier).logout(),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homePageProvider);
-    final authState = ref.watch(authProvider);
-    final user = authState.user;
-    final isManager =
-        user?.role == 'tenant_admin' || user?.role == 'tenant_manager';
-    final showLogout = isManager;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F3F3),
@@ -123,31 +103,6 @@ class _HomePageState extends ConsumerState<HomePage>
         backgroundColor: BrandColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          if (isManager)
-            GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const TeamStatsPage(),
-                  ),
-                );
-              },
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                child: Text('团队看板',
-                    style: TextStyle(fontSize: 14, color: Colors.white)),
-              ),
-            ),
-          if (showLogout)
-            GestureDetector(
-              onTap: () => _onLogout(context),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                child: Icon(Icons.logout, size: 20, color: Colors.white70),
-              ),
-            ),
-        ],
       ),
       body: Column(
         children: [

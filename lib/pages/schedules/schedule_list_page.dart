@@ -21,12 +21,11 @@ import 'package:telemarketing_app/providers/options_provider.dart';
 import 'widgets/schedule_card.dart';
 import 'widgets/schedule_sticky_header.dart';
 import 'widgets/schedule_skeleton.dart';
-import 'widgets/team_schedule_header.dart';
 import 'schedule_detail_page.dart';
 import 'package:telemarketing_app/widgets/app_error_body.dart';
 import 'package:telemarketing_app/widgets/app_empty_body.dart';
 import 'package:telemarketing_app/widgets/app_segmented_tab.dart';
-import 'package:telemarketing_app/widgets/app_scope_toggle.dart';
+import 'widgets/schedule_top_bar.dart';
 import 'package:telemarketing_app/widgets/app_sticky_header.dart';
 import 'package:telemarketing_app/widgets/app_list_footer.dart';
 import 'package:telemarketing_app/widgets/app_bottom_sheet.dart';
@@ -73,32 +72,35 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
     final canTeam =
         ref.read(scheduleListProvider.notifier).canSwitchScope;
 
+    final showPicker = canTeam && listState.scope == 'team';
+    final selectedColor = showPicker && listState.selectedOwnerId != null
+        ? userColor(listState.selectedOwnerId!)
+        : null;
+
     return Scaffold(
       backgroundColor: BrandColors.surface,
-      appBar: AppBar(
-        title: const Text('日程'),
-        backgroundColor: BrandColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          if (canTeam)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: AppScopeToggle(
-                options: const [
-                  ScopeOption('mine', '我的'),
-                  ScopeOption('team', '团队'),
-                ],
-                currentValue: listState.scope,
-                onChanged: (v) =>
-                    ref.read(scheduleListProvider.notifier).switchScope(v),
-              ),
+      // 员工视角：与「我的」页一致，居中标题 + 标准 AppBar
+      appBar: canTeam
+          ? null
+          : AppBar(
+              title: const Text('日程'),
+              centerTitle: true,
+              backgroundColor: BrandColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
             ),
-        ],
-      ),
       body: Column(
         children: [
-          if (listState.scope == 'team') _buildTeamHeader(listState),
+          if (canTeam)
+            ScheduleTopBar(
+              canTeam: canTeam,
+              currentScope: listState.scope,
+              onScopeChanged: (v) =>
+                  ref.read(scheduleListProvider.notifier).switchScope(v),
+              selectedOwnerId: showPicker ? listState.selectedOwnerId : null,
+              selectedOwnerColor: selectedColor,
+              onPickOwner: showPicker ? _pickOwner : null,
+            ),
           _buildTabBar(listState, statsState),
           Expanded(child: _buildBody(listState)),
         ],
@@ -159,35 +161,6 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: _buildSlivers(state, groups, ownerNames, ownerColors),
       ),
-    );
-  }
-
-  /// 团队视图头部（仅 scope==team 渲染）：统计摘要条 + 员工筛选
-  Widget _buildTeamHeader(ScheduleListState state) {
-    final selectedId = state.selectedOwnerId;
-    final int todayPending;
-    final int overdue;
-    final String ownerLabel;
-    final Color? ownerColor;
-    if (selectedId != null) {
-      // 成员筛选中：本地从已加载成员列表计算（后端 userId 过滤后 items 即该成员）
-      todayPending = _countTodayPending(state.items, state.serverTime);
-      overdue = _countOverdue(state.items, state.serverTime);
-      ownerLabel = ref.read(userNameProvider(selectedId)).value ?? selectedId;
-      ownerColor = userColor(selectedId);
-    } else {
-      // 全团队：读团队统计接口（与首页/home-summary 同源）
-      todayPending = state.teamStats?.todayPending ?? 0;
-      overdue = state.teamStats?.overdue ?? 0;
-      ownerLabel = '全部成员';
-      ownerColor = null;
-    }
-    return TeamScheduleHeader(
-      todayPending: todayPending,
-      overdue: overdue,
-      ownerLabel: ownerLabel,
-      ownerColor: ownerColor,
-      onPickOwner: _pickOwner,
     );
   }
 
@@ -339,29 +312,6 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
     );
   }
 
-  /// 本地统计：今日待办数（严格今日窗口、不含逾期，与后端 todayPending 同源）
-  int _countTodayPending(List<Schedule> items, int serverTime) {
-    final base = DateTime.fromMillisecondsSinceEpoch(serverTime * 1000);
-    var n = 0;
-    for (final s in items) {
-      if (s.status != 'pending') continue;
-      if (s.scheduledAt < serverTime) continue; // 已逾期不计入今日待办
-      final dt = DateTime.fromMillisecondsSinceEpoch(s.scheduledAt * 1000);
-      if (dt.year == base.year && dt.month == base.month && dt.day == base.day) {
-        n++;
-      }
-    }
-    return n;
-  }
-
-  /// 本地统计：逾期数（pending 且 scheduledAt < 服务端时间）
-  int _countOverdue(List<Schedule> items, int serverTime) {
-    var n = 0;
-    for (final s in items) {
-      if (s.status == 'pending' && s.scheduledAt < serverTime) n++;
-    }
-    return n;
-  }
 }
 
 /// 员工筛选抽屉内容
