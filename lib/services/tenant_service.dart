@@ -17,11 +17,13 @@ class TenantService {
 
   Map<String, dynamic>? _cachedSettings;
   String? _cachedName;
+  String? _cachedTenantId;
   DateTime? _lastFetchTime;
   bool _localLoaded = false;
 
   static const _keySettings = 'cache_tenant_settings';
   static const _keyName = 'cache_tenant_name';
+  static const _keyTenantId = 'cache_tenant_id';
   static const _keyTime = 'cache_tenant_time';
 
   bool get _isValid =>
@@ -51,6 +53,7 @@ class TenantService {
         _cachedSettings = jsonDecode(settingsStr) as Map<String, dynamic>;
       }
       _cachedName = prefs.getString(_keyName);
+      _cachedTenantId = prefs.getString(_keyTenantId);
     } catch (_) {}
   }
 
@@ -66,6 +69,9 @@ class TenantService {
       if (_cachedName != null) {
         await prefs.setString(_keyName, _cachedName!);
       }
+      if (_cachedTenantId != null) {
+        await prefs.setString(_keyTenantId, _cachedTenantId!);
+      }
     } catch (_) {}
   }
 
@@ -78,6 +84,7 @@ class TenantService {
         _cachedSettings =
             profile['settings'] as Map<String, dynamic>? ?? {};
         _cachedName = profile['name']?.toString() ?? '';
+        _cachedTenantId = profile['id']?.toString();
         _lastFetchTime = DateTime.now();
         await _saveToLocal();
       }
@@ -98,6 +105,41 @@ class TenantService {
   Future<String> fetchTenantName() async {
     await _ensureLoaded();
     return _cachedName ?? '';
+  }
+
+  /// 当前租户 ID（profile.data.id）
+  ///
+  /// 供跨账号缓存隔离判定使用（见 [CacheCoordinator] / [AuthNotifier.login]）。
+  /// 注意：在 [fetchTenantId] 刷新前读取，即为「上一次登录的租户」。
+  String? get cachedTenantId => _cachedTenantId;
+
+  /// 确保已加载后返回当前租户 ID
+  ///
+  /// [force] 为 true 时忽略本地 TTL 缓存，强制重新拉取 profile。
+  /// 用于登录路径：必须拿到「本次登录」的真实租户 ID，
+  /// 否则跨租户但本地缓存未过期时会误判为同租户，导致 options 泄漏。
+  Future<String?> fetchTenantId({bool force = false}) async {
+    if (force) _lastFetchTime = null;
+    await _ensureLoaded();
+    return _cachedTenantId;
+  }
+
+  /// 清空租户共享缓存（内存 + 磁盘）
+  ///
+  /// 跨租户切换时由 [CacheCoordinator._clearTenantShared] 调用。
+  /// 仅删自身 `cache_tenant_*` key，不触碰 [TokenStorage] 的登录凭据 key。
+  Future<void> clearAll() async {
+    _cachedSettings = null;
+    _cachedName = null;
+    _cachedTenantId = null;
+    _lastFetchTime = null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_keySettings);
+      await prefs.remove(_keyName);
+      await prefs.remove(_keyTenantId);
+      await prefs.remove(_keyTime);
+    } catch (_) {}
   }
 
   /// 手动刷新缓存（清空并重新请求）

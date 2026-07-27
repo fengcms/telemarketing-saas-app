@@ -10,5 +10,8 @@ import 'package:telemarketing_app/services/call_service.dart';
 
 /// 通话记录服务实例
 final callServiceProvider = Provider<CallService>((ref) {
-  return CallService(apiClient: ref.read(apiClientProvider));
+  return CallService(
+    apiClient: ref.read(apiClientProvider),
+    ref: ref,
+  );
 });

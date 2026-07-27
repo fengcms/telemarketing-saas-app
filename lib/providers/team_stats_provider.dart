@@ -146,7 +146,8 @@ class TeamStatsNotifier extends StateNotifier<TeamStatsState> {
   Future<void> load({bool force = false}) async {
     final (from, to) = _currentRange();
     if (from.isEmpty || to.isEmpty) return;
-    final key = '$from~$to';
+    final tenantId = _ref.read(tenantServiceProvider).cachedTenantId ?? '';
+    final key = '$tenantId~$from~$to';
 
     final cached = _cache[key];
     if (!force &&

@@ -140,9 +140,11 @@ class ScheduleListNotifier extends StateNotifier<ScheduleListState> {
   /// 各 Tab 数据缓存：key = "$scope:$tab"，命中则切换不重新请求
   final Map<String, _TabCache> _cache = {};
 
-  /// 当前 scope:tab:owner 缓存 key
+  /// 当前 userId:scope:tab:owner 缓存 key
+  /// （前缀 userId 做跨账号纵深防御；见 cache_coordinator.dart）
   /// （成员筛选单独成键，避免与全团队数据互相污染）
-  String get _cacheKey => '${state.scope}:${state.activeTab}:${state.selectedOwnerId ?? ''}';
+  String get _cacheKey =>
+      '${_userId ?? ''}:${state.scope}:${state.activeTab}:${state.selectedOwnerId ?? ''}';
 
   ScheduleListNotifier(this._ref) : super(const ScheduleListState()) {
     _loadInitial();
@@ -246,7 +248,9 @@ class ScheduleListNotifier extends StateNotifier<ScheduleListState> {
   /// 已缓存则直接复用，不重新请求网络。
   void switchTab(String tab) {
     if (tab == state.activeTab) return;
-    final key = '${state.scope}:$tab';
+    // 目标 tab 的完整缓存 key（与 [_cacheKey] 格式一致，含 userId/owner 维度），
+    // 命中则直接恢复、不闪 loading。
+    final key = '${_userId ?? ''}:${state.scope}:$tab:${state.selectedOwnerId ?? ''}';
     if (_cache.containsKey(key)) {
       state = state.copyWith(activeTab: tab);
       _restoreFromCache(key);

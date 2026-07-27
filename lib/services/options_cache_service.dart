@@ -6,10 +6,12 @@
 library;
 
 import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:telemarketing_app/services/api_client.dart';
 import 'package:telemarketing_app/services/api_constants.dart';
 import 'package:telemarketing_app/models/option_item.dart';
+import 'package:telemarketing_app/providers/auth_provider.dart';
 
 /// 下拉选项缓存服务
 ///
@@ -27,14 +29,24 @@ class OptionsCacheService {
   bool _localLoaded = false;
   /// 进行中的刷新 Future（并发调用共享同一实例，避免重复请求）
   Future<void>? _loadingFuture;
+  final Ref? _ref;
 
+  /// 旧全局 key（仅用于跨租户 [clearAll] 迁移清理）
   static const _keyCategories = 'cache_options_categories';
   static const _keyProjects = 'cache_options_projects';
   static const _keyUsers = 'cache_options_users';
   static const _keyQuickNotes = 'cache_options_quick_notes';
   static const _keyTime = 'cache_options_time';
 
-  OptionsCacheService({required this._apiClient});
+  /// 当前租户 ID 前缀（跨账号隔离；见 cache_coordinator.dart）
+  String get _tid => _ref?.read(tenantServiceProvider).cachedTenantId ?? '';
+  String get _kCategories => 'cache_options_${_tid}_categories';
+  String get _kProjects => 'cache_options_${_tid}_projects';
+  String get _kUsers => 'cache_options_${_tid}_users';
+  String get _kQuickNotes => 'cache_options_${_tid}_quick_notes';
+  String get _kTime => 'cache_options_${_tid}_time';
+
+  OptionsCacheService({required this._apiClient, this._ref});
 
   /// 缓存是否有效（未过期）
   bool get _isValid =>
@@ -72,10 +84,10 @@ class OptionsCacheService {
       if (timeStr != null) {
         _lastFetchTime = DateTime.tryParse(timeStr);
       }
-      final cats = prefs.getString(_keyCategories);
-      final projs = prefs.getString(_keyProjects);
-      final users = prefs.getString(_keyUsers);
-      final notes = prefs.getString(_keyQuickNotes);
+      final cats = prefs.getString(_kCategories);
+      final projs = prefs.getString(_kProjects);
+      final users = prefs.getString(_kUsers);
+      final notes = prefs.getString(_kQuickNotes);
       if (cats != null) _categories = _decodeList(cats);
       if (projs != null) _projects = _decodeList(projs);
       if (users != null) _users = _decodeList(users);
@@ -90,10 +102,10 @@ class OptionsCacheService {
       if (_lastFetchTime != null) {
         await prefs.setString(_keyTime, _lastFetchTime!.toIso8601String());
       }
-      await prefs.setString(_keyCategories, _encodeList(_categories));
-      await prefs.setString(_keyProjects, _encodeList(_projects));
-      await prefs.setString(_keyUsers, _encodeList(_users));
-      await prefs.setString(_keyQuickNotes, _encodeList(_quickNotes));
+      await prefs.setString(_kCategories, _encodeList(_categories));
+      await prefs.setString(_kProjects, _encodeList(_projects));
+      await prefs.setString(_kUsers, _encodeList(_users));
+      await prefs.setString(_kQuickNotes, _encodeList(_quickNotes));
     } catch (_) {}
   }
 
@@ -214,5 +226,32 @@ class OptionsCacheService {
   Future<void> refresh() async {
     _lastFetchTime = null;
     await _refreshFromApi();
+  }
+
+  /// 跨租户隔离：清空选项缓存（内存 + 磁盘）
+  ///
+  /// 移除新（租户前缀）与旧（全局）两种 key，兼容历史缓存。
+  /// 由 [CacheCoordinator._clearTenantShared] 在跨租户切换时调用。
+  Future<void> clearAll() async {
+    _categories = [];
+    _projects = [];
+    _users = [];
+    _quickNotes = [];
+    _lastFetchTime = null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // 新（租户前缀）key
+      await prefs.remove(_kCategories);
+      await prefs.remove(_kProjects);
+      await prefs.remove(_kUsers);
+      await prefs.remove(_kQuickNotes);
+      await prefs.remove(_kTime);
+      // 旧（全局）key，迁移清理
+      await prefs.remove(_keyCategories);
+      await prefs.remove(_keyProjects);
+      await prefs.remove(_keyUsers);
+      await prefs.remove(_keyQuickNotes);
+      await prefs.remove(_keyTime);
+    } catch (_) {}
   }
 }

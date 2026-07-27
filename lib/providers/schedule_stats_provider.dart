@@ -32,44 +32,60 @@ class _Unset {
 const _unset = _Unset();
 
 /// 日程统计状态
+///
+/// 同时持有「我的」与「团队」两份统计（见 [load]）：
+/// - [mineStats]：个人口径，供 home 角标 / 个人中心 / 日程「我的」视图共用；
+/// - [teamStats]：团队口径，仅 TM/TA，供日程「团队」视图使用。
+/// 日程页 Tab 数字通过 [pendingForScope] / [completedForScope] 按当前
+/// scope 取对应口径，避免「经理看到团队总数但列表是我的」的错位。
 class ScheduleStatsState {
   /// 是否加载中
   final bool isLoading;
 
-  /// 统计结果
-  final ScheduleStats? stats;
+  /// 我的统计（个人口径）
+  final ScheduleStats? mineStats;
+
+  /// 团队统计（仅 TM/TA，null 表示无权限 / 接口不可用）
+  final ScheduleStats? teamStats;
 
   /// 错误信息
   final Object? errorMessage;
 
   const ScheduleStatsState({
     this.isLoading = false,
-    this.stats,
+    this.mineStats,
+    this.teamStats,
     this.errorMessage,
   });
 
   ScheduleStatsState copyWith({
     bool? isLoading,
-    ScheduleStats? stats,
+    ScheduleStats? mineStats,
+    ScheduleStats? teamStats,
     Object? errorMessage = _unset,
   }) {
     return ScheduleStatsState(
       isLoading: isLoading ?? this.isLoading,
-      stats: stats ?? this.stats,
+      mineStats: mineStats ?? this.mineStats,
+      teamStats: teamStats ?? this.teamStats,
       errorMessage:
           errorMessage is _Unset ? this.errorMessage : errorMessage,
     );
   }
 
-  /// 今日待办数（底部 Tab 角标 / 个人中心用，严格今日窗口）
+  /// 今日待办数（底部 Tab 角标 / 个人中心用，严格今日窗口，我的口径）
   /// 与首页 home-summary.todayPending 同源，全端一致。
-  int get todayPending => stats?.todayPending ?? 0;
+  int get todayPending => mineStats?.todayPending ?? 0;
 
-  /// 待办总数（列表 Tab 计数用）
-  int get pending => stats?.pending ?? 0;
+  /// 按 scope 取待办总数（日程列表 Tab 计数用）
+  ///
+  /// [scope] 为 'team' 时返回团队口径，否则返回我的口径。
+  int pendingForScope(String scope) =>
+      (scope == 'team' ? teamStats : mineStats)?.pending ?? 0;
 
-  /// 已完成总数（列表 Tab 计数用）
-  int get completed => stats?.completed ?? 0;
+  /// 按 scope 取已完成总数（日程列表 Tab 计数用）
+  int completedForScope(String scope) =>
+      (scope == 'team' ? teamStats : mineStats)?.completed ?? 0;
 }
 
 /// 日程统计状态管理
@@ -82,28 +98,38 @@ class ScheduleStatsNotifier extends StateNotifier<ScheduleStatsState> {
 
   /// 加载统计
   ///
-  /// TA/TM 角色优先尝试团队统计接口（stats），
-  /// 不可用时（如接口未实现）静默降级为个人统计（mine）。
+  /// 同时拉取「我的」与「团队」两份（TM/TA 才拉团队）：
+  /// - mine 为个人口径，home 角标 / 个人中心 / 日程「我的」视图共用；
+  /// - team 为团队口径，仅 TM/TA，接口不可用静默降级为 null
+  ///   （团队视图 Tab 数字显示 0，但团队头部摘要条由列表 [teamStats] 提供，不受影响）。
+  /// 两份都缓存进 state，日程页按当前 scope 取对应口径，
+  /// 切「我的 / 团队」无需重新请求即可同步数字。
   Future<void> load() async {
     try {
       final service = _ref.read(scheduleServiceProvider);
       final user = _ref.read(authProvider).user;
-      final isManager = user?.role == 'tenant_admin' || user?.role == 'tenant_manager';
+      final isManager =
+          user?.role == 'tenant_admin' || user?.role == 'tenant_manager';
 
-      ScheduleStats stats;
+      // 我的统计（个人口径，必拉）
+      final mine = await service.fetchMyScheduleStats();
+
+      // 团队统计仅 TM/TA；接口不可用降级为 null
+      ScheduleStats? team;
       if (isManager) {
         try {
-          stats = await service.fetchTeamScheduleStats();
+          team = await service.fetchTeamScheduleStats();
         } catch (_) {
-          // 团队统计接口不可用，降级为个人
-          stats = await service.fetchMyScheduleStats();
+          team = null;
         }
-      } else {
-        stats = await service.fetchMyScheduleStats();
       }
 
       if (mounted) {
-        state = state.copyWith(isLoading: false, stats: stats);
+        state = state.copyWith(
+          isLoading: false,
+          mineStats: mine,
+          teamStats: team,
+        );
       }
     } catch (_) {
       if (mounted) {

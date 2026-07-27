@@ -5,15 +5,18 @@
 library;
 
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/services/api_client.dart';
 import 'package:telemarketing_app/services/api_constants.dart';
 import 'package:telemarketing_app/models/call_record.dart';
+import 'package:telemarketing_app/providers/auth_provider.dart';
 
 /// 通话记录接口服务
 class CallService {
   final ApiClient _apiClient;
+  final Ref? _ref;
 
-  CallService({required this._apiClient});
+  CallService({required this._apiClient, this._ref});
 
   // ── 首屏列表缓存（随 App 存活，避免每次进入都请求）──
   /// 缓存 TTL：5 分钟
@@ -23,8 +26,17 @@ class CallService {
   String? _cacheKey;
   DateTime? _cacheTime;
 
-  String _buildKey(String? q, String? answerType) =>
-      '${q ?? ''}|${answerType ?? ''}';
+  String _buildKey(String? q, String? answerType) {
+    final uid = _ref?.read(authProvider).user?.id ?? '';
+    return '$uid|${q ?? ''}|${answerType ?? ''}';
+  }
+
+  /// 跨账号隔离：清空通话列表缓存（见 [CacheCoordinator]）
+  void clear() {
+    _cache = null;
+    _cacheKey = null;
+    _cacheTime = null;
+  }
 
   bool _isCacheValid(String key) =>
       _cache != null &&

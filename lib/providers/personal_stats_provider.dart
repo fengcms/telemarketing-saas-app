@@ -140,7 +140,8 @@ class PersonalStatsNotifier extends StateNotifier<PersonalStatsState> {
   Future<void> load({bool force = false}) async {
     final (from, to) = _currentRange();
     if (from.isEmpty || to.isEmpty) return;
-    final key = '$from~$to';
+    final userId = _ref.read(authProvider).user?.id ?? '';
+    final key = '$userId~$from~$to';
 
     final cached = _cache[key];
     if (!force &&

@@ -111,8 +111,14 @@ class _ScheduleListPageState extends ConsumerState<ScheduleListPage> {
   Widget _buildTabBar(ScheduleListState state, ScheduleStatsState stats) {
     return AppSegmentedTab(
       tabs: [
-        SegmentedTabItem(key: 'pending', label: '待办', count: stats.pending),
-        SegmentedTabItem(key: 'completed', label: '已完成', count: stats.completed),
+        SegmentedTabItem(
+            key: 'pending',
+            label: '待办',
+            count: stats.pendingForScope(state.scope)),
+        SegmentedTabItem(
+            key: 'completed',
+            label: '已完成',
+            count: stats.completedForScope(state.scope)),
       ],
       activeKey: state.activeTab,
       onChanged: (k) => ref.read(scheduleListProvider.notifier).switchTab(k),

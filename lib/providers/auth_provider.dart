@@ -9,6 +9,7 @@ import 'package:telemarketing_app/services/auth_service.dart';
 import 'package:telemarketing_app/services/token_storage.dart';
 import 'package:telemarketing_app/services/local_storage_service.dart';
 import 'package:telemarketing_app/services/tenant_service.dart';
+import 'package:telemarketing_app/providers/cache_coordinator.dart';
 
 // ── Service Providers ──
 
@@ -114,6 +115,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final authService = _ref.read(authServiceProvider);
       final result = await authService.login(email: email, password: password);
 
+      // ── 跨租户判定（必须在 fetchTenantId 前读 prev）──
+      // 详见 docs/dev/PLAN_34_CACHE_ISOLATION.md：同租户换人保留共享缓存，跨租户全清。
+      final tenantService = _ref.read(tenantServiceProvider);
+      final prevTenantId = tenantService.cachedTenantId;
+      // force:true 绕过本地 TTL，确保拿到「本次登录」真实租户 ID，
+      // 否则跨租户但缓存未过期时会误判同租户（见 tenant_service.fetchTenantId）。
+      final newTenantId = await tenantService.fetchTenantId(force: true);
+      final crossTenant = prevTenantId != null && prevTenantId != newTenantId;
+      _ref.read(cacheCoordinatorProvider).onSessionChanged(crossTenant: crossTenant);
+
       if (result.mustResetPassword) {
         // 管理员重置了密码，跳转强制改密页
         state = AuthState(
@@ -191,6 +202,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     final authService = _ref.read(authServiceProvider);
     await authService.logout();
+    // 只清用户私有缓存；租户共享（options/profile）保留供同租户换人加速
+    _ref.read(cacheCoordinatorProvider).onLogout();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
@@ -204,6 +217,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (ok) {
       final tokenStorage = _ref.read(tokenStorageProvider);
       await tokenStorage.clearAll();
+      _ref.read(cacheCoordinatorProvider).onLogout();
       state = const AuthState(status: AuthStatus.unauthenticated);
     }
     return ok;
