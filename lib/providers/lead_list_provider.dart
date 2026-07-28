@@ -38,7 +38,7 @@ class LeadListState {
   final String? ownerId;        // 归属人筛选（TM/TA）
   final int? dateFrom;
   final int? dateTo;
-  final String sortBy;          // -updatedAt / nextFollowupAt
+  final String sortBy;          // -updatedAt / pendingPriority(待跟进优先)
 
   // 缓存选项数据
   final List<OptionItem> categories;
@@ -61,7 +61,7 @@ class LeadListState {
     this.ownerId,
     this.dateFrom,
     this.dateTo,
-    this.sortBy = 'nextFollowupAt',
+    this.sortBy = 'pendingPriority',
     this.categories = const [],
     this.projects = const [],
     this.users = const [],
@@ -276,7 +276,7 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
 
   void toggleSort() {
     final newSort =
-        state.sortBy == '-updatedAt' ? 'nextFollowupAt' : '-updatedAt';
+        state.sortBy == '-updatedAt' ? 'pendingPriority' : '-updatedAt';
     state = state.copyWith(sortBy: newSort, isInitialLoading: true);
     _reloadPage(1);
   }

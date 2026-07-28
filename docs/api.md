@@ -709,6 +709,44 @@ curl -X POST https://tm-api-test.kao9.com/api/tenant/quick-notes \
 
 > `content` 必填（≤500 字），`sort` 可选（排序权重，默认 0），`type` 可选（场景分类闭集枚举，缺省 `followup`；传其他值 → `VALIDATION` 400）。无 PATCH 端点，编辑时删后重建即可。
 
+### POST /api/tenant/quick-notes/batch
+
+批量新增快捷备注（仅 TA）。`content` 为多行文本，按换行符（`\n` / `\r\n`）分割为多条，空行自动跳过；`sort` 采用**追加式**——在该 `type` 现有最大 `sort` 之后按行序续排（第 1 行 = 现有最大+1，第 2 行 = 现有最大+2…），不与已有备注排序冲突。整批原子写入（D1 `db.batch`），记一条审计 `quick_note.batch_create`。
+
+```bash
+curl -X POST https://tm-api-test.kao9.com/api/tenant/quick-notes/batch \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <ta_token>' \
+  -d '{"type":"followup","content":"已加微信\n近期有看房意向\n下月回款"}'
+```
+
+**请求体：**
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `type` | string | 是 | 场景分类闭集枚举：`followup`/`schedule`/`call`/`assign`/`recycle`；非法值 → `VALIDATION` 400 |
+| `content` | string | 是 | 多行文本，按换行分割；仅空白行被跳过；全空 → `VALIDATION` 400；单行 >500 字 → `VALIDATION 400`（错误信息含「line N」指明第几行） |
+
+**响应（`201`）：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "created": 3,
+    "type": "followup",
+    "items": [
+      { "id": "uuid", "content": "已加微信", "type": "followup", "sort": 6 },
+      { "id": "uuid", "content": "近期有看房意向", "type": "followup", "sort": 7 },
+      { "id": "uuid", "content": "下月回款", "type": "followup", "sort": 8 }
+    ]
+  },
+  "error": null
+}
+```
+
+> 前端建议：批量导入适合「整批配置某分类快捷备注」场景。若需覆盖式（先清空该 `type` 再导入），请先 `GET ?type=X` 拿到全部 `id` 再逐条 `DELETE`，或联系后端加覆盖模式。当前为**追加模式**（保留已有备注）。
+
 ### DELETE /api/tenant/quick-notes/:id
 
 软删快捷备注（仅 TA；不可恢复）。
@@ -817,6 +855,8 @@ curl 'https://tm-api-test.kao9.com/api/tenant/options/quick-notes?type=schedule'
 | `scope` | string | `mine` / `public` / `all` / `blocked` |
 | `raw` | 1 | 传入 `raw=1` 返回完整手机号（仅 PSA/TA） |
 | `erased` | 0/1 | PIPL 擦除过滤：`0`=仅未擦除；`1`=仅已擦除；缺省不过滤 |
+| `sort` | string | 排序字段，逗号分隔，前缀 `-` 表示降序。可用 DSL 白名单字段：`createdAt` / `updatedAt` / `nextFollowupAt` / `status` 等。缺省 `createdAt desc`。 |
+| `sort=pendingPriority` | — | **待跟进优先**专用排序（App「待跟进优先」场景请用此，勿用 `sort=nextFollowupAt`）：`assigned` 状态置顶，其余按 `nextFollowupAt` 升序、无跟进计划的排最后（NULLS LAST）。 |
 
 > TE 仅 `mine`。若租户开启 `allowSelfClaim`（`GET /profile` 可读），TE 还可使用 `scope=public` 浏览公海（自动过滤禁拨 + 无主线索）。
 

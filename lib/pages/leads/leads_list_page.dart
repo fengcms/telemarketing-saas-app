@@ -330,14 +330,12 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
                     state: state,
                     activeTab: _activeTab,
                     showPublicTab: _showPublicTab,
+                    isManager: isManager,
+                    total: state.total,
                     onTabChanged: _onTabChanged,
                     onShowSort: () => _showSortSheet(state),
                     onShowFilter: _showFilterSheet,
                   ),
-
-                  // ── 团队统计摘要条（仅 TM/TA 可见，显示共 X 条） ──
-                  if (isManager && !isPublic)
-                    _buildSummaryBar(state.total),
 
                   // ── 搜索栏（双控制器，切换 Tab 不丢失文字） ──
                   AppSearchBar(
@@ -372,44 +370,6 @@ class _LeadsListPageState extends ConsumerState<LeadsListPage> {
   }
 
   // ── 顶部导航栏 ──
-
-  /// 统计摘要条（仅 TM/TA 可见）
-  Widget _buildSummaryBar(int total) {
-    return Container(
-      width: double.infinity,
-      height: 40,
-      color: BrandColors.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      alignment: Alignment.centerLeft,
-      child: RichText(
-        text: TextSpan(
-          style: const TextStyle(fontSize: 12, color: Color(0xFF4E5969)),
-          children: [
-            const TextSpan(text: '共 '),
-            TextSpan(
-              text: _formatNum(total),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: BrandColors.primary,
-              ),
-            ),
-            const TextSpan(text: ' 条'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatNum(int n) {
-    if (n >= 10000) return '${(n / 10000).toStringAsFixed(1)}万';
-    final str = n.toString();
-    final buf = StringBuffer();
-    for (var i = 0; i < str.length; i++) {
-      if (i > 0 && (str.length - i) % 3 == 0) buf.write(',');
-      buf.write(str[i]);
-    }
-    return buf.toString();
-  }
 
   // ── 排序弹窗 ──
 

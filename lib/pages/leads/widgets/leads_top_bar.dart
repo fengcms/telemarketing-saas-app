@@ -9,12 +9,16 @@ import 'package:telemarketing_app/providers/lead_list_provider.dart';
 ///
 /// 布局：
 /// - 开启公海可领（showPublicTab=true）：左侧「我的线索 / 公海线索」双 Tab + 右侧筛选/排序
-/// - 关闭公海可领（showPublicTab=false）：居中标题「线索」+ 右侧筛选/排序
-///   （与「我的」页标题居中风格一致，但保留筛选/排序功能，经理/管理员仍可筛选排序）
+/// - 关闭公海可领（showPublicTab=false）：
+///   - 员工视角：居中标题「线索」+ 右侧筛选/排序
+///   - 经理/管理员视角：左侧「共 X 条」统计 + 居中标题「线索」+ 右侧筛选/排序
+///     （「共 X 条」原在标题栏下方独立占一行，现移入顶栏左上角，节省一行空间）
 class LeadsTopBar extends StatelessWidget {
   final LeadListState state;
   final int activeTab;
   final bool showPublicTab;
+  final bool isManager;
+  final int total;
   final ValueChanged<int> onTabChanged;
   final VoidCallback onShowSort;
   final VoidCallback onShowFilter;
@@ -24,6 +28,8 @@ class LeadsTopBar extends StatelessWidget {
     required this.state,
     required this.activeTab,
     this.showPublicTab = false,
+    this.isManager = false,
+    this.total = 0,
     required this.onTabChanged,
     required this.onShowSort,
     required this.onShowFilter,
@@ -55,6 +61,7 @@ class LeadsTopBar extends StatelessWidget {
             _buildSortButton(),
           ] else
             // 关闭公海可领：居中标题「线索」+ 右侧筛选/排序（叠加布局，标题真正居中）
+            // 经理/管理员额外在左侧显示「共 X 条」统计
             Expanded(
               child: Stack(
                 alignment: Alignment.center,
@@ -70,8 +77,19 @@ class LeadsTopBar extends StatelessWidget {
                     ),
                   ),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      if (isManager)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16),
+                          child: Text(
+                            '共 ${_formatNum(total)} 条',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xB3FFFFFF),
+                            ),
+                          ),
+                        ),
+                      const Spacer(),
                       _buildFilterButton(),
                       _buildSortButton(),
                     ],
@@ -162,5 +180,17 @@ class LeadsTopBar extends StatelessWidget {
         child: const Icon(Icons.sort_rounded, size: 22, color: Colors.white),
       ),
     );
+  }
+
+  /// 数字格式化：>=1万 显示「x.x万」，否则每三位加逗号
+  String _formatNum(int n) {
+    if (n >= 10000) return '${(n / 10000).toStringAsFixed(1)}万';
+    final str = n.toString();
+    final buf = StringBuffer();
+    for (var i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) buf.write(',');
+      buf.write(str[i]);
+    }
+    return buf.toString();
   }
 }

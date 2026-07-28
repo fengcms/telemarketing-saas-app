@@ -980,6 +980,49 @@ ApiClient 拦截器链：
 
 ---
 
+## 节点 v0.36 — 待跟进优先专用排序 + 顶栏计数整合（2026-07-28）
+
+> 计划：`docs/dev/PLAN_LEAD_SORT_PENDING_PRIORITY-2026-07-28.md`（排序）、`docs/dev/PLAN_LEADS_TOPBAR_COUNT-2026-07-28.md`（顶栏计数）
+> 后端对接：`docs/api.md` 补 `GET /api/tenant/leads` 的 `sort` / `sort=pendingPriority` 说明
+
+### 完成内容
+
+| 模块 | 状态 | 说明 |
+|------|:----:|------|
+| 待跟进优先专用排序 | ✅ | 「我的线索」默认排序与排序弹窗「待跟进优先」由 `nextFollowupAt` 改为后端专用 `pendingPriority`（assigned 置顶、其余按 nextFollowupAt 升序、无计划排尾） |
+| 顶栏计数整合 | ✅ | 经理/管理员视角原独立的「共 X 条」统计行移入标题栏左上角，省掉一行；员工视角不变 |
+
+### 排序改动文件
+
+| 文件 | 改动 |
+|------|------|
+| `lib/providers/lead_list_provider.dart` | `sortBy` 默认 `'nextFollowupAt'`→`'pendingPriority'`；`toggleSort()` 切换值同步改 |
+| `lib/pages/leads/widgets/leads_filter_sheet.dart` | 排序弹窗「待跟进优先」选项 value `'nextFollowupAt'`→`'pendingPriority'` |
+
+### 顶栏计数改动文件
+
+| 文件 | 改动 |
+|------|------|
+| `lib/pages/leads/widgets/leads_top_bar.dart` | 新增 `isManager`/`total` 参数；`!showPublicTab` 分支用 `Stack` 居中「线索」+ `Row`（`isManager` 时左侧插「共 X 条」白70 字） |
+| `lib/pages/leads/leads_list_page.dart` | `LeadsTopBar` 传 `isManager/total`；删除独立 `_buildSummaryBar`/`_formatNum`（逻辑迁入顶栏） |
+
+### 关键决策
+
+| 决策 | 选择 | 原因 |
+|------|------|------|
+| 待跟进优先排序 | 用专用 `pendingPriority` 而非 `nextFollowupAt` | 后端确认 `nextFollowupAt` 对无计划线索为 null、语义混乱；专用参数语义正确（assigned 置顶、NULL 排尾） |
+| 顶栏计数布局 | 左计数 / 中标题 / 右图标（不采用标题左对齐） | 用户拍板文字短不重叠，保留「线索」居中视觉一致 |
+
+### 验证
+
+| 验证项 | 结果 |
+|------|------|
+| `flutter analyze lib/pages/leads/` | 0 issue |
+| 构建 + 装真机 | `app-release.apk`，Redmi K60(`3e06fd6d`) 实测通过 |
+| 真机实测 | 默认即「待跟进优先」顺序；经理/管理员顶栏左侧显示「共 X 条」、无独立统计行；员工视角不变 |
+
+---
+
 ## 下一步节点规划
 
 > ⚠️ 下方 P0 核心流程**实际已完成**，见 v0.1~v0.11。剩余工作均为 P1 及以后。

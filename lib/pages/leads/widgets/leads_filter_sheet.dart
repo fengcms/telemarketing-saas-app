@@ -31,7 +31,7 @@ class LeadsSortSheet extends ConsumerWidget {
           const SizedBox(height: 16),
           _sortOption(context, ref, '最近更新', '-updatedAt', state.sortBy),
           const Divider(height: 1),
-          _sortOption(context, ref, '待跟进优先', 'nextFollowupAt', state.sortBy),
+          _sortOption(context, ref, '待跟进优先', 'pendingPriority', state.sortBy),
           const SizedBox(height: 16),
         ],
       ),
