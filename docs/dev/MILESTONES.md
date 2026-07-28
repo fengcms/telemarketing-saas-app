@@ -1023,6 +1023,32 @@ ApiClient 拦截器链：
 
 ---
 
+## 节点 v0.36.1 — 修复拨号返回跟进写错线索（2026-07-28）
+
+> 计划：`docs/dev/PLAN_FIX_FOLLOWUP_WRONG_LEAD-2026-07-28.md`
+
+### 问题
+
+员工在详情页内点「下一个」切换线索后，拨号返回自动弹出的跟进面板，把跟进内容写到了**上一个**线索。
+
+### 根因
+
+`LeadDetailPage` 是常驻页面实例；底部「上一个/下一个」只改全局 `leadDetailProvider` 状态、不新开路由页。而 `didChangeAppLifecycleState` 自动弹跟进面板时用的是 `widget.leadId`（进入页时的初始线索 ID，切换后不变），导致写错线索。手动「跟进」按钮用 `state.detail!.id` 正确，故仅拨号返回路径出错。
+
+### 修复
+
+`lib/pages/leads/lead_detail_page.dart`：`didChangeAppLifecycleState` 改用 `ref.read(leadDetailProvider).detail?.id` 读取**当前正在查看**的线索 ID，替代 `widget.leadId`。
+
+### 验证
+
+| 验证项 | 结果 |
+|------|------|
+| `flutter analyze lib/pages/leads/lead_detail_page.dart` | No issues |
+| 构建 + 装真机 | `app-release.apk`(62.0MB)，Redmi K60(`3e06fd6d`) 安装成功 |
+| 真机实测 | 进入 A 拨号返回写 A；点下一个到 B 拨号返回写 B（不再串到 A）；手动跟进路径正常 |
+
+---
+
 ## 下一步节点规划
 
 > ⚠️ 下方 P0 核心流程**实际已完成**，见 v0.1~v0.11。剩余工作均为 P1 及以后。
