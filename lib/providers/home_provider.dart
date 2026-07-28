@@ -115,6 +115,8 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
   final Ref _ref;
   Timer? _pollingTimer;
   bool _isDisposed = false;
+  /// 上次静默刷新（loadData / _silentRefresh）发起时间，用于 onResume 节流
+  DateTime? _lastSilentRefreshAt;
 
   HomePageNotifier(this._ref) : super(const HomePageState()) {
     // 监听认证状态：登出时重置首页数据，避免切换账号后显示旧数据
@@ -141,6 +143,7 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
   /// 并行加载所有首页数据（首屏 + 下拉刷新）
   Future<void> loadData() async {
     if (_isDisposed) return;
+    _lastSilentRefreshAt = DateTime.now(); // 记录首屏加载时间，避免冷启动后 resumed 立即重复刷新
 
     final today = _getTodayDate();
     final homeService = _ref.read(homeServiceProvider);
@@ -242,6 +245,7 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
   /// 静默刷新（轮询 + 后台回前台）
   Future<void> _silentRefresh() async {
     if (_isDisposed) return;
+    _lastSilentRefreshAt = DateTime.now();
     final today = _getTodayDate();
     final homeService = _ref.read(homeServiceProvider);
 
@@ -295,8 +299,14 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
   /// APP 回到前台时触发
   void onResume() {
     if (_isDisposed) return;
-    _startPolling(); // 重启定时器
-    // 检查是否距上次更新超过 10 分钟
+    _startPolling(); // 重启定时器（切回前台继续 10 分钟轮询）
+    // 节流：距上次静默刷新不足 60 秒则跳过网络请求，
+    // 避免拨号 / 截图 / 下拉通知栏等瞬时前后台切换重复拉取
+    final now = DateTime.now();
+    if (_lastSilentRefreshAt != null &&
+        now.difference(_lastSilentRefreshAt!).inSeconds < 60) {
+      return;
+    }
     _silentRefresh();
   }
 

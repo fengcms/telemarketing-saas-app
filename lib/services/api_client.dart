@@ -153,6 +153,12 @@ class ApiClient {
       return null;
     } finally {
       _isRefreshing = false;
+      // 兜底：任何提前 return（如 refreshToken 缺失）都不应让队列请求永久挂起，
+      // 否则会拖死依赖该 future 的 options 缓存加载，表现为列表长期骨架屏。
+      for (final pending in _refreshQueue) {
+        pending.completer.complete(null);
+      }
+      _refreshQueue.clear();
     }
   }
 

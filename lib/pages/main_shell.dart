@@ -1,16 +1,11 @@
-/// 当前选中的底部 Tab 索引
-library;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:telemarketing_app/providers/tab_provider.dart';
 import 'home/home_page.dart';
 import 'leads/leads_list_page.dart';
 import 'profile/profile_page.dart';
 import 'schedules/schedule_list_page.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
-
-/// 当前选中的底部 Tab 索引
-final currentTabProvider = StateProvider<int>((ref) => 0);
 
 /// 主页面壳（底部 Tab 导航）
 ///

@@ -17,6 +17,8 @@ import 'package:telemarketing_app/providers/call_service_provider.dart';
 import 'package:telemarketing_app/providers/lead_detail_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'package:telemarketing_app/providers/options_provider.dart';
+import 'package:telemarketing_app/providers/home_provider.dart';
+import 'package:telemarketing_app/providers/auth_provider.dart';
 
 /// 跨账号缓存协调器
 class CacheCoordinator {
@@ -28,6 +30,19 @@ class CacheCoordinator {
   ///
   /// 租户共享（options / 租户 profile）保留，供同租户换人加速访问。
   void onLogout() => _clearUserPrivate();
+
+  /// 清除所有本地缓存数据（含租户共享），用于「清除缓存」功能。
+  ///
+  /// 与 [onLogout] 区别：额外清 options（磁盘+内存）、租户 profile/settings
+  /// （磁盘+内存）、首页状态（停轮询）、团队聚合统计，回到近似「刚安装」的
+  /// 本地状态。不含登录凭据（属 TokenStorage）与登录预填（属 LocalStorageService）。
+  Future<void> clearAllData() async {
+    _clearUserPrivate();
+    await _ref.read(optionsCacheProvider).clearAll();
+    await _ref.read(tenantServiceProvider).clearAll();
+    _ref.read(homePageProvider.notifier).reset();
+    _ref.invalidate(teamStatsProvider);
+  }
 
   /// 登录成功后：私有必清；跨租户再清共享。
   void onSessionChanged({required bool crossTenant}) {

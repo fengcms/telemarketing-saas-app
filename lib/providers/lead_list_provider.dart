@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/lead.dart';
 import 'package:telemarketing_app/models/option_item.dart';
 import 'package:telemarketing_app/services/lead_service.dart';
+import 'package:telemarketing_app/providers/options_provider.dart';
 import 'auth_provider.dart';
 
 // ── Providers ──
@@ -157,7 +158,7 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
     // 并行请求数据 + 缓存选项
     final results = await Future.wait([
       _fetchPage(service, 1),
-      _loadOptions(service),
+      _loadOptions(),
     ]);
 
     final pageResult = results[0] as ({List<Lead> leads, int total});
@@ -190,17 +191,23 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
     }
   }
 
-  Future<void> _loadOptions(LeadService service) async {
+  Future<void> _loadOptions() async {
     try {
+      // 走 OptionsCacheService（10h TTL + 磁盘缓存 + 并发去重），
+      // 不再走 LeadService.fetch* 的无缓存直接请求，避免每次刷新都发 options 接口
+      final cache = _ref.read(optionsCacheProvider);
       final results = await Future.wait([
-        service.fetchCategories(),
-        service.fetchProjects(),
-        service.fetchUsers(),
+        cache.getCategories(),
+        cache.getProjects(),
+        cache.getUsers(),
       ]);
-      final cats = results[0];
-      final projs = results[1];
-      final users = results[2];
-      state = state.copyWith(categories: cats, projects: projs, users: users);
+      if (mounted) {
+        state = state.copyWith(
+          categories: results[0],
+          projects: results[1],
+          users: results[2],
+        );
+      }
     } catch (_) {}
   }
 
@@ -343,8 +350,8 @@ class LeadListNotifier extends StateNotifier<LeadListState> {
   Future<void> refresh() async {
     state = state.copyWith(isInitialLoading: true);
     _reloadPage(1);
-    // 并行刷新选项数据（项目/分类/用户），与 _loadInitial 一致
-    await _loadOptions(_ref.read(leadServiceProvider));
+    // 并行刷新选项数据（项目/分类/用户），走带缓存的 OptionsCacheService
+    await _loadOptions();
   }
 
   void _reloadPage(int page) {

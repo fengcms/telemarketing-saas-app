@@ -223,6 +223,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return ok;
   }
 
+  /// 清除本地所有缓存数据（含登录凭据）并跳登录页重新登录。
+  ///
+  /// 与 [logout] 区别：
+  /// - 清**所有**本地数据（含租户共享 options / tenant profile），[logout] 仅清用户私有；
+  /// - **不调**后端 `/api/auth/logout`，不吊销后端会话、不影响其他设备（纯本地清除）；
+  /// - **保留** [LocalStorageService] 的登录预填（saved_login_email/password）。
+  ///
+  /// 由设置页「清除缓存」调用：清除后状态置 [AuthStatus.unauthenticated]，
+  /// [AuthGate] 自动跳转登录页（清除任务栈）。
+  Future<void> clearLocalCache() async {
+    final tokenStorage = _ref.read(tokenStorageProvider);
+    await tokenStorage.clearAll();
+    await _ref.read(cacheCoordinatorProvider).clearAllData();
+    state = const AuthState(status: AuthStatus.unauthenticated);
+    // 重建 API 层：清除 _isRefreshing / 刷新队列 / options._loadingFuture 等
+    // 跨清除缓存存活的脏状态，等价于「杀 App 重开」，避免重新登录后列表卡骨架屏
+    // （apiClient 是单例 Provider，不清会复用 401 刷新死锁的脏状态）。
+    _ref.invalidate(apiClientProvider);
+  }
+
   /// 修改密码（用户主动修改，需旧密码复核）
   ///
   /// 调 POST /api/auth/change-password。成功时清除本地 Token 并返回 null；
