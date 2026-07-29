@@ -85,8 +85,12 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
   /// [widget.leadId] 不一致时（即用户导航到了其他线索），自动关闭面板。
   ///
   /// 用 [previous] 非空判断避免面板首次打开时因数据未加载而误关。
+  ///
+  /// 使用 [listenManual] 而非 [listen] 是因为此方法在 [initState] 中调用，
+  /// 而 Riverpod 2.6.1 的 [listen] 仅允许在 [build] 方法内使用。
+  /// [listenManual] 返回的订阅会在 widget dispose 时自动清理。
   void _watchLeadChange() {
-    ref.listen(leadDetailProvider, (LeadDetailState? previous, LeadDetailState next) {
+    ref.listenManual(leadDetailProvider, (LeadDetailState? previous, LeadDetailState next) {
       // previous?.detail != null → 确保只在上次有数据后才触发检查
       //（面板刚打开时 detail 可能为 null，跳过避免误关闭）
       if (previous?.detail != null &&
