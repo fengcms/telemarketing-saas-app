@@ -60,6 +60,9 @@ class ApiConstants {
 
   static const String statsMine = '/api/tenant/stats/mine';
   static const String statsTeam = '/api/tenant/stats';
+  // 经理/管理员 · 团队当日概览（首页四宫格 + 「我的」页团队业绩卡共用）
+  // 仅 tenant_manager / tenant_admin 可访问，实时 COUNT，无参
+  static const String statsToday = '/api/tenant/stats/today';
 
   // ── 日程 ──
 

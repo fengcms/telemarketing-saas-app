@@ -34,6 +34,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _logouting = false;
   /// 全设备登出中
   bool _logoutingAll = false;
+  /// 清除缓存中
+  bool _clearing = false;
 
   @override
   void initState() {
@@ -113,6 +115,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       AppToast.show(context, '已在所有设备上退出登录');
     } else {
       AppToast.show(context, '操作失败，请重试');
+    }
+  }
+
+  /// 清除缓存
+  ///
+  /// 清除本机所有接口缓存（含登录凭据）后跳登录页重新登录。
+  /// 纯本地清除：不调后端登出接口、不吊销会话、不影响其他设备、保留账号预填。
+  Future<void> _onClearCache() async {
+    final confirmed = await AppDialog.confirm(
+      context: context,
+      title: '清除缓存',
+      content: '将清除本机所有接口缓存数据（含登录信息），清除后需重新登录。确定继续？',
+      confirmText: '清除',
+      confirmColor: BrandColors.error,
+      onConfirm: () {},
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _clearing = true);
+    await ref.read(authProvider.notifier).clearLocalCache();
+    // clearLocalCache 已将状态设为 unauthenticated，AuthGate 自动跳登录页
+    if (mounted) {
+      setState(() => _clearing = false);
+      Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }
 
@@ -232,6 +258,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             _buildSectionTitle('账户操作'),
             _buildCard(
               children: [
+                ListTile(
+                  leading: const Icon(Icons.cleaning_services, size: 22),
+                  title: const Text('清除缓存'),
+                  enabled: !_clearing,
+                  onTap: _clearing ? null : _onClearCache,
+                  trailing: _clearing
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        )
+                      : null,
+                ),
+                const Divider(height: 0, indent: 52),
                 ListTile(
                   leading: Icon(Icons.logout, size: 22, color: BrandColors.error),
                   title: Text(

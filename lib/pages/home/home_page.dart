@@ -17,6 +17,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:telemarketing_app/widgets/app_notice_bar.dart';
 import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/providers/home_provider.dart';
+import 'package:telemarketing_app/providers/tab_provider.dart';
 import 'home_skeletons.dart';
 import 'home_stats_section.dart';
 import 'home_schedule_section.dart';
@@ -65,8 +66,13 @@ class _HomePageState extends ConsumerState<HomePage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final notifier = ref.read(homePageProvider.notifier);
     if (state == AppLifecycleState.resumed) {
-      notifier.onResume();
+      // 仅在首页是当前 Tab 时才刷新，避免在其他页面（如线索详情拨号）前后台切换时
+      // 无谓请求 stats/mine 与 home-summary
+      if (ref.read(currentTabProvider) == 0) {
+        notifier.onResume();
+      }
     } else if (state == AppLifecycleState.paused) {
+      // 进入后台统一暂停轮询（与当前 Tab 无关，暂停无害）
       notifier.onPause();
     }
   }
@@ -95,6 +101,13 @@ class _HomePageState extends ConsumerState<HomePage>
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homePageProvider);
+
+    // 切回首页 Tab 时主动刷新（替代原先依赖全局 resumed 的那次刷新）
+    ref.listen(currentTabProvider, (prev, next) {
+      if (next == 0) {
+        ref.read(homePageProvider.notifier).onResume();
+      }
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F3F3),

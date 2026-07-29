@@ -1,7 +1,7 @@
 /// 下拉选项缓存服务
 ///
 /// 缓存分类/项目等下拉选项数据，避免重复请求。
-/// 内存缓存 TTL 在 [ApiConstants.optionsCacheTTL] 中配置（默认 1800 秒/30 分钟）。
+/// 内存缓存 TTL 在 [ApiConstants.optionsCacheTTL] 中配置（默认 36000 秒/10 小时）。
 /// 同时持久化到 SharedPreferences，重开 APP 后先加载本地缓存再后台刷新。
 library;
 
@@ -16,7 +16,7 @@ import 'package:telemarketing_app/providers/auth_provider.dart';
 /// 下拉选项缓存服务
 ///
 /// 缓存分类/项目等下拉选项数据，避免重复请求。
-/// 内存缓存 TTL 在 [ApiConstants.optionsCacheTTL] 中配置（默认 1800 秒/30 分钟）。
+/// 内存缓存 TTL 在 [ApiConstants.optionsCacheTTL] 中配置（默认 36000 秒/10 小时）。
 /// 同时持久化到 SharedPreferences，重开 APP 后先加载本地缓存再后台刷新。
 class OptionsCacheService {
   final ApiClient _apiClient;
@@ -27,6 +27,8 @@ class OptionsCacheService {
   List<OptionItem> _quickNotes = [];
   DateTime? _lastFetchTime;
   bool _localLoaded = false;
+  /// 是否已确保租户 ID 从磁盘加载（见 [_ensureLoaded] 时序修复）
+  bool _tenantIdEnsured = false;
   /// 进行中的刷新 Future（并发调用共享同一实例，避免重复请求）
   Future<void>? _loadingFuture;
   final Ref? _ref;
@@ -61,6 +63,21 @@ class OptionsCacheService {
   /// 回退成原始 id 并被 FutureProvider 永久缓存（表现即「归属」显示 id）。
   /// 改为 await 同一刷新 Future（并发调用共享，仅发起一次请求）。
   Future<void> _ensureLoaded() async {
+    // 关键修复：先确保租户 ID 已从磁盘加载。
+    // 否则首屏（线索卡片等）在 TenantService 尚未 _loadFromLocal 时，
+    // options 会用空前缀（_tid=''）读磁盘缓存，拿到空数据；
+    // 而 TTL 内又不会回退 API 刷新，表现即「分类/项目显示成 ID」。
+    // fetchTenantId() 内部先 _loadFromLocal（不依赖网络），仅租户缓存
+    // 过期时才会请求 profile；冷启动常见场景仅一次磁盘读取。
+    if (!_tenantIdEnsured) {
+      try {
+        await _ref?.read(tenantServiceProvider).fetchTenantId();
+      } catch (_) {
+        // 忽略：tenant 拉取失败不影响后续逻辑
+      }
+      _tenantIdEnsured = true;
+    }
+
     // 先尝试从本地加载
     if (!_localLoaded) {
       await _loadFromLocal();
@@ -239,6 +256,7 @@ class OptionsCacheService {
     _users = [];
     _quickNotes = [];
     _lastFetchTime = null;
+    _tenantIdEnsured = false;
     try {
       final prefs = await SharedPreferences.getInstance();
       // 新（租户前缀）key

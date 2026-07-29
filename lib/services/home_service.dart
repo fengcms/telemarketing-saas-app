@@ -12,6 +12,7 @@ import 'package:telemarketing_app/services/api_exception.dart';
 import 'package:telemarketing_app/models/home_stats.dart';
 import 'package:telemarketing_app/models/personal_stats.dart';
 import 'package:telemarketing_app/models/home_summary.dart';
+import 'package:telemarketing_app/models/manager_today_stats.dart';
 
 /// 首页看板数据服务
 class HomeService {
@@ -91,6 +92,29 @@ class HomeService {
         statusCode: 200,
         code: 'UNKNOWN',
         message: '获取首页日程失败',
+      );
+    } on DioException catch (e) {
+      throw ApiClient.parseError(e);
+    }
+  }
+
+  /// 获取经理/管理员团队当日概览
+  ///
+  /// 调 GET /api/tenant/stats/today（无参，仅 TM/TA 可访问）。
+  /// 返回 [ManagerTodayStats]（今日跟进/接通/转化/新增/待办 + 较昨日环比）。
+  /// 数据为实时 COUNT（北京时间今日窗口），**非** dailyTrend 宽表口径。
+  /// TE 调用后端返回 403，前端应在调用前自行按角色判断，避免误调。
+  Future<ManagerTodayStats> fetchManagerTodayStats() async {
+    try {
+      final response = await _apiClient.dio.get(ApiConstants.statsToday);
+      final data = response.data;
+      if (data is Map && data['success'] == true) {
+        return ManagerTodayStats.fromJson(data as Map<String, dynamic>);
+      }
+      throw const ApiException(
+        statusCode: 200,
+        code: 'UNKNOWN',
+        message: '获取团队今日统计失败',
       );
     } on DioException catch (e) {
       throw ApiClient.parseError(e);

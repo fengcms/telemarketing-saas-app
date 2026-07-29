@@ -86,11 +86,17 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage>
         _recentlyDialed = false;
         // 通话结束返回，自动弹出跟进面板
         // 用 addPostFrameCallback 确保 build 完成后执行
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            showFollowUpPanel(context, leadId: widget.leadId, fromDial: true);
-          }
-        });
+        // 注意：必须用「当前正在查看的线索 ID」，不能用 widget.leadId ——
+        // widget.leadId 是进入详情页时的初始线索，点「上一个/下一个」后不会变，
+        // 会导致跟进信息写错线索（见 PLAN_FIX_FOLLOWUP_WRONG_LEAD）。
+        final currentLeadId = ref.read(leadDetailProvider).detail?.id;
+        if (currentLeadId != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              showFollowUpPanel(context, leadId: currentLeadId, fromDial: true);
+            }
+          });
+        }
       }
     } else if (lifeState == AppLifecycleState.paused) {
       // app 进入后台时不操作，保持标记

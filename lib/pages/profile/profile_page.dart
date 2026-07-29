@@ -10,7 +10,8 @@
 /// 数据来源：
 /// - 用户信息：authProvider（本地缓存，来自登录响应）
 /// - 所属租户：tenantService.fetchTenantName()（GET /api/tenant/profile）
-/// - 业绩概览：homeService.fetchMyStats(today)（GET /api/tenant/stats/mine）
+/// - 业绩概览：TE 用 homeService.fetchMyStats(today)（GET /api/tenant/stats/mine）；
+///   TM/TA 改用 homeService.fetchManagerTodayStats()（GET /api/tenant/stats/today，团队当日）
 /// - 今日待办：共享 scheduleStatsProvider.todayPending（GET /api/tenant/schedules/stats/mine，严格今日窗口）
 library;
 
@@ -18,7 +19,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/home_stats.dart';
+import 'package:telemarketing_app/models/manager_today_stats.dart';
 import 'package:telemarketing_app/theme/role_label.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 import 'package:telemarketing_app/pages/customers/customer_list_page.dart';
 import 'package:telemarketing_app/pages/settings/settings_page.dart';
@@ -27,6 +30,7 @@ import 'package:telemarketing_app/pages/personal_stats/personal_stats_page.dart'
 import 'package:telemarketing_app/pages/theme_preview_page.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_menu_row.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_stats_card.dart';
+import 'package:telemarketing_app/pages/profile/widgets/team_stats_overview_card.dart';
 import 'package:telemarketing_app/pages/profile/widgets/profile_user_card.dart';
 import 'package:telemarketing_app/pages/schedules/widgets/schedule_skeleton.dart';
 import 'package:telemarketing_app/providers/auth_provider.dart';
@@ -35,12 +39,6 @@ import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'package:telemarketing_app/core/dev_tools.dart';
 import 'package:telemarketing_app/widgets/app_toast.dart';
-
-// ── 颜色常量（对齐 TDesign 设计规范）──
-const Color _brandColor = Color(0xFF0052D9);
-const Color _pageBg = Color(0xFFF3F3F3);
-const Color _textSecondary = Color(0xFFA6A6A6);
-const Color _errorColor = Color(0xFFD54941);
 
 /// 个人中心页
 ///
@@ -70,6 +68,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   /// 业绩统计数据（null 表示未加载）
   HomeStats? _stats;
 
+  /// 团队当日统计（TM/TA 视角；TE 为 null）
+  /// 来自 [HomeService.fetchManagerTodayStats]（GET /api/tenant/stats/today）
+  ManagerTodayStats? _managerTodayStats;
+
   @override
   void initState() {
     super.initState();
@@ -86,27 +88,36 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     super.dispose();
   }
 
-  /// 并行业绩数据：租户名 + 今日业绩
+  /// 并行业绩数据：租户名 + 当日业绩/团队业绩
   ///
+  /// - TE：拉个人 [HomeService.fetchMyStats]（GET /api/tenant/stats/mine）
+  /// - TM/TA：拉团队 [HomeService.fetchManagerTodayStats]（GET /api/tenant/stats/today）
   /// 今日待办复用共享 provider（幂等 load），用户信息来自本地缓存无需请求。
   Future<void> _load() async {
     final today = _todayStr();
+    final role = ref.read(authProvider).user?.role ?? '';
+    final isManager = role == 'tenant_manager' || role == 'tenant_admin';
     final tenantService = ref.read(tenantServiceProvider);
     final homeService = ref.read(homeServiceProvider);
-    // 今日待办（todayPending）由共享 scheduleStatsProvider 自动加载：
-    // 其 notifier 构造时已发起请求，build 中 watch 即触发，无需此处重复 load。
 
-    // 并行发起：租户名 + 业绩统计
+    // 并行发起：租户名 + （按角色分支的）业绩统计
     final tenantNameFuture = _safe(() => tenantService.fetchTenantName());
-    final statsFuture = _safe(() => homeService.fetchMyStats(today));
+    final Future<ManagerTodayStats?> managerFuture = isManager
+        ? _safe(() => homeService.fetchManagerTodayStats())
+        : Future.value(null);
+    final Future<HomeStats?> myFuture = isManager
+        ? Future.value(null)
+        : _safe(() => homeService.fetchMyStats(today));
     final tenantName = await tenantNameFuture;
-    final stats = await statsFuture;
+    final managerStats = await managerFuture;
+    final myStats = await myFuture;
 
     if (!mounted) return;
     setState(() {
       _tenantName = tenantName ?? '';
-      _stats = stats;
-      _statsError = stats == null;
+      _managerTodayStats = managerStats;
+      _stats = myStats;
+      _statsError = isManager ? managerStats == null : myStats == null;
       _isLoading = false;
     });
   }
@@ -158,10 +169,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     final todayPending = ref.watch(scheduleStatsProvider).todayPending;
 
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: BrandColors.surface,
       appBar: AppBar(
         title: const Text('我的'),
-        backgroundColor: _brandColor,
+        backgroundColor: BrandColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -184,20 +195,43 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                     ),
               const SizedBox(height: 24),
 
-              // 我的业绩
-              _sectionTitle('我的业绩'),
-              const SizedBox(height: 12),
-              _isLoading
-                  ? _StatsCardSkeleton(ctrl: _skeletonCtrl)
-                  : _statsError
-                  ? _statsErrorWidget()
-                  : ProfileStatsCard(
-                      leadsTotal: _stats?.myLeadsTotal ?? 0,
-                      followupCount: _stats?.followupCount ?? 0,
-                      answeredCount: _stats?.answeredCount ?? 0,
-                      todayPending: todayPending,
-                      onTap: () => _push(const PersonalStatsPage()),
+              // 业绩区块（TM/TA 显示团队业绩概览；TE 显示我的业绩）
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _sectionTitle(isManager ? '团队业绩概览' : '我的业绩'),
+                  if (isManager)
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () => _push(const PersonalStatsPage()),
+                      child: const Text('查看我的业绩 →'),
                     ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (isManager)
+                _isLoading
+                    ? _ManagerStatsCardSkeleton(ctrl: _skeletonCtrl)
+                    : _statsError
+                        ? _statsErrorWidget()
+                        : TeamStatsOverviewCard(stats: _managerTodayStats!)
+              else
+                _isLoading
+                    ? _StatsCardSkeleton(ctrl: _skeletonCtrl)
+                    : _statsError
+                        ? _statsErrorWidget()
+                        : ProfileStatsCard(
+                            leadsTotal: _stats?.myLeadsTotal ?? 0,
+                            followupCount: _stats?.followupCount ?? 0,
+                            answeredCount: _stats?.answeredCount ?? 0,
+                            todayPending: todayPending,
+                            onTap: () => _push(const PersonalStatsPage()),
+                          ),
               const SizedBox(height: 24),
 
               // 功能入口（标题按需求隐藏）
@@ -263,7 +297,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     style: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w500,
-      color: _textSecondary,
+      color: BrandColors.textSecondary,
     ),
   );
 
@@ -278,13 +312,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 24),
         decoration: BoxDecoration(
-          color: _pageBg,
+          color: BrandColors.surface,
           borderRadius: BorderRadius.circular(8),
         ),
         child: const Center(
           child: Text(
             '数据加载失败，点击重试',
-            style: TextStyle(fontSize: 14, color: _errorColor),
+            style: TextStyle(fontSize: 14, color: BrandColors.error),
           ),
         ),
       ),
@@ -365,6 +399,47 @@ class _StatsCardSkeleton extends StatelessWidget {
               children: [
                 ShimmerBlock(ctrl: ctrl, width: 40, height: 20),
                 const SizedBox(height: 8),
+                ShimmerBlock(ctrl: ctrl, width: 48, height: 12),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 团队业绩概览区骨架屏（3 行占位：数字 + 环比 + 标签，对齐 [TeamStatsOverviewCard]）
+class _ManagerStatsCardSkeleton extends StatelessWidget {
+  final AnimationController ctrl;
+
+  const _ManagerStatsCardSkeleton({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: List.generate(
+          4,
+          (_) => Expanded(
+            child: Column(
+              children: [
+                ShimmerBlock(ctrl: ctrl, width: 40, height: 20),
+                const SizedBox(height: 2),
+                ShimmerBlock(ctrl: ctrl, width: 32, height: 14),
+                const SizedBox(height: 4),
                 ShimmerBlock(ctrl: ctrl, width: 48, height: 12),
               ],
             ),

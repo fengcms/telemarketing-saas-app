@@ -1023,6 +1023,105 @@ ApiClient 拦截器链：
 
 ---
 
+## 节点 v0.36.1 — 修复拨号返回跟进写错线索（2026-07-28）
+
+> 计划：`docs/dev/PLAN_FIX_FOLLOWUP_WRONG_LEAD-2026-07-28.md`
+
+### 问题
+
+员工在详情页内点「下一个」切换线索后，拨号返回自动弹出的跟进面板，把跟进内容写到了**上一个**线索。
+
+### 根因
+
+`LeadDetailPage` 是常驻页面实例；底部「上一个/下一个」只改全局 `leadDetailProvider` 状态、不新开路由页。而 `didChangeAppLifecycleState` 自动弹跟进面板时用的是 `widget.leadId`（进入页时的初始线索 ID，切换后不变），导致写错线索。手动「跟进」按钮用 `state.detail!.id` 正确，故仅拨号返回路径出错。
+
+### 修复
+
+`lib/pages/leads/lead_detail_page.dart`：`didChangeAppLifecycleState` 改用 `ref.read(leadDetailProvider).detail?.id` 读取**当前正在查看**的线索 ID，替代 `widget.leadId`。
+
+### 验证
+
+| 验证项 | 结果 |
+|------|------|
+| `flutter analyze lib/pages/leads/lead_detail_page.dart` | No issues |
+| 构建 + 装真机 | `app-release.apk`(62.0MB)，Redmi K60(`3e06fd6d`) 安装成功 |
+| 真机实测 | 进入 A 拨号返回写 A；点下一个到 B 拨号返回写 B（不再串到 A）；手动跟进路径正常 |
+
+---
+
+## 节点 v0.37 — 修复首页 resume 时无条件请求 home-summary / stats/mine（2026-07-28）
+
+> 计划：`docs/dev/PLAN_FIX_HOMEPAGE_RESUME_REFRESH-2026-07-28.md`
+
+### 问题
+
+用户在 Alice 抓包发现：任何 App 前后台切换（含线索详情拨号返回、下拉通知栏、截图），都会请求
+`GET /api/tenant/schedules/home-summary` 与 `GET /api/tenant/stats/mine`，即使当时不在首页。
+
+### 根因
+
+1. `HomePage` 在 `IndexedStack` 中常驻，其 `WidgetsBinding` observer 的 `didChangeAppLifecycleState`
+   是全局回调，与当前所在页面无关。
+2. `home_provider.onResume()` 无条件 `_silentRefresh()`（并发请求上述两接口），注释写的「10 分钟节流」从未实现。
+
+### 修复
+
+| 文件 | 改动 |
+|------|------|
+| `lib/providers/tab_provider.dart` | 新建，抽出 `currentTabProvider`（避免 `home_page ⇄ main_shell` 循环依赖） |
+| `lib/pages/main_shell.dart` | 删除本地 `currentTabProvider` 定义，改 import `tab_provider.dart` |
+| `lib/pages/home/home_page.dart` | `didChangeAppLifecycleState` 的 `resumed` 仅在 `currentTabProvider==0` 时 `onResume()`；`build` 内 `ref.listen(currentTabProvider)` 切回首页 Tab 时主动刷新 |
+| `lib/providers/home_provider.dart` | 加 `_lastSilentRefreshAt`；`loadData`/`_silentRefresh` 记录时间戳；`onResume` 距上次 <60s 跳过 `_silentRefresh`（仍重启轮询） |
+| `lib/services/options_cache_service.dart` | 修正 2 处 TTL 注释为「36000 秒/10 小时」（实际 TTL 即 10 小时，用户本意） |
+
+### 效果
+
+- 首页且真回前台：仍刷新
+- 别的 Tab / 线索详情拨号返回：不发这两个请求
+- 切回首页 Tab：正常刷新一次
+- 瞬时前后台切换（<60s）：节流跳过，不重复拉取
+
+### 验证
+
+| 验证项 | 结果 |
+|------|------|
+| `flutter analyze` 5 文件 | No issues |
+| 构建 + 装真机 | `app-release.apk`(62.0MB)，Redmi K60(`3e06fd6d`) 安装成功，待 Alice 抓包实测 |
+| 真机实测（Alice 抓包） | 线索详情拨号返回 → 不再出现 home-summary / stats/mine；切回首页 Tab → 出现一次 |
+
+---
+
+## 节点 v0.38 — 设置页新增「清除缓存」功能（2026-07-28）
+
+> 计划：`docs/dev/PLAN_SETTINGS_CLEAR_CACHE-2026-07-28.md`
+
+### 需求
+
+设置页新增「清除缓存」菜单：清除本机所有接口缓存（含登录凭据）后跳登录页重新登录。
+
+### 决策（已与用户确认）
+
+1. **纯本地清除**：不调后端 `/api/auth/logout`，不吊销会话、不影响其他设备。
+2. **保留账号预填**：不清 `LocalStorageService` 的 saved_login_email/password。
+
+### 修复/实现
+
+| 文件 | 改动 |
+|------|------|
+| `lib/providers/cache_coordinator.dart` | 新增 `clearAllData()`：清用户私有 + `optionsCacheProvider.clearAll()` + `tenantServiceProvider.clearAll()` + `homePageProvider.notifier.reset()` + `teamStatsProvider` invalidate |
+| `lib/providers/auth_provider.dart` | 新增 `clearLocalCache()`：`tokenStorage.clearAll()` + `cacheCoordinator.clearAllData()`，置 `unauthenticated` 触发 AuthGate 跳登录 |
+| `lib/pages/settings/settings_page.dart` | 「账户操作」区新增「清除缓存」ListTile（`Icons.cleaning_services`）+ `_onClearCache`（二次确认 + 调用 + popUntil first） |
+
+### 验证
+
+| 验证项 | 结果 |
+|------|------|
+| `flutter analyze` 3 文件 | No issues |
+| 构建 + 装真机 | `app-release.apk`(62.0MB)，Redmi K60(`3e06fd6d`) 待实测 |
+| 真机实测 | 点「清除缓存」→ 二次确认 → 清本地数据跳登录页；登录页账号预填仍在；重新登录后首页正常；其他设备不受影响 |
+
+---
+
 ## 下一步节点规划
 
 > ⚠️ 下方 P0 核心流程**实际已完成**，见 v0.1~v0.11。剩余工作均为 P1 及以后。
