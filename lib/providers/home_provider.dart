@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/home_stats.dart';
 import 'package:telemarketing_app/models/schedule.dart';
 import 'package:telemarketing_app/models/home_summary.dart';
+import 'package:telemarketing_app/models/manager_today_stats.dart';
 import 'package:telemarketing_app/services/home_service.dart';
 import 'auth_provider.dart';
 
@@ -45,6 +46,15 @@ class HomePageState {
   /// 统计区域错误
   final String? statsError;
 
+  /// 是否为经理/管理员视角（TM/TA）。决定四宫格展示个人还是团队当日数据。
+  final bool isManager;
+
+  /// 团队当日概览（TM/TA 调用 stats/today 得到，TE 为 null）
+  final ManagerTodayStats? managerTodayStats;
+
+  /// 团队当日统计区域错误（TM/TA 专用）
+  final String? managerStatsError;
+
   /// 日程区域错误
   final String? schedulesError;
 
@@ -66,6 +76,9 @@ class HomePageState {
     this.isLoadingStats = false,
     this.isLoadingSchedules = false,
     this.statsError,
+    this.isManager = false,
+    this.managerTodayStats,
+    this.managerStatsError,
     this.schedulesError,
     this.isOffline = false,
     this.isDueSoonBannerClosed = false,
@@ -81,6 +94,9 @@ class HomePageState {
     bool? isLoadingStats,
     bool? isLoadingSchedules,
     String? statsError,
+    bool? isManager,
+    ManagerTodayStats? managerTodayStats,
+    String? managerStatsError,
     String? schedulesError,
     bool? isOffline,
     bool? isDueSoonBannerClosed,
@@ -95,6 +111,9 @@ class HomePageState {
       isLoadingStats: isLoadingStats ?? this.isLoadingStats,
       isLoadingSchedules: isLoadingSchedules ?? this.isLoadingSchedules,
       statsError: statsError,
+      isManager: isManager ?? this.isManager,
+      managerTodayStats: managerTodayStats ?? this.managerTodayStats,
+      managerStatsError: managerStatsError,
       schedulesError: schedulesError,
       isOffline: isOffline ?? this.isOffline,
       isDueSoonBannerClosed:
@@ -148,10 +167,16 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
     final today = _getTodayDate();
     final homeService = _ref.read(homeServiceProvider);
 
-    // 并行发起 2 个请求：业务统计 + 首页日程聚合
+    // 角色判定：TM/TA 走团队当日视角，额外拉取 stats/today
+    final user = _ref.read(authProvider).user;
+    final isManager =
+        user?.role == 'tenant_admin' || user?.role == 'tenant_manager';
+
+    // 并行发起请求：个人统计 + 首页日程聚合（TE/TM/TA 都需要）；TM/TA 额外拉团队当日
     final results = await Future.wait([
       _safeCall(() => homeService.fetchMyStats(today)),
       _safeCall(() => homeService.fetchHomeSummary()),
+      if (isManager) _safeCall(() => homeService.fetchManagerTodayStats()),
     ]);
 
     if (_isDisposed) return;
@@ -185,6 +210,19 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
       schedulesError = '加载日程失败';
     }
 
+    // TM/TA：处理团队当日概览（第 3 个结果，仅 isManager 时存在）
+    ManagerTodayStats? managerTodayStats;
+    String? managerStatsError;
+    if (isManager && results.length > 2) {
+      final m = results[2];
+      if (m != null && m is ManagerTodayStats) {
+        managerTodayStats = m;
+        managerStatsError = null;
+      } else {
+        managerStatsError = '加载团队统计失败';
+      }
+    }
+
     state = state.copyWith(
       isInitialLoading: false,
       stats: mergedStats,
@@ -194,6 +232,9 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
       isLoadingStats: false,
       isLoadingSchedules: false,
       statsError: statsError,
+      isManager: isManager,
+      managerTodayStats: managerTodayStats,
+      managerStatsError: managerStatsError,
       schedulesError: schedulesError,
     );
   }
@@ -254,6 +295,23 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
     final summary =
         await _safeCall(() => homeService.fetchHomeSummary());
 
+    final user = _ref.read(authProvider).user;
+    final isManager =
+        user?.role == 'tenant_admin' || user?.role == 'tenant_manager';
+
+    ManagerTodayStats? managerTodayStats = state.managerTodayStats;
+    String? managerStatsError = state.managerStatsError;
+    if (isManager) {
+      final m = await _safeCall(() => homeService.fetchManagerTodayStats());
+      if (m != null && m is ManagerTodayStats) {
+        managerTodayStats = m;
+        managerStatsError = null;
+      } else {
+        // 失败保留上次数据，仅记录错误；不刷新时避免空白闪烁
+        managerStatsError = '加载团队统计失败';
+      }
+    }
+
     if (_isDisposed) return;
 
     HomeStats? mergedStats = state.stats;
@@ -275,6 +333,9 @@ class HomePageNotifier extends StateNotifier<HomePageState> {
       schedules: scheduleList,
       todayPending: todayPending,
       dueSoonCount: dueSoonCount,
+      isManager: isManager,
+      managerTodayStats: managerTodayStats,
+      managerStatsError: managerStatsError,
     );
   }
 
