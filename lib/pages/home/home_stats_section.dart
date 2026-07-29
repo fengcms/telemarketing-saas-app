@@ -61,28 +61,36 @@ class HomeStatsSection extends ConsumerWidget {
   // ── 团队当日网格（TM/TA）──
 
   Widget _buildTeamGrid(ManagerTodayStats m) {
+    // 注意：Section 外层是垂直无界约束（Column/ListView），此处必须用 IntrinsicHeight
+    // 包裹 Row，否则裸用 CrossAxisAlignment.stretch 会把无限高度向下传播导致崩溃。
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-                child: _teamCard('团队今日跟进', m.todayFollowup,
-                    diff: m.compareYesterday.followupDiff)),
-            const SizedBox(width: 12),
-            Expanded(
-                child: _teamCard('团队今日接通', m.todayAnswered,
-                    diff: m.compareYesterday.answeredDiff)),
-          ],
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                  child: _teamCard('团队今日跟进', m.todayFollowup,
+                      diff: m.compareYesterday.followupDiff)),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: _teamCard('团队今日接通', m.todayAnswered,
+                      diff: m.compareYesterday.answeredDiff)),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-                child: _teamCard('团队今日转化', m.todayConverted,
-                    diff: m.compareYesterday.convertedDiff)),
-            const SizedBox(width: 12),
-            Expanded(child: _teamCard('团队今日待办', m.todayPending)),
-          ],
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                  child: _teamCard('团队今日转化', m.todayConverted,
+                      diff: m.compareYesterday.convertedDiff)),
+              const SizedBox(width: 12),
+              Expanded(child: _teamCard('团队今日待办', m.todayPending)),
+            ],
+          ),
         ),
       ],
     );
@@ -98,11 +106,11 @@ class HomeStatsSection extends ConsumerWidget {
       child: Column(
         children: [
           Text(
-            '$value',
+            _formatNum(value),
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w600,
-              color: BrandColors.textPrimary,
+              color: BrandColors.primary,
             ),
           ),
           const SizedBox(height: 4),
@@ -128,10 +136,10 @@ class HomeStatsSection extends ConsumerWidget {
     final Color color;
     final String text;
     if (diff > 0) {
-      color = Colors.green.shade600;
+      color = BrandColors.success;
       text = '↗ +$diff';
     } else if (diff < 0) {
-      color = Colors.red.shade500;
+      color = BrandColors.error;
       text = '↘ ${diff.abs()}';
     } else {
       color = BrandColors.textDisabled;
@@ -142,6 +150,9 @@ class HomeStatsSection extends ConsumerWidget {
       style: TextStyle(fontSize: 12, color: color),
     );
   }
+
+  /// 数值格式化：超过 9999 显示 "9999+"，避免 4 列拥挤（与我的页团队卡一致）
+  String _formatNum(int n) => n > 9999 ? '9999+' : '$n';
 
   // ── 个人网格（TE，原逻辑）──
 

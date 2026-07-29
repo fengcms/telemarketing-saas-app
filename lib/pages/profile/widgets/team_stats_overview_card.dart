@@ -1,6 +1,6 @@
 /// 个人中心 - 团队业绩概览卡片（TM/TA 视角）
 ///
-/// 4 列等分：团队今日跟进 / 团队今日接通 / 团队今日转化 / 团队今日待办。
+/// 4 列等分：今日跟进 / 今日接通 / 今日转化 / 今日待办。
 /// 每列：数字(20px Bold 品牌色) + 环比小标(11px 绿↗/红↘/灰—) + 标签(12px 灰)。
 /// 白色圆角卡片，列间以淡灰色细线分隔；风格对齐 [ProfileStatsCard]。
 /// 数据来自 [ManagerTodayStats]（GET /api/tenant/stats/today 实时 COUNT）。
@@ -8,6 +8,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:telemarketing_app/models/manager_today_stats.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 
 /// 团队业绩概览卡片
 ///
@@ -35,24 +36,24 @@ class TeamStatsOverviewCard extends StatelessWidget {
       child: Row(
         children: [
           _column(
-            '团队今日跟进',
+            '今日跟进',
             stats.todayFollowup,
             stats.compareYesterday.followupDiff,
           ),
           _divider(),
           _column(
-            '团队今日接通',
+            '今日接通',
             stats.todayAnswered,
             stats.compareYesterday.answeredDiff,
           ),
           _divider(),
           _column(
-            '团队今日转化',
+            '今日转化',
             stats.todayConverted,
             stats.compareYesterday.convertedDiff,
           ),
           _divider(),
-          _column('团队今日待办', stats.todayPending, null),
+          _column('今日待办', stats.todayPending, null),
         ],
       ),
     );
@@ -64,7 +65,7 @@ class TeamStatsOverviewCard extends StatelessWidget {
   /// 交叉轴高度约束不定，常渲染成 0 高，故用手写固定高 Container 保证显示。
   Widget _divider() => SizedBox(
         height: 44,
-        child: Container(width: 1, color: const Color(0xFFE7E7E7)),
+        child: Container(width: 1, color: BrandColors.border),
       );
 
   /// 单列指标（数字 + 环比小标 + 标签）
@@ -79,7 +80,7 @@ class TeamStatsOverviewCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF0052D9),
+              color: BrandColors.primary,
             ),
           ),
           const SizedBox(height: 2),
@@ -90,7 +91,7 @@ class TeamStatsOverviewCard extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 12,
-              color: Color(0xFFA6A6A6),
+              color: BrandColors.textSecondary,
             ),
           ),
         ],
@@ -104,12 +105,12 @@ class TeamStatsOverviewCard extends StatelessWidget {
       return const SizedBox(height: 14); // 占位保持列对齐
     }
     final color = diff > 0
-        ? const Color(0xFF2BA471)
+        ? BrandColors.success
         : diff < 0
-            ? const Color(0xFFD54941)
-            : const Color(0xFFA6A6A6);
+            ? BrandColors.error
+            : BrandColors.textSecondary;
     final arrow = diff > 0 ? '↗' : diff < 0 ? '↘' : '—';
-    final text = diff > 0 ? '$arrow +$diff' : diff < 0 ? '$arrow $diff' : arrow;
+    final text = diff > 0 ? '$arrow +$diff' : diff < 0 ? '$arrow ${diff.abs()}' : arrow;
     return Text(
       text,
       style: TextStyle(

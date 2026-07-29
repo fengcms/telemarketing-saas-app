@@ -21,6 +21,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:telemarketing_app/models/home_stats.dart';
 import 'package:telemarketing_app/models/manager_today_stats.dart';
 import 'package:telemarketing_app/theme/role_label.dart';
+import 'package:telemarketing_app/theme/color_scheme.dart';
 import 'package:telemarketing_app/pages/call_records/call_records_page.dart';
 import 'package:telemarketing_app/pages/customers/customer_list_page.dart';
 import 'package:telemarketing_app/pages/settings/settings_page.dart';
@@ -38,12 +39,6 @@ import 'package:telemarketing_app/providers/options_provider.dart';
 import 'package:telemarketing_app/providers/schedule_stats_provider.dart';
 import 'package:telemarketing_app/core/dev_tools.dart';
 import 'package:telemarketing_app/widgets/app_toast.dart';
-
-// ── 颜色常量（对齐 TDesign 设计规范）──
-const Color _brandColor = Color(0xFF0052D9);
-const Color _pageBg = Color(0xFFF3F3F3);
-const Color _textSecondary = Color(0xFFA6A6A6);
-const Color _errorColor = Color(0xFFD54941);
 
 /// 个人中心页
 ///
@@ -174,10 +169,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     final todayPending = ref.watch(scheduleStatsProvider).todayPending;
 
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: BrandColors.surface,
       appBar: AppBar(
         title: const Text('我的'),
-        backgroundColor: _brandColor,
+        backgroundColor: BrandColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -201,28 +196,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
               const SizedBox(height: 24),
 
               // 业绩区块（TM/TA 显示团队业绩概览；TE 显示我的业绩）
-              _sectionTitle(isManager ? '团队业绩概览' : '我的业绩'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _sectionTitle(isManager ? '团队业绩概览' : '我的业绩'),
+                  if (isManager)
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () => _push(const PersonalStatsPage()),
+                      child: const Text('查看我的业绩 →'),
+                    ),
+                ],
+              ),
               const SizedBox(height: 12),
               if (isManager)
                 _isLoading
                     ? _ManagerStatsCardSkeleton(ctrl: _skeletonCtrl)
                     : _statsError
                         ? _statsErrorWidget()
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              TeamStatsOverviewCard(stats: _managerTodayStats!),
-                              const SizedBox(height: 4),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: () =>
-                                      _push(const PersonalStatsPage()),
-                                  child: const Text('查看我的业绩 →'),
-                                ),
-                              ),
-                            ],
-                          )
+                        : TeamStatsOverviewCard(stats: _managerTodayStats!)
               else
                 _isLoading
                     ? _StatsCardSkeleton(ctrl: _skeletonCtrl)
@@ -300,7 +297,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     style: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w500,
-      color: _textSecondary,
+      color: BrandColors.textSecondary,
     ),
   );
 
@@ -315,13 +312,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 24),
         decoration: BoxDecoration(
-          color: _pageBg,
+          color: BrandColors.surface,
           borderRadius: BorderRadius.circular(8),
         ),
         child: const Center(
           child: Text(
             '数据加载失败，点击重试',
-            style: TextStyle(fontSize: 14, color: _errorColor),
+            style: TextStyle(fontSize: 14, color: BrandColors.error),
           ),
         ),
       ),
