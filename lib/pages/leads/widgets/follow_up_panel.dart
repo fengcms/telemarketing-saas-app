@@ -68,6 +68,19 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
     ('suspended', '停机'),
   ];
 
+  /// 接听类型 → 默认跟进内容文本
+  static const _defaultContentByType = {
+    'answered': '已接听',
+    'no_answer': '无人接听',
+    'rejected': '拒接',
+    'empty_number': '空号',
+    'suspended': '停机',
+  };
+
+  /// 根据接听类型获取默认跟进内容
+  String _getDefaultContent(String answerType) =>
+      _defaultContentByType[answerType] ?? '跟进';
+
   @override
   void initState() {
     super.initState();
@@ -75,6 +88,31 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
     _showDuration = true;
     _loadCategories();
     _loadQuickNotes();
+    // 监听线索切换：用户通过底部导航「上一个/下一个」浏览时，
+    // 面板中的 widget.leadId 不会自动更新，提交时会写到旧线索。
+    // 检测到当前查看的线索已改变 → 自动关闭面板。
+    _watchLeadChange();
+  }
+
+  /// 监听 [leadDetailProvider]，当详情页显示的线索 ID 与面板创建时的
+  /// [widget.leadId] 不一致时（即用户导航到了其他线索），自动关闭面板。
+  ///
+  /// 用 [previous] 非空判断避免面板首次打开时因数据未加载而误关。
+  ///
+  /// 使用 [listenManual] 而非 [listen] 是因为此方法在 [initState] 中调用，
+  /// 而 Riverpod 2.6.1 的 [listen] 仅允许在 [build] 方法内使用。
+  /// [listenManual] 返回的订阅会在 widget dispose 时自动清理。
+  void _watchLeadChange() {
+    ref.listenManual(leadDetailProvider, (LeadDetailState? previous, LeadDetailState next) {
+      // previous?.detail != null → 确保只在上次有数据后才触发检查
+      //（面板刚打开时 detail 可能为 null，跳过避免误关闭）
+      if (previous?.detail != null &&
+          next.detail != null &&
+          next.detail!.id != widget.leadId) {
+        // 当前查看的线索已切换，关闭跟进面板
+        if (mounted) Navigator.of(context).pop();
+      }
+    });
   }
 
   /// 从 OptionsCacheService 加载分类列表（供「线索分类」平铺选择）
@@ -383,7 +421,14 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
 
     try {
       final service = ref.read(leadServiceProvider);
-      final content = _contentController.text.trim();
+      final userInput = _contentController.text.trim();
+
+      // 拨号场景：如果用户没打字，根据接听类型自动生成跟进内容，
+      // 确保后端在创建通话记录的同时也创建了跟进记录。
+      // 详见 docs/dev/BACKEND_CALL_FOLLOWUP.md
+      final content = widget.fromDial
+          ? (userInput.isNotEmpty ? userInput : _getDefaultContent(_selectedAnswerType!))
+          : userInput;
 
       if (widget.fromDial) {
         // 拨号返回：走复合端点，原子创建通话+跟进
@@ -402,7 +447,7 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
           externalCallId: externalCallId,
           answerType: _selectedAnswerType!,
           duration: duration != null && duration > 0 ? duration : null,
-          content: content.isNotEmpty ? content : null,
+          content: content,
           categoryId: _selectedCategoryId,
         );
       } else {
