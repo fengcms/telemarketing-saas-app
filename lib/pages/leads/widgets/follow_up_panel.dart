@@ -68,6 +68,19 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
     ('suspended', '停机'),
   ];
 
+  /// 接听类型 → 默认跟进内容文本
+  static const _defaultContentByType = {
+    'answered': '已接听',
+    'no_answer': '无人接听',
+    'rejected': '拒接',
+    'empty_number': '空号',
+    'suspended': '停机',
+  };
+
+  /// 根据接听类型获取默认跟进内容
+  String _getDefaultContent(String answerType) =>
+      _defaultContentByType[answerType] ?? '跟进';
+
   @override
   void initState() {
     super.initState();
@@ -408,7 +421,14 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
 
     try {
       final service = ref.read(leadServiceProvider);
-      final content = _contentController.text.trim();
+      final userInput = _contentController.text.trim();
+
+      // 拨号场景：如果用户没打字，根据接听类型自动生成跟进内容，
+      // 确保后端在创建通话记录的同时也创建了跟进记录。
+      // 详见 docs/dev/BACKEND_CALL_FOLLOWUP.md
+      final content = widget.fromDial
+          ? (userInput.isNotEmpty ? userInput : _getDefaultContent(_selectedAnswerType!))
+          : userInput;
 
       if (widget.fromDial) {
         // 拨号返回：走复合端点，原子创建通话+跟进
@@ -427,7 +447,7 @@ class _FollowUpPanelState extends ConsumerState<_FollowUpPanel> {
           externalCallId: externalCallId,
           answerType: _selectedAnswerType!,
           duration: duration != null && duration > 0 ? duration : null,
-          content: content.isNotEmpty ? content : null,
+          content: content,
           categoryId: _selectedCategoryId,
         );
       } else {
