@@ -74,3 +74,10 @@ MaterialApp(
 - Web 调试时 Flutter 引擎(CanvasKit)会自动从 gstatic 拉 Noto 导致超时：可改用 HTML renderer
   （`flutter run -d chrome --web-renderer html`）走浏览器系统字体（Mac=苹方）。
 - 当前决定：**暂不持久化改动** web 渲染模式，保持现状；未来若要做 web 字体方案需先确认。
+
+### miniapp / Taro 微信小程序子项目（2026-07-30 新增）
+- 位置：仓库根 `miniapp/`，与 Flutter app 并存、互不影响。技术栈 **Taro 4.2.1 + React 18 + TypeScript + Sass**，目标平台微信（weapp），包管理 **pnpm**。
+- 开发脚本：`pnpm dev:weapp`（watch）、`pnpm build:weapp`（产物到 `dist/`，用微信开发者工具打开 `dist/` 目录预览）。`appid` 当前为占位 `touristappid`，正式接入需替换成真实小程序 AppID。
+- 后端复用：接口契约仍为根目录 `docs/api.md` / `docs/openapi.json`，小程序侧请求层需另起一套（utils/request 等），不要直接 import Flutter 代码。
+- **pnpm 构建脚本坑**：pnpm 默认忽略原生包 postinstall（esbuild / @tarojs/binding / @swc/core 等），需在 `miniapp/pnpm-workspace.yaml` 用 `allowBuilds` 白名单放行，否则 `taro build` 可能找不到 native binding。
+- **config 文件坑（重要）**：`*.config.ts`（app.config.ts / 各 page.config.ts）**禁止** `import { defineAppConfig/definePageConfig } from '@tarojs/taro'`。原因：构建加载配置阶段会在 Node 里 require 到 @tarojs/runtime，而 `ENABLE_INNER_HTML` 等是仅由 webpack DefinePlugin 注入的编译期全局常量，未定义即崩。正确写法：直接 `export default { ... }` 纯对象。

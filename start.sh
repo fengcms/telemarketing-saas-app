@@ -61,7 +61,8 @@ check_flutter() {
 # ── 菜单选项 ──
 
 menu_items=(
-  "🚀 启动项目 (Chrome 开发模式 · 预填账号 + Alice)"
+  "🚀 启动项目 (Chrome 测试模式 · 预填账号 + Alice)"
+  "🌐 启动项目 (Chrome 生产模式 · 预填账号 + Alice + 正式环境)"
   "🔧 编译 Debug 版 APK（测试环境 · 预填账号 + Alice）"
   "📲 安装 Debug 版 APK 到手机"
   "📦 编译 Release 版 APK（生产环境）"
@@ -70,7 +71,7 @@ menu_items=(
   "📥 安装依赖 (flutter pub get)"
   "🔍 代码静态分析 (flutter analyze)"
   "🔄 拉取最新代码 (git pull)"
-  "⚡ 重启 adb 服务"
+  "⚡ 重启 adb ���务"
   "📋 查看已连接的 adb 设备"
   "🚚 一步到位：编译 Debug + 安装到手机"
   "🚚 一步到位：编译 Release + 安装到手机"
@@ -94,8 +95,13 @@ show_menu() {
 # ── 各选项执行逻辑 ──
 
 option_run_chrome() {
-  info "启动 Chrome 开发模式（预填测试账号 + Alice 网络抓包）..."
+  info "启动 Chrome 测试模式（接口：${TEST_API} · 预填测试账号 + Alice 网络抓包）..."
   no_proxy=* flutter run -d chrome "$DEV_TOOLS"
+}
+
+option_run_chrome_prod() {
+  info "启动 Chrome 生产模式（接口：${PROD_API} · 预填测试账号 + Alice 网络抓包）..."
+  no_proxy=* flutter run -d chrome "$DEV_TOOLS" --dart-define=API_BASE_URL="$PROD_API"
 }
 
 option_build_debug() {
@@ -204,19 +210,20 @@ while true; do
 
   case "$choice" in
     1)  option_run_chrome ;;
-    2)  option_build_debug ;;
-    3)  option_install_debug ;;
-    4)  option_build_release ;;
-    5)  option_install_release ;;
-    6)  option_clean ;;
-    7)  option_pub_get ;;
-    8)  option_analyze ;;
-    9)  option_git_pull ;;
-    10) option_restart_adb ;;
-    11) option_adb_devices ;;
-    12) option_build_and_install_debug ;;
-    13) option_build_and_install_release ;;
-    14)
+    2)  option_run_chrome_prod ;;
+    3)  option_build_debug ;;
+    4)  option_install_debug ;;
+    5)  option_build_release ;;
+    6)  option_install_release ;;
+    7)  option_clean ;;
+    8)  option_pub_get ;;
+    9)  option_analyze ;;
+    10) option_git_pull ;;
+    11) option_restart_adb ;;
+    12) option_adb_devices ;;
+    13) option_build_and_install_debug ;;
+    14) option_build_and_install_release ;;
+    15)
       echo -e "${GREEN}再见！${NC}"
       exit 0
       ;;
